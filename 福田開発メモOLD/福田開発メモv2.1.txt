@@ -1,0 +1,263 @@
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+プログラム仕様
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+
+■CHASER ver1.2.2 仕様
+■構想日：2013/10/28
+■実装日：2013/10/28
+・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
+・CHASERモードはTHROTTLE AUTO, ROLLPITCH AUTO, YAW_CHASER, NAV_CHASERである
+・NAV_CHASERの仕様は以下。なお制御はx,y独立で実施し、z方向は固定とする
+　・ビーコン位置を指定回平均してなました位置をdestinationとする（デフォルト値は5）
+　・ビーコン位置が更新される時のtarget位置をoriginとする。初回のみ機体位置とする。
+　・更新周期とorigin-destination間距離で定義された速度を目標速度としてtargetはoriginからdestinationへ動く。また、目標速度にリミットを設ける。
+　・現状速度から目標速度への変化量は加速度で決める
+　・target位置がorigin-destination間を超えたら目標速度を0とする
+・YAW_CHASERの仕様は以下。
+　・機首の向きはtarget位置に向ける。その変化速度にCHASER_YAW_SLEW_RATEで制限をかける。
+　・targetの更新はupdate_chaserで行われ（10Hz）、機首の目標値更新はupdate_yaw_modeで行われる（100Hz）
+・Loiterコントローラを一部改変
+　・AC_WPNav::get_loiter_position_to_velocityで位置から速度を出す際にlinear_distance以上で目標速度が変わる制御をマスク
+　　→全て比例制御に
+・その他変更点
+　・GPSが使えない場合はStabilizeに移行する（failsafe）
+　・グローバル変数の宣言場所をchaser.pdeからArduCopter.pdeに
+
+
+■CHASER ver1.2.1 仕様
+■構想：2013/10/19
+■実装：2013/10/19
+・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
+・CHASERモードはTHROTTLE AUTO, ROLLPITCH AUTO, YAWHOLD, NAV_CHASERである
+　　★TODO：YAWHOLDは変更したい
+・NAV_CHASERの説明は以下。なお制御はx,y独立で実施し、z方向は固定とする
+　・ビーコン位置を10回平均してなました位置をdestinationとする
+　・ビーコン位置が更新される時のtarget位置をoriginとする。初回のみ機体位置とする。
+　・更新周期とorigin-destination間距離で定義された速度を目標速度としてtargetはoriginからdestinationへ動く
+　・現状速度から目標速度への変化量は加速度で決める
+　・target位置がorigin-destination間を超えたら目標速度を0とする
+・Loiterコントローラを一部改変
+　・AC_WPNav::get_loiter_position_to_velocityで位置から速度を出す際にlinear_distance以上で目標速度が変わる制御をマスク
+　　→全て比例制御に
+
+
+■CHASER ver1.2 仕様
+■構想：2013/10/17
+■実装：2013/10/19
+・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
+・CHASERモードはTHROTTLE AUTO, ROLLPITCH AUTO, YAWHOLD, NAV_CHASERである
+　　★TODO：YAWHOLDは変更したい
+・NAV_CHASERの説明は以下。なお制御はx,y独立で実施し、z方向は固定とする
+　・ビーコン位置を10回平均してなました位置をdestinationとする
+　・ビーコン位置が更新される時のtarget位置をoriginとする。初回のみ機体位置とする。
+　・更新周期とorigin-destination間距離で定義された速度を目標速度としてtargetはoriginからdestinationへ動く
+　・現状速度から目標速度への変化量は加速度で決める
+　・target位置がorigin-destination間を超えたら目標速度を0とする
+
+
+
+■CHASERモードの仕様@20131013
+・プログラム名：CHASER_test03　★★131017 バグ発見
+・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
+・CHASERモードはTHROTTLE AUTO, ROLLPITCH AUTO, YAWHOLD, NAV_CHASERである
+・NAV_CHASERの説明は以下
+　・ビーコン位置を10回平均してなました位置をdestinationとする
+　・ビーコン位置が更新される時のtarget位置をoriginとする。初回のみ機体位置とする。
+　・更新周期とorigin→destination間距離で定義された速度を目標速度としてtargetはoriginからdestinationへ動く
+　・更新時に方向が変わる際の速度補正はしていない。前回速度絶対値のまま目標速度が変わるという仕様（逆向きに進むとMAX吹っ飛ぶ可能性有）
+　　・ここはx,y独立で現在のルールを適用すれば良さそう
+　・速度変化（＝加速度）にリミットを設けてある
+　・destinationまで到達したらtargetの移動停止（減速度がとっても大きい。速度0なので次の立ち上がりが遅くなる）
+・バグ
+　・速度が目標速度に固定される
+　・target_distanceがリセットされない
+
+
+■mavlinkにメッセージを追加する
+・GCS_MAVLink/message_definitions/ardupilotmega.xmlをいじって、generate.shをシェルスクリプトとして実行する
+・generate.shは改行コードがCR+LFになっていてmacのコマンドプロンプトだとエラーをはくので注意
+・mavlinkプログラム（githubより入手）の奥のほうにあるmavgen.pyのフォルダにPATHが通っていないとエラーを吐くので注意
+・そのままgenerateするとmavlink_conversions.hが生成されてmavlink_helper.hからincludeされ、それがエラーをはくけど、ひとまずincludeをやめるとコンパイルは通る。他にも色々違う部分ありそう（3.0.1についてくるやつと比べて行数が違う）だけどそのままやってみる
+
+
+■改造ファイルと場所
+ArduCopter.pde
+　754行目付近　"CHASERモード用グローバル変数"の項目を追加（※以下の行数がすべて狂ってるはず）
+　1377行目付近　set_yaw_mode関数内にYAW_CHASERのcaseを追加
+　1449行目付近　update_yaw_mode関数内にYAW_CHASERのcaseを追加
+　18xx行目付近　set_throttle_mode内にTHROTTLE_AUTO_TAKEOFFを追加
+　19xx行目付近　update_throttle_mode内にTHROTTLE_AUTO_TAKEOFFを追加
+　　　　　　　　 自動テイクオフ用にTHROTTLE_AUTOを元にちょい修正。
+chaser.pde
+　すべて　新規作成ファイル
+navigation.pde
+　134行目付近　set_nav_modeのスイッチにNAV_CHASERを追加
+　171行目付近　nav_modeのスイッチにNAV_CHASERを追加
+defines.h
+　28行目付近　YAW_CHASERを追加　番号は10
+　41行目付近　THROTTLE_AUTO_TAKEOFFを追加　番号は5
+　130行目付近　C_TAKEOFFモードとCHASERモードを追加、NUMをふたつ増やす
+　190行目付近　#define NAV_CHASER 4とした
+　一番下　CHASER関連の#defineはこっちへ移動
+commands_logic.pde
+　ファイル末尾　do_c_takeoff関数、do_chaser関数を追加
+system.pde
+　316行目付近　mode_requires_GPS関数内にC_TAKEOFFとCHASER追加
+　486行目付近　C_TAKEOFFモードとCHASERモードを追加。
+ardupilotmega.xml
+　348行目付近　CHASER_CMDを追加
+GCS_Mavlink.pde
+　2078行目付近　case MAVLINK_MSG_ID_CHASER_CMDの項目を追加。一応ここでLAT,LONの上下限制限している。do_chaser内でもいいのだけど。
+AC_WPNav.cpp
+　537行目付近　linear_distance以上での処理をマスク
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+実験時のメモなど
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+
+■131019　後半のメモ
+1. ver1.1 _max_speed_cms=12m/s, _wp_accel_cms =4m/s
+　ほとんど速くならず
+2. pを3.6
+　ちょっと速くなった
+3. _wp_accel_cms = 9.8m/s2
+　ちょっと速くなった？
+4. ver1.2
+　一発OK。近いと速いけど、遠いと速くなくなる。？？
+5. ver1.2.1 loiterを比例制御のみにする
+　速くなった。がロスト率も上がった気がする？？
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+******************************************
+過去のものたち
+
+
+
+■update_nav_mode
+・ここに case NAV_CHASE を追加
+・case NAV_CHASE で update_chase() を呼ぶ
+
+■update_chase
+・handleMessagesで処置し格納した変数からtargetを作り出す・・・か？
+・もしくはhandleMessages内で処置するか
+・handleMessagesからdo_chase関数を呼び出し、そこでとりあえず格納
+
+update_chase関数で最初の5mフラグ、chase_target配列にloiterポジションの格納、5m超えたらbeacon_loc
+
+
+
+
+
+　
+
+■TODO
+・update_chase()　完了
+・do_chaser()　完了
+・set_mode　完了
+・defines　完了
+・mavlinkメッセージ追加　完了
+・handleMessagesに上記メッセージ追加　完了
+・THROTTLE_AUTO_TAKEOFFとAUTOの住み分け、もしくはCHASE 完了
+・update_chaser_origin_destination　完了
+
+■その他
+・CHASERモードに他から入った際、ビーコン位置配列をクリアするのを忘れないように
+
+■131006の気づき
+・徒歩レベルでCHASEできた。
+　・ビーコンとの通信のタイミングで機体が揺れる。AndroPilotでFollowMeしたときと似ている。
+　　ただし、今回は揺れ方が軽微だった。10回平均を取ってるためか？
+　・徒歩で10回平均をとっても揺れる。もっと細かくtargetを動かす必要がある。
+　　・もっと通信頻度を増やすか、ビーコン位置の予測をして、通信頻度以上に動かすか
+　・現時点の性能では40km/hは到底ムリかな
+・2回目やったらうまくできず
+　・XBeeの問題か？機体のバッテリーもヘタっていたからそれか？
+　・1回目のCHASE時も途中でビタっと止まってしまった。その時は機体のXBeeがビーコンと反対方向を向いていた。
+　・これは勘だけど、ビーコンのシリアル通信周りが微妙っぽい。
+・ビーコンとりあえずできた
+　・ArduinoUno＋CRIUS_GPS_I2Cモジュール+ホビキンNEO6M+吉川プログラムで動いた！
+　・CRIUS_GPS_I2CモジュールとホビキンNEO6Mをつなぐ際、TX,RXが合っているか要確認（それっぽいケーブルでつなぐと逆になる）
+
+
+
+■プロポ無しの自動テイクオフに向けて
+見つけたかも。set_throttle_modeの中のIntegerの設定。 @2013.10.4
+set_accel_throttle_I_from_pilot_throttle(get_pilot_desired_throttle(g.rc_3.control_in));
+
+get_pilot_desired_throttleは”おそらく”スロットル値をちょこっとスケーリングして返すだけ
+set_accel_throttle_I_from_pilot_throttleでI項に-500前後入ってしまう可能性あり
+　ただしこの-500だけだといつかなくなるはず。なんで、ここからI項を積算しないなにかがあるのか。
+　おそらくAttitude.pde1000行目のあたりだと思うのだけど。
+　　Attitude.pde 1000行目
+　　// freeze I term if we've breached throttle limits
+　    if(motors.reached_limit(AP_MOTOR_THROTTLE_LIMIT)) {
+　        i = g.pid_throttle.get_integrator();
+　    }else{
+　        i = g.pid_throttle.get_i(z_rate_error, .02);
+　    }
+　    d = g.pid_throttle.get_d(z_rate_error, .02);
+
+g.rc_3.servo_outはおそらくthrottleの出力。
+ヘリコプターのタイプによってそれをservoにどう分解するかはset_servos_4()がやってそう
+ただ気になるのはthrottle_accelがfalseだとg.rc_3.servo_outが決定されない、ように見えること・・・
+そんなことなかった。set_throttle_outがあらゆる場所で呼び出されてたわ。
+ 
+
+
+■update_altitudeから追った
+update_altitude()はセンサーから値をとってくるだけ。とってくる値はbaro_altとsonar_alt。
+↓
+AP_InertialNav.cppのAP_InertialNav::correct_with_baroがbaro_altを唯一使っている
+↓
+correct_with_baroを唯一呼び出すのはAP_InertialNav::check_baro
+↓
+check_baroを唯一呼び出すのはAP_InertialNav::update
+　こいつは、check_gpsも呼び出す。
+↓
+AP_InertialNav::updateを（唯一か分からないけど）呼び出すのはread_inertia() of inertia.pdeでここでグローバル変数になり
+それを呼び出すのはfast_loop
+

@@ -1,0 +1,43 @@
+■update_nav_mode
+・ここに case NAV_CHASE を追加
+・case NAV_CHASE で update_chase() を呼ぶ
+
+■update_chase
+・handleMessagesで処置し格納した変数からtargetを作り出す・・・か？
+・もしくはhandleMessages内で処置するか
+・handleMessagesからdo_chase関数を呼び出し、そこでとりあえず格納
+
+update_chase関数で最初の5mフラグ、chase_target配列にloiterポジションの格納、5m超えたらbeacon_loc
+
+
+■mavlinkにメッセージを追加する
+・GCS_MAVLink/message_definitions/ardupilotmega.xmlをいじって、generate.shをシェルスクリプトとして実行する
+・generate.shは改行コードがCR+LFになっていてmacのコマンドプロンプトだとエラーをはくので注意
+・mavlinkプログラム（githubより入手）の奥のほうにあるmavgen.pyのフォルダにPATHが通っていないとエラーを吐くので注意
+・そのままgenerateするとmavlink_conversions.hが生成されてmavlink_helper.hからincludeされ、それがエラーをはくけど、ひとまずincludeをやめるとコンパイルは通る。他にも色々違う部分ありそう（3.0.1についてくるやつと比べて行数が違う）だけどそのままやってみる
+
+■改造ファイルと場所
+chaser.pde（新規）
+navigation.pde
+　171行目付近　nav_modeのスイッチにNAV_CHASERを追加
+defines.h
+　130行目付近　C_TAKEOFFモードとCHASERモードを追加、NUMをふたつ増やす
+　190行目付近　#define NAV_CHASER 4とした
+commands_logic.pde
+　ファイル末尾　do_c_takeoff関数、do_chaser関数を追加
+system.pde
+　486行目付近　C_TAKEOFFモードとCHASERモードを追加。
+ardupilotmega.xml
+　348行目付近　CHASER_CMDを追加
+
+■TODO
+・update_chase()　完了
+・do_chaser()　完了
+・set_mode　完了
+・defines　完了
+・mavlinkメッセージ追加　完了
+・handleMessagesに上記メッセージ追加
+・inertial OKで変える
+
+■その他
+・CHASERモードに他から入った際、ビーコン位置配列をクリアするのを忘れないように
