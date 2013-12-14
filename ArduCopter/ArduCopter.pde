@@ -755,6 +755,7 @@ static AC_WPNav wp_nav(&inertial_nav, &ahrs, &g.pi_loiter_lat, &g.pi_loiter_lon,
 // CHASERモード用グローバル変数
 ////////////////////////////////////////////////////////////////////////////////
 static Vector3f beacon_loc[CHASER_TARGET_RELAX_NUM];		//ビーコンの位置配列(home基準)[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
+static Vector3f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
 
 static Vector3f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
 static Vector3f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
@@ -762,12 +763,14 @@ static Vector3f chaser_target;				// ターゲット：loiterコントローラ�
 
 static Vector3f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
 static Vector3f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
+static Vector3f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
 
 static Vector3f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）
 static Vector3f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
 static bool chaser_reset = false;			// chaserモードをリセットするフラグ（command_logic内、do_chaserで使う、現在は使っていない、今後のため）
 static bool chaser_est_ok = false;			// 位置予測できるかのフラグ（位置配列が埋まって1回後）
+static bool chaser_est_started = false;		// 予測開始フラグ（位置配列が埋まって1回目の処置が終わったら立つ）
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
 

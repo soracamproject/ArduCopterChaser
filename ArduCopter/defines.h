@@ -446,7 +446,9 @@ enum ap_message {
 #define CHASER_ALT                800.0f		// CHASER時の高さ（とりあえず固定版）、do_c_takeoffでも使用中
 #define CHASER_TARGET_ACCEL       300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX     1200.0f		// ターゲットの移動速度の最大値[m/s]
-#define CHASER_YAW_SLEW_RATE      45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
+#define CHASER_YAW_SLEW_RATE      45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
+#define CHASER_OVERRUN_SEC        0.1f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
+												// target_dest_vel*CHASER_OVERRUN_SECで計算
 
 
 //受け取ったビーコン位置の緯度経度の上下限界を設定

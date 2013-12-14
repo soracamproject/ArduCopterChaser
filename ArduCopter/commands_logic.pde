@@ -1110,7 +1110,6 @@ static void do_chaser(const struct Location *cmd)
 	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
 	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
 	static uint32_t last = 0;								// 前回格納時刻[ms]
-	static Vector3f beacon_loc_relaxed_last = (0,0,0);		// ビーコン位置なましの前回値[cm]
 	
 	// 現在CHASERモードでない場合CHASERモードにする
 	if (control_mode != CHASER) {
@@ -1123,10 +1122,13 @@ static void do_chaser(const struct Location *cmd)
 		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {
 			beacon_loc[i].zero();
 		}
+		beacon_loc_relaxed_last.zero();
+		
 		index = 0;
 		relax_stored_num = 0;
 		chaser_est_ok = false;
 		chaser_reset = false;
+		chaser_est_started = false;
 		
 		Vector3f init_pos = inertial_nav.get_position();
 		init_pos.z = CHASER_ALT;
@@ -1169,18 +1171,30 @@ static void do_chaser(const struct Location *cmd)
 			beacon_loc_relaxed.z = CHASER_ALT;
 			
 			if (!chaser_est_ok) {
-				chaser_target = chaser_origin = inertial_nav.get_position();
+				// 予測不可時（呼び出し1回目）の処置
+				// chaser_originとchaser_targetに現在位置を入れ、ビーコン位置配列なまし前回値を更新し、予測OKとする
+				beacon_loc_relaxed_last = beacon_loc_relaxed;
+				chaser_est_ok = true;
+			} else {
+				// 予測可能時の処置
 				
-			// chaser_origin,chaser_destinationを更新する
-			update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt, chaser_est_ok);
-			
-			// update_chaser()を呼ぶ
-			// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
-			update_chaser();
-			
-			// ビーコンなまし位置1回前を更新し、フラグを立てる
-			beacon_loc_relaxed_last = beacon_loc_relaxed;
-			chaser_est_ok = true;
+				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
+				if (!chaser_est_started) {
+					chaser_target = inertial_nav.get_position();
+					chaser_target_vel.zero();
+					chaser_est_started = true;
+				}
+				// chaser_origin,chaser_destinationを更新する
+				// 前回と異なり、予測はできる状態という考え方
+				update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt);
+				
+				// update_chaser()を呼ぶ
+				// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
+				update_chaser();
+				
+				// ビーコン位置配列なまし前回値を更新する
+				beacon_loc_relaxed_last = beacon_loc_relaxed;
+			}
 		} else {
 			// 無し
 		}

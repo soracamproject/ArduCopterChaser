@@ -16,7 +16,7 @@ static void update_chaser() {
 	
 	// CHASERモードの準備ができていない場合はloiterっぽい状態にする
 	// loiterコントローラを呼ぶのみで終了
-	if (!chaser_started) {
+	if (!chaser_est_started) {
 		wp_nav.update_loiter();
 		return;
 	}
@@ -31,11 +31,11 @@ static void update_chaser() {
 		chaser_target.y = chaser_origin.y + target_distance.y;
 		chaser_target.z = CHASER_ALT;
 		
-		// chaser_targetがchaser_destinationを越えている場合、目標速度を0とする
-		if (fabsf(target_distance.x) >= fabsf(chaser_track_length.x)) {
+		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
+		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
 			chaser_dest_vel.x = 0;
 		}
-		if (fabsf(target_distance.y) >= fabsf(chaser_track_length.y)) {
+		if (fabsf(target_distance.y) >= chaser_overrun_thres.y) {
 			chaser_dest_vel.y = 0;
 		}
 		
@@ -69,25 +69,21 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	
 	// track関連の計算
 	chaser_track_length.x = chaser_destination.x - chaser_origin.x;
-	chaser_track_length.y = chaser_destination.y - chaser_origin.y
+	chaser_track_length.y = chaser_destination.y - chaser_origin.y;
 	chaser_track_length.z = 0;
 	
 	// target_distanceを0にする
 	target_distance.zero();
 	
 	// 目標速度計算
-	// 初回は0とする。またchaser_target_velも0にする
-	if (started) {
-		chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
-		chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
-		chaser_dest_vel.z = 0;
-	} else {
-		chaser_dest_vel.zero();
-		
-		// 初回のみchaser_target_velを0にする
-		chaser_target_vel.zero();
-	}
+	chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
+	chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
+	chaser_dest_vel.z = 0;
 	
+	// 目標到達判定距離の計算
+	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);
+	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
+	chaser_overrun_thres.z = 0;
 }
 
 // 現在値からtargetへので目標角度を計算する
