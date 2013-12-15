@@ -1172,7 +1172,7 @@ static void do_chaser(const struct Location *cmd)
 			
 			if (!chaser_est_ok) {
 				// 予測不可時（呼び出し1回目）の処置
-				// chaser_originとchaser_targetに現在位置を入れ、ビーコン位置配列なまし前回値を更新し、予測OKとする
+				// ビーコン位置配列なまし値前回値を更新し、予測OKとする
 				beacon_loc_relaxed_last = beacon_loc_relaxed;
 				chaser_est_ok = true;
 			} else {
