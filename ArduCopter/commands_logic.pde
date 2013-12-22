@@ -1110,6 +1110,7 @@ static void do_chaser(const struct Location *cmd)
 	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
 	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
 	static uint32_t last = 0;								// 前回格納時刻[ms]
+	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
 	
 	// 現在CHASERモードでない場合CHASERモードにする
 	if (control_mode != CHASER) {
@@ -1123,12 +1124,15 @@ static void do_chaser(const struct Location *cmd)
 			beacon_loc[i].zero();
 		}
 		beacon_loc_relaxed_last.zero();
+		beacon_loc_relaxed_latch.zero();
 		
 		index = 0;
 		relax_stored_num = 0;
 		chaser_est_ok = false;
 		chaser_reset = false;
 		chaser_est_started = false;
+		
+		latch_count = 0;
 		
 		Vector3f init_pos = inertial_nav.get_position();
 		init_pos.z = CHASER_ALT;
@@ -1172,11 +1176,30 @@ static void do_chaser(const struct Location *cmd)
 			
 			if (!chaser_est_ok) {
 				// 予測不可時（呼び出し1回目）の処置
-				// ビーコン位置配列なまし値前回値を更新し、予測OKとする
+				// ビーコン位置配列なまし値前回値とラッチ値を更新し、予測OKとする
 				beacon_loc_relaxed_last = beacon_loc_relaxed;
+				beacon_loc_relaxed_latch = beacon_loc_relaxed;
 				chaser_est_ok = true;
 			} else {
 				// 予測可能時の処置
+				
+				// 不感帯内かの判断
+				float beacon_movement = safe_sqrt(
+				  (beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)*(beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)
+				 +(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y)*(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y));
+				
+				if (beacon_movement < CHASER_BEACON_MOVE_DB) {
+					latch_count++;
+					if (latch_count >= CHASER_BEACON_MOVE_DB_COUNT_THRES) {
+						beacon_loc_relaxed = beacon_loc_relaxed_latch;
+						latch_count = CHASER_BEACON_MOVE_DB_COUNT_THRES;
+					} else {
+						beacon_loc_relaxed_latch = beacon_loc_relaxed;
+					}
+				} else {
+					beacon_loc_relaxed_latch = beacon_loc_relaxed;
+					latch_count = 0;
+				}
 				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
 				if (!chaser_est_started) {

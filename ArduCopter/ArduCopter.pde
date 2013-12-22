@@ -754,8 +754,10 @@ static AC_WPNav wp_nav(&inertial_nav, &ahrs, &g.pi_loiter_lat, &g.pi_loiter_lon,
 ////////////////////////////////////////////////////////////////////////////////
 // CHASERモード用グローバル変数
 ////////////////////////////////////////////////////////////////////////////////
-static Vector3f beacon_loc[CHASER_TARGET_RELAX_NUM];		//ビーコンの位置配列(home基準)[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
+static Vector3f beacon_loc[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
 static Vector3f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
+static Vector3f beacon_loc_relaxed_latch;					// ビーコン位置なましのラッチ値[cm]不感帯に入っているかの基準とする
+															// （本当はdo_chaser()に入れたいけどエラー出るので）
 
 static Vector3f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
 static Vector3f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
@@ -773,6 +775,8 @@ static bool chaser_est_ok = false;			// 位置予測できるかのフラグ（�
 static bool chaser_est_started = false;		// 予測開始フラグ（位置配列が埋まって1回目の処置が終わったら立つ）
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
+
+static Vector3f chaser_copter_pos;
 
 
 ////////////////////////////////////////////////////////////////////////////////

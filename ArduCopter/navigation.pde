@@ -45,8 +45,9 @@ static void run_nav_updates(void)
 static void calc_position(){
     if( inertial_nav.position_ok() ) {
         // pull position from interial nav library
-        current_loc.lng = inertial_nav.get_longitude();
-        current_loc.lat = inertial_nav.get_latitude();
+        //current_loc.lng = inertial_nav.get_longitude();
+        //current_loc.lat = inertial_nav.get_latitude();
+		chaser_copter_pos = inertial_nav.get_position();
     }
 }
 

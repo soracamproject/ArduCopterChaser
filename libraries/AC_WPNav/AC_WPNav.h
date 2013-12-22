@@ -21,7 +21,6 @@
 #define WPNAV_LOITER_ACCEL_MAX          250.0f      // maximum acceleration in loiter mode
 #define WPNAV_LOITER_ACCEL_MIN           25.0f      // minimum acceleration in loiter mode
 #define WPNAV_LOITER_SPEED_MAX_TO_CORRECT_ERROR 200.0f      // maximum speed used to correct position error (i.e. not including feed forward)
-#define WPNAV_LOITER_SPEED_MAX_FOR_CHASER 1200.0f	// CHASER時の最大速度[cm/s]
 
 #define MAX_LEAN_ANGLE                  4500        // default maximum lean angle
 
@@ -35,6 +34,14 @@
 #define WPNAV_ALT_HOLD_ACCEL_MAX        250.0f      // hard coded copy of throttle controller's maximum acceleration in cm/s.  To-Do: remove duplication with throttle controller definition
 
 #define WPNAV_MIN_LEASH_LENGTH          100.0f      // minimum leash lengths in cm
+
+///
+/// CHASER用定義
+///
+#define WPNAV_CHASER_LOITER_KP          1.5f		// CHASER時のLoiterのP項[-]
+#define WPNAV_CHASER_LOITER_VEL_MAX     1200.0f		// CHASER時の最大速度[cm/s]
+#define WPNAV_CHASER_LOITER_ACCEL       980.0f		// CHASER時の加速度[cm/s/s]
+
 
 class AC_WPNav
 {
@@ -188,6 +195,13 @@ protected:
     /// calculate_wp_leash_length - calculates horizontal and vertical leash lengths for waypoint controller
     ///    set climb param to true if track climbs vertically, false if descending
     void calculate_wp_leash_length(bool climb);
+	
+	///
+	/// CHASER用関数
+	/// 
+	
+	/// get_loiter_position_to_velocity - CHASER用
+	void get_loiter_position_to_velocity_chaser(float dt);
 
     // pointers to inertial nav and ahrs libraries
     AP_InertialNav*	_inav;

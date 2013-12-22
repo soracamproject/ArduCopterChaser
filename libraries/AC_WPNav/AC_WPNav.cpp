@@ -276,23 +276,18 @@ void AC_WPNav::update_loiter()
 /// update_loiter_for_chaser CHASER時のloiterコントローラ。速度限界が高い。10Hzで呼ぶこと。
 void AC_WPNav::update_loiter_for_chaser()
 {
-    uint32_t now = hal.scheduler->millis();
-    float dt = (now - _loiter_last_update) / 1000.0f;
-    _loiter_last_update = now;
+	uint32_t now = hal.scheduler->millis();
+	float dt = (now - _loiter_last_update) / 1000.0f;
+	_loiter_last_update = now;
 
-    // catch if we've just been started
-    if( dt >= 1.0 ) {
-        dt = 0.0;
-        reset_I();
-    }
-
-    // translate any adjustments from pilot to loiter target
-    //translate_loiter_target_movements(dt);
-	_target_vel.x = 0;		//念のため
-    _target_vel.y = 0;		//念のため
+	// catch if we've just been started
+	if( dt >= 1.0 ) {
+		dt = 0.0;
+		reset_I();
+	}
 	
     // run loiter position controller
-    get_loiter_position_to_velocity(dt, WPNAV_LOITER_SPEED_MAX_FOR_CHASER);
+    get_loiter_position_to_velocity_chaser(dt);
 }
 
 
@@ -580,6 +575,48 @@ void AC_WPNav::get_loiter_position_to_velocity(float dt, float max_speed_cms)
 
     // call velocity to acceleration controller
     get_loiter_velocity_to_acceleration(desired_vel.x, desired_vel.y, dt);
+}
+
+// CHASERモード用関数
+void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt)
+{
+	Vector3f curr = _inav->get_position();
+	float dist_error_total;
+	
+	float vel_total;
+	
+	float linear_distance;      // the distace we swap between linear and sqrt.
+	
+	// avoid divide by zero
+	if (WPNAV_CHASER_LOITER_KP <= 0.0f) {
+		vel_total = 0.0f;
+		desired_vel.x = 0.0f;
+		desired_vel.y = 0.0f;
+	} else {
+		// calculate distance error
+		dist_error.x = _target.x - curr.x;
+		dist_error.y = _target.y - curr.y;
+		
+		linear_distance = WPNAV_CHASER_LOITER_ACCEL/(2.0f*WPNAV_CHASER_LOITER_KP*WPNAV_CHASER_LOITER_KP);
+		
+		dist_error_total = safe_sqrt(dist_error.x*dist_error.x + dist_error.y*dist_error.y);
+		_distance_to_target = dist_error_total;      // for reporting purposes
+		
+		if (dist_error_total < 2.0f * linear_distance) {
+			vel_total = WPNAV_CHASER_LOITER_KP * dist_error_total;
+		} else {
+			vel_total = safe_sqrt(2.0f*WPNAV_CHASER_LOITER_ACCEL*(dist_error_total-linear_distance));
+		}
+		// 制限速度内におさめる
+		vel_total = constrain_float(vel_total, 0, WPNAV_CHASER_LOITER_VEL_MAX);
+		
+		// xy方向に分解
+		desired_vel.x = vel_total*dist_error.x/dist_error_total;
+		desired_vel.y = vel_total*dist_error.y/dist_error_total;
+	}
+	
+	// call velocity to acceleration controller
+	get_loiter_velocity_to_acceleration(desired_vel.x, desired_vel.y, dt);
 }
 
 /// get_loiter_velocity_to_acceleration - loiter velocity controller
