@@ -458,6 +458,11 @@ enum ap_message {
 #define CHASER_LON_MIN            1369701330		//経度下限
 #define CHASER_LON_MAX            1370635160		//経度上限
 
+//CHASERデバッグ用通信有効無効フラグ
+//0は通常通信モード（たぶんこれじゃないとMISSION PLANNERで初期設定できない）
+//1にすると通信変数を割付し直し必要な分だけ50Hz目標で通信する
+#define CHASER_DEBUG              0
+
 
 
 #endif // _DEFINES_H

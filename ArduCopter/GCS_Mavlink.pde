@@ -245,17 +245,32 @@ static void NOINLINE send_location(mavlink_channel_t chan)
 
 static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 {
+#if CHASER_DEBUG == 1
+	//CHASERデバッグ版
+	mavlink_msg_nav_controller_output_send(
+		chan,
+		0.0f,		//float,nav_roll
+		0.0f,		//float,nav_pitch
+		0,			//int16_t,nav_bearing
+		0,			//int16_t,target_bearing
+		0,			//uint16_t,wp_dist
+		0.0f,		//float,alt_error
+		0.0f,		//float,aspd_error
+		0.0f		//float,xtrack_error
+	);
+#else
+	//通常通信版
     mavlink_msg_nav_controller_output_send(
         chan,
         nav_roll / 1.0e2f,
         nav_pitch / 1.0e2f,
         wp_bearing / 1.0e2f,
         wp_bearing / 1.0e2f,
-        //wp_distance / 1.0e2f,
-        wp_distance,
+        wp_distance / 1.0e2f,
         altitude_error / 1.0e2f,
         0,
         0);
+#endif
 }
 
 static void NOINLINE send_ahrs(mavlink_channel_t chan)
@@ -411,6 +426,19 @@ static void NOINLINE send_radio_out(mavlink_channel_t chan)
 
 static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 {
+#if CHASER_DEBUG == 1
+	//CHASERデバッグ版
+	mavlink_msg_vfr_hud_send(
+		chan,
+		0.0f,		//float,airspeed
+		0.0f,		//float,groundspeed
+		0,			//int16_t,heading
+		0,			//uint16_t,throttle
+		0.0f,		//float,alt
+		0.0f		//float,climb
+	);
+#else
+	//通常通信版
     mavlink_msg_vfr_hud_send(
         chan,
         (float)g_gps->ground_speed / 100.0f,
@@ -419,6 +447,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
         g.rc_3.servo_out/10,
         current_loc.alt / 100.0f,
         climb_rate / 100.0f);
+#endif
 }
 
 static void NOINLINE send_raw_imu1(mavlink_channel_t chan)
@@ -917,6 +946,20 @@ GCS_MAVLINK::update(void)
 bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 {
     uint8_t rate;
+#ifdef CHASER_DEBUG == 1
+	//CHASERデバッグ用
+	switch (stream_num) {
+		case STREAM_POSITION:
+			rate = 50;
+			break;
+		case STREAM_PARAMS:
+            rate = streamRateParams.get();
+            break;
+        default:
+            rate = 0;
+    }
+#else
+	//通常通信用
     switch (stream_num) {
         case STREAM_RAW_SENSORS:
             rate = streamRateRawSensors.get();
@@ -948,7 +991,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
         default:
             rate = 0;
     }
-
+#endif
     if (rate == 0) {
         return false;
     }
@@ -995,6 +1038,14 @@ GCS_MAVLINK::data_stream_send(void)
         return;
     }
 
+#if CHASER_DEBUG == 1
+	//CHASERデバッグ用
+	if (stream_trigger(STREAM_POSITION)) {
+		send_message(MSG_NAV_CONTROLLER_OUTPUT);
+		send_message(MSG_VFR_HUD);
+	}
+#else
+	//通常通信用
     if (stream_trigger(STREAM_RAW_SENSORS)) {
         send_message(MSG_RAW_IMU1);
         send_message(MSG_RAW_IMU2);
@@ -1055,6 +1106,8 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_AHRS);
         send_message(MSG_HWSTATUS);
     }
+#endif
+
 }
 
 

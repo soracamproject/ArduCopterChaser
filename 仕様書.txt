@@ -25,18 +25,30 @@
 ■BEACON仕様
 
 ■デバッグ用変数割付表
-vfr_hudとnav_controllerかな
-型				元変数　　　　　割付変数　　備考
-uint32_t    time_boot_ms 
-int32_t      lat
-int32_t      lon
-int32_t      alt
-int32_t      relative_alt
-int16_t      vx
-int16_t      vy
-int16_t      vz
-uint16_t    hdg　　　　　　　　　　　たぶん使えない（デバッグ？）
+CHASER_DEBUGをdefineすると下記設定が有効になる
+　rate設定はSTREAM_POSITIONで50Hz設定、それ以外は無効
+　MSGとしては、「MSG_NAV_CONTROLLER_OUTPUT」と「MSG_VFR_HUD」
+　mavlink関数としては、「mavlink_msg_nav_controller_output_send」と「mavlink_msg_vfr_hud_send」
+　変更箇所は、GCS_Mavlink.pdeの例えば、static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)内を編集する
+　変数の型については、例えばmavlink_msg_nav_controller_output_send.hに記載。GCS_Mavlink.pdeに転記済。
 
+　　　　型				元変数　　   　　　割付変数　　備考
+nav_controller
+　　　　float           nav_roll
+　　　　float           nav_pitch
+　　　　float           alt_error
+　　　　float           aspd_error
+　　　　float           xtrack_error
+　　　　int16_t        nav_bearing
+　　　　int16_t        target_bearing
+　　　　uint16_t      wp_dist
+vfr_hud
+　　　　float            airspeed
+　　　　float            groundspeed
+　　　　float            alt
+　　　　float            climb
+　　　　int16_t        heading
+　　　　uint16_t      throttle
 
 ■改造ファイルと場所
 ArduCopter.pde
@@ -67,7 +79,9 @@ ardupilotmega.xml
 　348行目付近　CHASER_CMDを追加
 GCS_Mavlink.pde
 　254行目付近　wp_distの桁数変更
-　2078行目付近　case MAVLINK_MSG_ID_CHASER_CMDの項目を追加。一応ここでLAT,LONの上下限制限している。do_chaser内でもいいのだけど。
+   bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
+   void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
+　case MAVLINK_MSG_ID_CHASER_CMDの項目を追加。一応ここでLAT,LONの上下限制限している。do_chaser内でもいいのだけど。
 AC_WPNav.h
 　24行目付近　#define WPNAV_LOITER_SPEED_MAX_FOR_CHASER 1200.0fを追加
 AC_WPNav.cpp
