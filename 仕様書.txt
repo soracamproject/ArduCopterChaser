@@ -1,6 +1,6 @@
 ※横一列の■で挟まれた部分単位で考える。
 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-有効期間：2013/12/19〜2013/12/xx
+有効期間：2013/12/19〜2013/12/28
 
 ■CHASER仕様
 ・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
@@ -13,12 +13,13 @@
 　　　また、dest_velにリミットを設ける（絶対値でかけて比例倍する、つまり方角は変わらない）
 　・現状速度の変化量は加速度で決める。
 　・target位置がorigin-destination間を「目標速度×所定時間（100msくらい？）」超えたら目標速度を0とする
+　・不感帯制御
+　　・ビーコン位置変化量が半径1.5m以内が5回続いたらビーコン位置をラッチする
+　・専用WP_Nav
+　　・基本機能は同じ
 ・YAW_CHASERの仕様は以下。
 　・機首の向きはtarget位置に向ける。その変化速度にCHASER_YAW_SLEW_RATEで制限をかける。
 　・targetの更新はupdate_chaserで行われ（10Hz）、機首の目標値更新はupdate_yaw_modeで行われる（100Hz）
-・LoiterコントローラにCHASER用を追加
-　・update_loiter_for_chaser。最大速度が12m/sに。
-　　translate_loiter_target_movements()をマスク（leashがかかっていたので）し、_target_velを必ず0にする（その先の関数を共通化するため）
 ・その他変更点
 　・GPSが使えない場合はStabilizeに移行する（failsafe）
 
@@ -34,17 +35,17 @@ CHASER_DEBUGをdefineすると下記設定が有効になる
 
 　　　　型				元変数　　   　　　割付変数　　備考
 nav_controller
-　　　　float           nav_roll
-　　　　float           nav_pitch
-　　　　float           alt_error
-　　　　float           aspd_error
+　　　　float           nav_roll              chaser_copter_pos.x
+　　　　float           nav_pitch           chaser_copter_pos.y
+　　　　float           alt_error             chaser_target.x
+　　　　float           aspd_error         chaser_target.y
 　　　　float           xtrack_error
 　　　　int16_t        nav_bearing
 　　　　int16_t        target_bearing
 　　　　uint16_t      wp_dist
 vfr_hud
-　　　　float            airspeed
-　　　　float            groundspeed
+　　　　float            airspeed           chaser_destination.x
+　　　　float            groundspeed    chaser_destination.y
 　　　　float            alt
 　　　　float            climb
 　　　　int16_t        heading
@@ -71,21 +72,21 @@ defines.h
 　190行目付近　#define NAV_CHASER 4とした
 　一番下　CHASER関連の#defineはこっちへ移動
 commands_logic.pde
-　ファイル末尾　do_c_takeoff関数、do_chaser関数を追加
+　do_c_takeoff関数、do_chaser関数を追加
 system.pde
 　316行目付近　mode_requires_GPS関数内にC_TAKEOFFとCHASER追加
 　486行目付近　C_TAKEOFFモードとCHASERモードを追加。
 ardupilotmega.xml
 　348行目付近　CHASER_CMDを追加
 GCS_Mavlink.pde
-　254行目付近　wp_distの桁数変更
    bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
    void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
 　case MAVLINK_MSG_ID_CHASER_CMDの項目を追加。一応ここでLAT,LONの上下限制限している。do_chaser内でもいいのだけど。
+   send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
 AC_WPNav.h
-　24行目付近　#define WPNAV_LOITER_SPEED_MAX_FOR_CHASER 1200.0fを追加
+　CHASER関連define追加
 AC_WPNav.cpp
-　276行目付近　update_loiter_for_chaser()を追加
+　update_loiter_for_chaser、get_loiter_position_to_velocity_chaserを追加
 ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 
 
