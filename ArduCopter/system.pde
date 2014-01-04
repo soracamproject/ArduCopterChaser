@@ -460,18 +460,20 @@ static bool set_mode(uint8_t mode)
             break;
 
 		case C_TAKEOFF:	// CHASERモード用単独テイクオフ
-			ap.manual_attitude = false;
-			ap.manual_throttle = false;
-			do_c_takeoff();
+			if (GPS_ok() || ignore_checks) {
+				success = true;
+				do_c_takeoff();
+			}
 			break;
 	
 		case CHASER:		// CHASERモード
-			ap.manual_attitude = false;
-			ap.manual_throttle = false;
-			set_yaw_mode(YAW_CHASER);					// YAW_CHASERモード
-			set_roll_pitch_mode(ROLL_PITCH_AUTO);		// ロールピッチAUTO
-			set_throttle_mode(THROTTLE_AUTO);			// スロットルAUTO。ALTは目標高さに、みたいに書いてあった
-			set_nav_mode(NAV_CHASER);					// CHASERモード
+			if (GPS_ok() || ignore_checks) {
+				success = true;
+				set_yaw_mode(YAW_CHASER);					// YAW_CHASERモード
+				set_roll_pitch_mode(ROLL_PITCH_AUTO);		// ロールピッチAUTO
+				set_throttle_mode(THROTTLE_AUTO);			// スロットルAUTO。ALTは目標高さに、みたいに書いてあった
+				set_nav_mode(NAV_CHASER);					// CHASERモード
+			}
 			break;
 
         default:

@@ -51,7 +51,9 @@ AC_WPNav.cpp
 ■■■■■　mavlinkにメッセージを追加する方法　■■■■■
 ・GCS_MAVLink/message_definitions/ardupilotmega.xmlをいじって、generate.shをシェルスクリプトとして実行する
 ・generate.shは改行コードがCR+LFになっていてmacのコマンドプロンプトだとエラーをはくので注意
-・mavlinkプログラム（githubより入手）の奥のほうにあるmavgen.pyのフォルダにPATHが通っていないとエラーを吐くので注意
+・generate.sh実行時はlibrariesフォルダから「./GCS_Mavlink/generate.sh」を叩く
+・mavlinkプログラム（githubより入手）の奥のほうにあるmavgen.pyのフォルダにPATH（PYTHONPATHではなくPATH）が通っていないとエラーを吐くので注意
+　例：export PATH=(上位フォルダ)/mavlink/pymavlink/generator:$PATH
 ・そのままgenerateするとmavlink_conversions.hが生成されてmavlink_helper.hからincludeされ、それがエラーをはくけど、
 　ひとまずincludeをやめるとコンパイルは通る。他にも色々違う部分ありそう（3.0.1についてくるやつと比べて行数が違う）だけどそのままやってみる
 
