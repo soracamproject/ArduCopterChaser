@@ -47,6 +47,11 @@ AC_WPNav.cpp
 　update_loiter_for_chaserを作成　　←以前と大きく変わっている部分
 　get_loiter_position_to_velocity_chaserを作成　　←以前と大きく変わっている部分
 
+==以下Beacon関連==
+libraries/FastSerial
+　DLしてきたものそのまま
+libraries/BC_Compat
+　新規作成
 
 ■■■■■　mavlinkにメッセージを追加する方法　■■■■■
 ・GCS_MAVLink/message_definitions/ardupilotmega.xmlをいじって、generate.shをシェルスクリプトとして実行する

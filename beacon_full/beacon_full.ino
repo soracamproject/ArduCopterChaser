@@ -1,13 +1,15 @@
+#include <BC_Compat.h>
 #include <FastSerial.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 
 //C_TAKEOFFモード
-#define C_TAKEOFF 13
+#define C_TAKEOFF       14
 
 //XBee用
-#define STATE_ARMED     0
-#define STATE_TAKEOFF   1
-#define STATE_CHASER    2
+#define STATE_PREARM    0
+#define STATE_ARMED     1
+#define STATE_TAKEOFF   2
+#define STATE_CHASER    3
 
 FastSerialPort0(Serial);
 
@@ -17,14 +19,6 @@ FastSerialPort0(Serial);
 #define I2C_SPEED 100000L
 
 uint8_t rawADC[6];
-
-//LCD用
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8, 7 , 5, 4, 3, 2);
-char lin1[18];
-char lin2[18];
-char lin3[18];
-char lin4[18];
 
 //GPS用
 struct GPS_DATA{
@@ -59,13 +53,6 @@ void setup()
 	gps_data.lon.coord = 0;
 	gps_data.alt.coord = 0;
 	
-	// LCD表示
-	strcpy(lin1, "****************");
-	strcpy(lin2, "BEACON");
-	strcpy(lin3, "ver0.4");
-	strcpy(lin4, "****************");
-	lcd_update();
-	
 	delay(20000);
 	//delay(2000);		//デバッグ用
 }
@@ -73,17 +60,22 @@ void setup()
 
 void loop(){
 	static uint32_t now = 0;
-	static uint8_t state = 0;
+	static uint8_t state = STATE_PREARM;
 	
 	switch(state){
-		case STATE_ARMED:
-			//LCD表示
-			strcpy(lin1, "Now taking off.");
-			strcpy(lin2, "wait 10 seconds...");
-			strcpy(lin3, "");
-			strcpy(lin4, "");
-			lcd_update();
+		case STATE_PREARM:
+			//自動テイクオフコマンド送信
+			send_arm_cmd();
 			
+			//10秒待つ（テイクオフするまでのざっくり時間）
+			delay(10000);
+			
+			//状態更新
+			state = STATE_ARMED;
+			
+			break;
+			
+		case STATE_ARMED:
 			//自動テイクオフコマンド送信
 			send_takeoff_cmd();
 			
@@ -106,14 +98,6 @@ void loop(){
 			send_chaser_cmd(gps_data.lat.coord,gps_data.lon.coord,700);
 			//Serial.println(gps_data.lat.coord);		//デバッグ用
 			//Serial.println(gps_data.lon.coord);		//デバッグ用
-			
-			
-			//LCD表示
-			strcpy(lin1, "Now chasing!!!");
-			sprintf(lin2, "LAT:    %ld",gps_data.lat.coord);
-			sprintf(lin3, "LON:   %ld",gps_data.lon.coord);
-			strcpy(lin4, "");
-			lcd_update();
 			
 			//ちょっと待たない
 			//delay(500);
@@ -164,11 +148,39 @@ static void get_gps_data(){
 	gps_data.alt.data[1] = i2c_readNak();  //ROMデータ受信＋ストップコンディションの発行
 }
 
-// 自動テイクオフコマンドを送信する
+// アームコマンド送信
+void send_arm_cmd(){
+	uint8_t system_id = 0;			// たぶんなんでもいい
+	uint8_t component_id = MAV_COMP_ID_SYSTEM_CONTROL;
+	uint8_t target_system = 1;		// target_componentと同一である必要有
+	uint8_t target_component = 1;	// target_componentと同一である必要有
+	uint16_t command = MAV_CMD_COMPONENT_ARM_DISARM;
+	uint8_t confirmation = 0;		// たぶんなんでもいい
+	float param1 = 1.0f;			// ARM(1),DISARM(0)
+	float param2 = 0.0f;			// 使用しない
+	float param3 = 0.0f;			// 使用しない
+	float param4 = 0.0f;			// 使用しない
+	float param5 = 0.0f;			// 使用しない
+	float param6 = 0.0f;			// 使用しない
+	float param7 = 0.0f;			// 使用しない
+	
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+	uint16_t len;
+	
+	mavlink_msg_command_long_pack(system_id, component_id, &msg, target_system, target_component, command,
+								confirmation, param1, param2, param3, param4, param5, param6, param7);
+	
+	len = mavlink_msg_to_send_buffer(buf, &msg);
+	
+	Serial.write(buf, len);
+}
+
+// 自動テイクオフコマンド送信
 void send_takeoff_cmd(){
-	uint8_t system_id = 20;
-	uint8_t component_id = 200;
-	uint8_t target_system = 1;
+	uint8_t system_id = 0;			// たぶんなんでもいい
+	uint8_t component_id = 0;		// たぶんなんでもいい
+	uint8_t target_system = 0;		// たぶんなんでもいい
 	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
 	uint32_t custom_mode = C_TAKEOFF;
 	
@@ -183,9 +195,10 @@ void send_takeoff_cmd(){
 	Serial.write(buf, len);
 }
 
+// CHASERコマンド送信
 void send_chaser_cmd(int32_t lat, int32_t lon, int16_t alt){
-	uint8_t system_id = 20;
-	uint8_t component_id = 200;
+	uint8_t system_id = 0;			// たぶんなんでもいい
+	uint8_t component_id = 0;		// たぶんなんでもいい
 	
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
@@ -313,26 +326,4 @@ uint8_t i2c_readReg(uint8_t add, uint8_t reg) {
   uint8_t val;
   i2c_read_reg_to_buf(add, reg, &val, 1);
   return val;
-}
-
-
-void lcd_update()
-{
-  lcd.begin(20, 4);
-  lcd.clear();
-  lcd.cursor();
-  lcd.blink();
-	
-  lcd.setCursor(0, 0);
-  lcd.print(lin1);
-	
-  lcd.setCursor(0, 1);
-  lcd.print(lin2);
-	
-  lcd.setCursor(0, 2);
-  lcd.print(lin3);
-	
-  lcd.setCursor(0, 3);
-  lcd.print(lin4);
-	
 }
