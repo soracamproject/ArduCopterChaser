@@ -104,6 +104,7 @@ static bool set_nav_mode(uint8_t new_nav_mode)
             break;
 
         case NAV_WP:
+		case NAV_CHASER:	//CHASER用、NAV_WPと同じ
             nav_initialised = true;
             break;
     }
@@ -153,6 +154,11 @@ static void update_nav_mode()
             // call waypoint controller
             wp_nav.update_wpnav();
             break;
+
+		case NAV_CHASER:
+			// CHASERコントローラを呼ぶ
+			update_chaser();
+			break;
     }
 
     // log to dataflash at 10hz

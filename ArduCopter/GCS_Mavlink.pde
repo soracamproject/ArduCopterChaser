@@ -259,6 +259,21 @@ static void NOINLINE send_location(mavlink_channel_t chan)
 
 static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 {
+#if CHASER_DEBUG == 1
+	// CHASERデバッグ版
+	mavlink_msg_nav_controller_output_send(
+		chan,
+		chaser_copter_pos.x,	//float,nav_roll
+		chaser_copter_pos.y,	//float,nav_pitch
+		0,					//int16_t,nav_bearing
+		0,					//int16_t,target_bearing
+		0,					//uint16_t,wp_dist
+		chaser_target.x,	//float,alt_error
+		chaser_target.y,	//float,aspd_error
+		0.0f				//float,xtrack_error
+	);
+#else
+	// 通常通信版
     mavlink_msg_nav_controller_output_send(
         chan,
         nav_roll / 1.0e2f,
@@ -269,6 +284,7 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
         altitude_error / 1.0e2f,
         0,
         0);
+#endif
 }
 
 static void NOINLINE send_ahrs(mavlink_channel_t chan)
@@ -434,6 +450,19 @@ static void NOINLINE send_radio_out(mavlink_channel_t chan)
 
 static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 {
+#if CHASER_DEBUG == 1
+	// CHASERデバッグ版
+	mavlink_msg_vfr_hud_send(
+		chan,
+		chaser_destination.x,		//float,airspeed
+		chaser_destination.y,		//float,groundspeed
+		0,							//int16_t,heading
+		0,							//uint16_t,throttle
+		0.0f,						//float,alt
+		0.0f						//float,climb
+	);
+#else
+	// 通常通信版
     mavlink_msg_vfr_hud_send(
         chan,
         (float)g_gps->ground_speed_cm / 100.0f,
@@ -442,6 +471,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
         g.rc_3.servo_out/10,
         current_loc.alt / 100.0f,
         climb_rate / 100.0f);
+#endif
 }
 
 static void NOINLINE send_raw_imu1(mavlink_channel_t chan)
@@ -940,6 +970,20 @@ GCS_MAVLINK::update(void)
 bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 {
     uint8_t rate;
+#ifdef CHASER_DEBUG == 1
+	// CHASERデバッグ用
+	switch (stream_num) {
+		case STREAM_POSITION:
+			rate = 50;
+			break;
+		case STREAM_PARAMS:
+            rate = streamRateParams.get();
+            break;
+        default:
+            rate = 0;
+    }
+#else
+	// 通常通信用
     switch (stream_num) {
         case STREAM_RAW_SENSORS:
             rate = streamRateRawSensors.get();
@@ -971,6 +1015,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
         default:
             rate = 0;
     }
+#endif
 
     if (rate == 0) {
         return false;
@@ -1017,7 +1062,14 @@ GCS_MAVLINK::data_stream_send(void)
         // don't send any other stream types while in the delay callback
         return;
     }
-
+#if CHASER_DEBUG == 1
+	// CHASERデバッグ用
+	if (stream_trigger(STREAM_POSITION)) {
+		send_message(MSG_NAV_CONTROLLER_OUTPUT);
+		send_message(MSG_VFR_HUD);
+	}
+#else
+	// 通常通信用
     if (stream_trigger(STREAM_RAW_SENSORS)) {
         send_message(MSG_RAW_IMU1);
         send_message(MSG_RAW_IMU2);
@@ -1074,6 +1126,8 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_HWSTATUS);
         send_message(MSG_SYSTEM_TIME);
     }
+#endif
+
 }
 
 
@@ -2069,6 +2123,23 @@ mission_failed:
     }
 #endif // AC_FENCE ENABLED
 */
+
+	//CHASERモード用
+	case MAVLINK_MSG_ID_CHASER_CMD:
+	{
+		mavlink_chaser_cmd_t packet;
+		mavlink_msg_chaser_cmd_decode(msg, &packet);
+		tell_command.lat = packet.lat;
+		tell_command.lng = packet.lon;
+		tell_command.alt = packet.alt;
+		
+		//受け取った値が上下限に収まっていたらdo_chaserコマンドを実行する
+		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
+		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
+			do_chaser(&tell_command);
+		}
+		break;
+	}
 
     }     // end switch
 } // end handle mavlink

@@ -35,6 +35,14 @@
 
 #define WPNAV_MIN_LEASH_LENGTH          100.0f      // minimum leash lengths in cm
 
+/// ========================================
+/// CHASER用定義
+/// ========================================
+#define WPNAV_CHASER_LOITER_KP          1.5f		// CHASER時のLoiterのP項[-]
+#define WPNAV_CHASER_LOITER_VEL_MAX     1200.0f		// CHASER時の最大速度[cm/s]
+#define WPNAV_CHASER_LOITER_ACCEL       980.0f		// CHASER時の加速度[cm/s/s]
+
+
 class AC_WPNav
 {
 public:
@@ -148,6 +156,14 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+	/// ========================================
+	/// CHASER用定義
+	/// ========================================
+	
+	/// update_loiter_for_chaser CHASER時のloiterコントローラ。速度限界が高い。10Hzで呼ぶこと。
+	void update_loiter_for_chaser();
+
+
 protected:
     // flags structure
     struct wpnav_flags {
@@ -182,6 +198,14 @@ protected:
     /// calculate_wp_leash_length - calculates horizontal and vertical leash lengths for waypoint controller
     ///    set climb param to true if track climbs vertically, false if descending
     void calculate_wp_leash_length(bool climb);
+	
+	/// ========================================
+	/// CHASER用定義
+	/// ========================================
+	
+	/// get_loiter_position_to_velocity - CHASER用
+	void get_loiter_position_to_velocity_chaser(float dt);
+
 
     // references to inertial nav and ahrs libraries
     const AP_InertialNav* const _inav;

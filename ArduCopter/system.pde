@@ -303,6 +303,8 @@ static bool mode_requires_GPS(uint8_t mode) {
         case CIRCLE:
         case POSITION:
         case DRIFT:
+		case C_TAKEOFF:
+		case CHASER:
             return true;
         default:
             return false;
@@ -456,6 +458,21 @@ static bool set_mode(uint8_t mode)
             acro_pitch = ahrs.pitch_sensor;
             nav_yaw = ahrs.yaw_sensor;
             break;
+
+		case C_TAKEOFF:	// CHASERモード用単独テイクオフ
+			ap.manual_attitude = false;
+			ap.manual_throttle = false;
+			do_c_takeoff();
+			break;
+	
+		case CHASER:		// CHASERモード
+			ap.manual_attitude = false;
+			ap.manual_throttle = false;
+			set_yaw_mode(YAW_CHASER);					// YAW_CHASERモード
+			set_roll_pitch_mode(ROLL_PITCH_AUTO);		// ロールピッチAUTO
+			set_throttle_mode(THROTTLE_AUTO);			// スロットルAUTO。ALTは目標高さに、みたいに書いてあった
+			set_nav_mode(NAV_CHASER);					// CHASERモード
+			break;
 
         default:
             success = false;

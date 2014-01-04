@@ -780,6 +780,33 @@ static AP_InertialNav inertial_nav(&ahrs, &barometer, g_gps, gps_glitch);
 static AC_WPNav wp_nav(&inertial_nav, &ahrs, &g.pi_loiter_lat, &g.pi_loiter_lon, &g.pid_loiter_rate_lat, &g.pid_loiter_rate_lon);
 
 ////////////////////////////////////////////////////////////////////////////////
+// CHASERモード用グローバル変数
+////////////////////////////////////////////////////////////////////////////////
+static Vector3f beacon_loc[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
+static Vector3f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]（本当はdo_chaser()に入れたいけどエラー出るので）
+static Vector3f beacon_loc_relaxed_latch;					// ビーコン位置なましのラッチ値[cm]不感帯に入っているかの基準とする
+															// （本当はdo_chaser()に入れたいけどエラー出るので）
+
+static Vector3f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
+static Vector3f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
+static Vector3f chaser_target;				// ターゲット：loiterコントローラの目的地（ビーコン位置の更新周期よりも早く更新される）
+
+static Vector3f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
+static Vector3f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
+static Vector3f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
+
+static Vector3f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）
+static Vector3f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
+
+static bool chaser_reset = false;			// chaserモードをリセットするフラグ（command_logic内、do_chaserで使う、現在は使っていない、今後のため）
+static bool chaser_est_ok = false;			// 位置予測できるかのフラグ（位置配列が埋まって1回後）
+static bool chaser_est_started = false;		// 予測開始フラグ（位置配列が埋まって1回目の処置が終わったら立つ）
+
+static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
+
+static Vector3f chaser_copter_pos;
+
+////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
 ////////////////////////////////////////////////////////////////////////////////
 static int16_t pmTest1;
@@ -1407,6 +1434,10 @@ bool set_yaw_mode(uint8_t new_yaw_mode)
             nav_yaw = ahrs.yaw_sensor; // store current yaw so we can start rotating back to correct one
             yaw_initialised = true;
             break;
+		case YAW_CHASER:		//CHASERモード用、ここでは何もしない
+			yaw_initialised = true;
+            break;
+
     }
 
     // if initialisation has been successful update the yaw mode
@@ -1550,7 +1581,12 @@ void update_yaw_mode(void)
         }
 
         break;
-    }
+		
+	case YAW_CHASER:		// CHASERモード用
+		nav_yaw = get_yaw_slew(nav_yaw, chaser_yaw_target, CHASER_YAW_SLEW_RATE);	// 引数は順に現在、目標、制限速度
+        get_stabilize_yaw(nav_yaw);
+		break;
+	}
 }
 
 // get yaw mode based on WP_YAW_BEHAVIOR parameter
@@ -1866,6 +1902,7 @@ bool set_throttle_mode( uint8_t new_throttle_mode )
 
         case THROTTLE_HOLD:
         case THROTTLE_AUTO:
+		case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用。
             controller_desired_alt = get_initial_alt_hold(current_loc.alt, climb_rate);     // reset controller desired altitude to current altitude
             wp_nav.set_desired_alt(controller_desired_alt);                                 // same as above but for loiter controller
             if (throttle_mode_manual(throttle_mode)) {  // reset the alt hold I terms if previous throttle mode was manual
@@ -2016,6 +2053,7 @@ void update_throttle_mode(void)
         break;
 
     case THROTTLE_AUTO:
+	case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用
         // auto pilot altitude controller with target altitude held in wp_nav.get_desired_alt()
         if(ap.auto_armed) {
             // special handling if we are just taking off
