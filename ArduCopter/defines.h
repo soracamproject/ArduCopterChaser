@@ -152,7 +152,8 @@
 #define SPORT 13                        // earth frame rate control
 #define C_TAKEOFF 14					// CHASERモード用単独テイクオフ
 #define CHASER 15						// CHASERモード
-#define NUM_MODES 16
+#define C_LAND 16						// CHASERモード用ランディング
+#define NUM_MODES 17
 
 
 // CH_6 Tuning

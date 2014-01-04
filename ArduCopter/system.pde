@@ -418,6 +418,7 @@ static bool set_mode(uint8_t mode)
             break;
 
         case LAND:
+		case C_LAND:		// CHASERモード用ランディング（流用）
             success = true;
             do_land(NULL);  // land at current location
             break;

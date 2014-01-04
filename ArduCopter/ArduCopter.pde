@@ -2053,7 +2053,6 @@ void update_throttle_mode(void)
         break;
 
     case THROTTLE_AUTO:
-	case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用
         // auto pilot altitude controller with target altitude held in wp_nav.get_desired_alt()
         if(ap.auto_armed) {
             // special handling if we are just taking off
@@ -2077,6 +2076,12 @@ void update_throttle_mode(void)
         get_throttle_land();
         set_target_alt_for_reporting(0);
         break;
+	
+	case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用
+        get_throttle_althold_with_slew(wp_nav.get_desired_alt(), -wp_nav.get_descent_velocity(), wp_nav.get_climb_velocity());
+        set_target_alt_for_reporting(wp_nav.get_desired_alt()); // To-Do: return get_destination_alt if we are flying to a waypoint
+		break;
+
 
 #if FRAME_CONFIG == HELI_FRAME
     case THROTTLE_MANUAL_HELI:
