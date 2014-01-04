@@ -412,7 +412,8 @@
 //////////////////////////////////////////////////////////////////////////////
 //  OPTICAL_FLOW
 #ifndef OPTFLOW                         // sets global enabled/disabled flag for optflow (as seen in CLI)
- # define OPTFLOW                       ENABLED
+ //# define OPTFLOW                       ENABLED
+ # define OPTFLOW                       DISABLED
 #endif
 #ifndef OPTFLOW_ORIENTATION
  # define OPTFLOW_ORIENTATION    AP_OPTICALFLOW_ADNS3080_PINS_FORWARD
@@ -1067,7 +1068,8 @@
 
 // use this to completely disable the CLI
 #ifndef CLI_ENABLED
-  #  define CLI_ENABLED           ENABLED
+  //#  define CLI_ENABLED           ENABLED
+  #define CLI_ENABLED           DISABLED
 #endif
 
 /*
