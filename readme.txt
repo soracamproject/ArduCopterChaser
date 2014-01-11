@@ -56,29 +56,27 @@
 　　　　uint16_t      throttle
 
 
-■■■■■　改造ファイルと場所　■■■■■
+■■■■■　改造ファイルと場所（最新の状態）　■■■■■
 ArduCopter.pde
 　"CHASERモード用グローバル変数"の項目を追加
 　set_yaw_mode関数内にYAW_CHASERのcaseを追加
 　update_yaw_mode関数内にYAW_CHASERのcaseを追加
-　set_throttle_mode内にTHROTTLE_AUTO_TAKEOFFを追加（流用）
-　update_throttle_mode内にTHROTTLE_AUTO_TAKEOFFを追加（流用）　←以前と違うところ★★★
+chaser_defines.h
+　すべて　新規ファイル
 chaser.pde
 　すべて　新規作成ファイル
 commands_logic.pde
-　do_c_takeoff関数を新規作成
 　do_chaser関数を新規作成
 config.h
 　#define OPTFLOW          ENABLED　→　DISABLED　容量削減のため
 　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため
 defines.h
 　YAW_CHASERを追加　番号は10
-　THROTTLE_AUTO_TAKEOFFを追加　番号は6
 　Auto Pilot modes
-　　C_TAKEOFFとCHASERとC_LANDを追加　番号は14と15と16　←以前と番号変わっているので注意★★★
+　　CHASERを追加　番号は14
 　　NUM_MODESを増やす
 　Navigation modes held in nav_mode variableにNAV_CHASERを追加　番号は4
-　ファイル末尾にCHASER関連の#defineを追加
+　ファイル末尾にchaser_defines.hのインクルードを追加
 GCS_Mavlink.pde
    bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
    void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
@@ -88,8 +86,8 @@ navigation.pde
 　set_nav_modeのスイッチにNAV_CHASERを追加
 　update_nav_modeのスイッチにNAV_CHASERを追加
 system.pde
-　mode_requires_GPS関数内にC_TAKEOFFとCHASER追加
-　set_mode関数内にC_TAKEOFFモードとCHASERモードとC_LANDモードを追加
+　mode_requires_GPS関数内にCHASER追加　←おそらくGPS F/SをONにしていないと効かないと思われるが要検討★★
+　set_mode関数内にCHASERモードを追加
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml

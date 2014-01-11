@@ -1035,31 +1035,9 @@ static void do_take_picture()
 #endif
 }
 
-
-static void do_c_takeoff()
-{
-    // set roll-pitch mode
-    set_roll_pitch_mode(AUTO_RP);
-
-    // set yaw mode
-    set_yaw_mode(YAW_HOLD);
-
-    // set throttle mode to AUTO although we should already be in this mode
-    set_throttle_mode(THROTTLE_AUTO_TAKEOFF);
-
-    // set our nav mode to loiter
-    set_nav_mode(NAV_WP);
-
-    // Set wp navigation target to safe altitude above current position
-    Vector3f pos = inertial_nav.get_position();
-	pos.z = CHASER_ALT;
-	wp_nav.set_destination(pos);
-
-    // prevent flips
-    // To-Do: check if this is still necessary
-    reset_I_all();    
-}
-
+////////////////////////////////////////////////////////////////////////////////
+// CHASERモード用
+////////////////////////////////////////////////////////////////////////////////
 static void do_chaser(const struct Location *cmd)
 {
 	bool first_time = false;								// 初めてCHASERモードに入ったかどうか

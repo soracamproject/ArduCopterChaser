@@ -92,3 +92,87 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 static int32_t calc_chaser_yaw_target(const Vector3f target){
 	return (int32_t)pv_get_bearing_cd(inertial_nav.get_position(), target);
 }
+
+// CHASERモードでのGPSが必要な状態かの判定
+// 使ってない
+static bool mode_requires_GPS_chaser(uint8_t mode) {
+	switch(mode) {
+		case CHASER_READY:
+		case CHASER_TAKEOFF:
+		case CHASER_STAY:
+		case CHASER_CHASE:
+		case CHASER_LAND:
+			return true;
+		default:
+			return false;
+	}
+	return false;
+}
+
+// CHASERモードをセット（＝変更）する
+static bool set_chaser_mode(uint8_t mode) {
+	bool success = false;
+	
+	switch(mode) {
+		case CHASER_INIT:
+			// STABILIZEと同様
+			set_yaw_mode(STABILIZE_YAW);
+			set_roll_pitch_mode(STABILIZE_RP);
+			set_throttle_mode(STABILIZE_THR);
+			set_nav_mode(NAV_NONE);
+			
+			success = true;
+			break;
+		
+		case CHASER_READY:
+			if (GPS_ok()) {
+				// LOITERと同様
+				set_yaw_mode(LOITER_YAW);
+				set_roll_pitch_mode(LOITER_RP);
+				set_throttle_mode(LOITER_THR);
+				set_nav_mode(LOITER_NAV);
+				
+				Vector3f pos = inertial_nav.get_position();
+				wp_nav.set_loiter_target(pos);
+				
+				success = true;
+			}
+			break;
+		
+		case CHASER_TAKEOFF:
+			if (GPS_ok()) {
+				// オリジナル
+				set_yaw_mode(YAW_HOLD);
+				set_roll_pitch_mode(ROLL_PITCH_AUTO);
+				set_throttle_mode(THROTTLE_AUTO);
+				set_nav_mode(NAV_WP);
+				
+				Vector3f pos = inertial_nav.get_position();
+				pos.z = CHASER_ALT;
+				wp_nav.set_destination(pos);
+				
+				reset_I_all();		//フリップを防ぐためで要検討項目らしい（APMから持ってきている）
+				
+				success = true;
+			}
+			break;
+		
+		case CHASER_EM_LAND:
+			// LANDモードを流用
+			do_land(NULL);		// NULLでその場に降ろす
+			break;
+		
+		default:
+			success = false;
+			break;
+	}
+	
+	// CHASERモード更新
+	if (success) {
+		chaser_mode = mode;
+	}
+	
+	// 変更が成功したかどうかを返す
+	return success;
+}
+

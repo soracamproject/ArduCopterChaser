@@ -804,7 +804,9 @@ static bool chaser_est_started = false;		// 予測開始フラグ（位置配列
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
 
-static Vector3f chaser_copter_pos;
+static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（inertial_navで取ってくる）
+
+static int8_t chaser_mode;					// CHASERモード（定義はchaser_defines.h参照）
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
@@ -1902,7 +1904,6 @@ bool set_throttle_mode( uint8_t new_throttle_mode )
 
         case THROTTLE_HOLD:
         case THROTTLE_AUTO:
-		case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用。
             controller_desired_alt = get_initial_alt_hold(current_loc.alt, climb_rate);     // reset controller desired altitude to current altitude
             wp_nav.set_desired_alt(controller_desired_alt);                                 // same as above but for loiter controller
             if (throttle_mode_manual(throttle_mode)) {  // reset the alt hold I terms if previous throttle mode was manual
@@ -2076,12 +2077,6 @@ void update_throttle_mode(void)
         get_throttle_land();
         set_target_alt_for_reporting(0);
         break;
-	
-	case THROTTLE_AUTO_TAKEOFF:		// CHASER用。とりあえず流用
-        get_throttle_althold_with_slew(wp_nav.get_desired_alt(), -wp_nav.get_descent_velocity(), wp_nav.get_climb_velocity());
-        set_target_alt_for_reporting(wp_nav.get_desired_alt()); // To-Do: return get_destination_alt if we are flying to a waypoint
-		break;
-
 
 #if FRAME_CONFIG == HELI_FRAME
     case THROTTLE_MANUAL_HELI:
