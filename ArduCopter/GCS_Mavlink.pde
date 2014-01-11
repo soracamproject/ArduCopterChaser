@@ -2129,16 +2129,59 @@ mission_failed:
 	{
 		mavlink_chaser_cmd_t packet;
 		mavlink_msg_chaser_cmd_decode(msg, &packet);
-		tell_command.lat = packet.lat;
-		tell_command.lng = packet.lon;
-		tell_command.alt = packet.alt;
 		
-		//受け取った値が上下限に収まっていたらdo_chaserコマンドを実行する
-		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
-		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
-			do_chaser(&tell_command);
+		uint8_t command = packet.command;
+		uint8_t mode = packet.mode;
+		
+		// 実行コマンド分岐
+		switch(command) {
+			case 1:
+			{
+				switch(mode) {
+					case CHASER_INIT:
+						if(control_mode != CHASER) {
+							set_mode(CHASER);
+						}
+						break;
+					
+					case CHASER_READY:
+						if(control_mode == CHASER && chaser_mode == CHASER_INIT) {
+							// 機体モードがCHASERかつCHASERモードがINITの時のみ実施
+							set_chaser_mode(mode);
+						}
+						break;
+					
+					case CHASER_TAKEOFF:
+						if(control_mode == CHASER && chaser_mode == CHASER_READY) {
+							// 機体モードがCHASERかつCHASERモードがREADYの時のみ実施
+							set_chaser_mode(mode);
+						}
+						break;
+					
+					case CHASER_LAND:
+						if(control_mode == CHASER && chaser_mode == CHASER_TAKEOFF) {
+							// 機体モードがCHASERかつCHASERモードがTAKEOFFの時のみ実施
+							set_chaser_mode(mode);
+						}
+						break;
+					
+					default:
+						break;
+				}
+				break;
+			}
+			
+			case 2:
+			{
+				hal.rcin->set_override(3, 1500);
+				break;
+			}
+			
+			default:
+			{
+				break;
+			}
 		}
-		break;
 	}
 
     }     // end switch

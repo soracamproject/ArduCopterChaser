@@ -2055,21 +2055,21 @@ void update_throttle_mode(void)
 
     case THROTTLE_AUTO:
         // auto pilot altitude controller with target altitude held in wp_nav.get_desired_alt()
-        if(ap.auto_armed) {
+//        if(ap.auto_armed) {
             // special handling if we are just taking off
-            if (ap.land_complete) {
-                // tell motors to do a slow start.
-                motors.slow_start(true);
-            }
+//            if (ap.land_complete) {
+//                // tell motors to do a slow start.
+//                motors.slow_start(true);
+//            }
             get_throttle_althold_with_slew(wp_nav.get_desired_alt(), -wp_nav.get_descent_velocity(), wp_nav.get_climb_velocity());
             set_target_alt_for_reporting(wp_nav.get_desired_alt()); // To-Do: return get_destination_alt if we are flying to a waypoint
-        }else{
-            // pilot's throttle must be at zero so keep motors off
-            set_throttle_out(0, false);
-            // deactivate accel based throttle controller
-            throttle_accel_deactivate();
-            set_target_alt_for_reporting(0);
-        }
+//        }else{
+//            // pilot's throttle must be at zero so keep motors off
+//            set_throttle_out(0, false);
+//            // deactivate accel based throttle controller
+//            throttle_accel_deactivate();
+//            set_target_alt_for_reporting(0);
+//        }
         break;
 
     case THROTTLE_LAND:

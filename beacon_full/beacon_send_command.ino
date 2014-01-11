@@ -1,12 +1,11 @@
-// アームコマンド送信
-void send_arm_cmd(){
+// アームコマンド送信 ARM(1),DISARM(0)
+void send_arm_cmd(float param1){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
 	uint8_t target_system = 1;		// 1が必要（MISSION PLANNERのFull Param ListでSYSで検索）
 	uint8_t target_component = MAV_COMP_ID_SYSTEM_CONTROL;
 	uint16_t command = MAV_CMD_COMPONENT_ARM_DISARM;
 	uint8_t confirmation = 1;		// 実績値1
-	float param1 = 1.0f;			// ARM(1),DISARM(0)
 	float param2 = 0.0f;			// 使用しない
 	float param3 = 0.0f;			// 使用しない
 	float param4 = 0.0f;			// 使用しない
@@ -25,6 +24,7 @@ void send_arm_cmd(){
 	
 	Serial.write(buf, len);
 }
+
 
 // INITコマンド送信(CHASERモードに入れる)
 void send_init_cmd(){
@@ -45,10 +45,10 @@ void send_init_cmd(){
 }
 
 // READYコマンド送信
-void send_ready_cmd(){
+// command: (1)Ready, (2)モータを少し回す
+void send_ready_cmd(uint8_t command){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 1;			// とりあえず1で実行ということにする
 	uint8_t mode = CHASER_READY;
 	
 	mavlink_message_t msg;
@@ -86,7 +86,7 @@ void send_land_cmd(){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
 	uint8_t command = 1;			// とりあえず1で実行ということにする
-	uint8_t mode = CHASER_EM_LAND;	// 本当はCHASER_LAND
+	uint8_t mode = CHASER_LAND;
 	
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];

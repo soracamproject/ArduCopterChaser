@@ -36,15 +36,21 @@ static GPS_DATA gps_data;
 
 void setup()
 {
-	//XBee用のシリアルポートを開ける
+	// XBee用のシリアルポートを開ける
 	Serial.begin(57600);
 
-	//GPS取得用のI2Cの初期化
+	// GPS取得用のI2Cの初期化
 	i2c_init();
 	
 	gps_data.lat.coord = 0;
 	gps_data.lon.coord = 0;
 	gps_data.alt.coord = 0;
+	
+	// 緊急終了処置
+	// 再起動すると実行されるという意味で
+	emergency_end_process();
+	
+	delay(5000);
 }
 
 
@@ -54,20 +60,30 @@ void loop(){
 	
 	switch(state){
 		case BEACON_INIT:
-			delay(10000);
-			
 			send_init_cmd();
 			
-			delay(10000);
+			delay(3000);
+			
+			send_arm_cmd(1.0f);
+			
+			delay(5000);
+			
+			send_ready_cmd(2);
+			
+			delay(3000);
 			
 			state = BEACON_READY;
-			
+			//state = BEACON_END;	//デバッグ用
 			break;
 			
 		case BEACON_READY:
-			send_ready_cmd();
+			send_ready_cmd(1);
 			
-			delay(10000);
+			delay(3000);
+			
+			send_arm_cmd(1.0f);		// アーム命令
+			
+			delay(3000);
 			
 			state = BEACON_TAKEOFF;
 			
@@ -99,6 +115,10 @@ void loop(){
 			// 何もしない
 			break;
 	}
+}
+
+static void emergency_end_process(){
+	send_arm_cmd(0.0f);		// ディスアーム命令
 }
 
 static void get_gps_data(){

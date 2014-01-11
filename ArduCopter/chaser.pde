@@ -157,9 +157,9 @@ static bool set_chaser_mode(uint8_t mode) {
 			}
 			break;
 		
-		case CHASER_EM_LAND:
+		case CHASER_LAND:
 			// LANDモードを流用
-			do_land(NULL);		// NULLでその場に降ろす
+			do_land(NULL);		// NULLでその場に降ろす（暫定）
 			break;
 		
 		default:
