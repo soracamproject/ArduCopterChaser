@@ -28,7 +28,7 @@
 // CHASERデバッグ用通信有効無効フラグ
 // 0は通常通信モード（たぶんこれじゃないとMISSION PLANNERで初期設定できない）
 // 1にすると通信変数を割付し直し必要な分だけ50Hz目標で通信する
-#define CHASER_DEBUG              0
+#define CHASER_DEBUG              1
 
 // CHASERモード
 #define CHASER_INIT          0
