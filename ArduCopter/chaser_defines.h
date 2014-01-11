@@ -39,6 +39,17 @@
 #define CHASER_LAND          5
 #define CHASER_EM_LAND       6
 
+// BEACON_STATE
+#define BEACON_INIT          0
+#define BEACON_READY         1
+#define BEACON_TAKEOFF       2
+#define BEACON_STAY          3
+#define BEACON_CHASE         4
+#define BEACON_LAND          5
+#define BEACON_END           9
+
+
+
 // CHASER用LOITER関連の定義はAC_WPNav.hにあるので注意のこと
 
 #endif // _CHASER_DEFINES_H

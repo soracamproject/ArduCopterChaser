@@ -4,25 +4,23 @@
 
 typedef struct __mavlink_chaser_cmd_t
 {
- int32_t lat; ///< latitude (degree * 10^7)
- int32_t lon; ///< longitude (degree * 10^7)
- int16_t alt; ///< altitude (cm)
+ int8_t command; ///< command for chacer 
+ int8_t mode; ///< chaser mode
 } mavlink_chaser_cmd_t;
 
-#define MAVLINK_MSG_ID_CHASER_CMD_LEN 10
-#define MAVLINK_MSG_ID_200_LEN 10
+#define MAVLINK_MSG_ID_CHASER_CMD_LEN 2
+#define MAVLINK_MSG_ID_200_LEN 2
 
-#define MAVLINK_MSG_ID_CHASER_CMD_CRC 85
-#define MAVLINK_MSG_ID_200_CRC 85
+#define MAVLINK_MSG_ID_CHASER_CMD_CRC 172
+#define MAVLINK_MSG_ID_200_CRC 172
 
 
 
 #define MAVLINK_MESSAGE_INFO_CHASER_CMD { \
 	"CHASER_CMD", \
-	3, \
-	{  { "lat", NULL, MAVLINK_TYPE_INT32_T, 0, 0, offsetof(mavlink_chaser_cmd_t, lat) }, \
-         { "lon", NULL, MAVLINK_TYPE_INT32_T, 0, 4, offsetof(mavlink_chaser_cmd_t, lon) }, \
-         { "alt", NULL, MAVLINK_TYPE_INT16_T, 0, 8, offsetof(mavlink_chaser_cmd_t, alt) }, \
+	2, \
+	{  { "command", NULL, MAVLINK_TYPE_INT8_T, 0, 0, offsetof(mavlink_chaser_cmd_t, command) }, \
+         { "mode", NULL, MAVLINK_TYPE_INT8_T, 0, 1, offsetof(mavlink_chaser_cmd_t, mode) }, \
          } \
 }
 
@@ -33,26 +31,23 @@ typedef struct __mavlink_chaser_cmd_t
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param lat latitude (degree * 10^7)
- * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param command command for chacer 
+ * @param mode chaser mode
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       int32_t lat, int32_t lon, int16_t alt)
+						       int8_t command, int8_t mode)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, lat);
-	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int8_t(buf, 0, command);
+	_mav_put_int8_t(buf, 1, mode);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
 	mavlink_chaser_cmd_t packet;
-	packet.lat = lat;
-	packet.lon = lon;
-	packet.alt = alt;
+	packet.command = command;
+	packet.mode = mode;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif
@@ -71,27 +66,24 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t co
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
- * @param lat latitude (degree * 10^7)
- * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param command command for chacer 
+ * @param mode chaser mode
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           int32_t lat,int32_t lon,int16_t alt)
+						           int8_t command,int8_t mode)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, lat);
-	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int8_t(buf, 0, command);
+	_mav_put_int8_t(buf, 1, mode);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
 	mavlink_chaser_cmd_t packet;
-	packet.lat = lat;
-	packet.lon = lon;
-	packet.alt = alt;
+	packet.command = command;
+	packet.mode = mode;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif
@@ -114,7 +106,7 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack_chan(uint8_t system_id, uint8
  */
 static inline uint16_t mavlink_msg_chaser_cmd_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_chaser_cmd_t* chaser_cmd)
 {
-	return mavlink_msg_chaser_cmd_pack(system_id, component_id, msg, chaser_cmd->lat, chaser_cmd->lon, chaser_cmd->alt);
+	return mavlink_msg_chaser_cmd_pack(system_id, component_id, msg, chaser_cmd->command, chaser_cmd->mode);
 }
 
 /**
@@ -128,26 +120,24 @@ static inline uint16_t mavlink_msg_chaser_cmd_encode(uint8_t system_id, uint8_t 
  */
 static inline uint16_t mavlink_msg_chaser_cmd_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_chaser_cmd_t* chaser_cmd)
 {
-	return mavlink_msg_chaser_cmd_pack_chan(system_id, component_id, chan, msg, chaser_cmd->lat, chaser_cmd->lon, chaser_cmd->alt);
+	return mavlink_msg_chaser_cmd_pack_chan(system_id, component_id, chan, msg, chaser_cmd->command, chaser_cmd->mode);
 }
 
 /**
  * @brief Send a chaser_cmd message
  * @param chan MAVLink channel to send the message
  *
- * @param lat latitude (degree * 10^7)
- * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param command command for chacer 
+ * @param mode chaser mode
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int32_t lat, int32_t lon, int16_t alt)
+static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int8_t command, int8_t mode)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, lat);
-	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int8_t(buf, 0, command);
+	_mav_put_int8_t(buf, 1, mode);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, buf, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -156,9 +146,8 @@ static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int32_t l
 #endif
 #else
 	mavlink_chaser_cmd_t packet;
-	packet.lat = lat;
-	packet.lon = lon;
-	packet.alt = alt;
+	packet.command = command;
+	packet.mode = mode;
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, (const char *)&packet, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -174,33 +163,23 @@ static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int32_t l
 
 
 /**
- * @brief Get field lat from chaser_cmd message
+ * @brief Get field command from chaser_cmd message
  *
- * @return latitude (degree * 10^7)
+ * @return command for chacer 
  */
-static inline int32_t mavlink_msg_chaser_cmd_get_lat(const mavlink_message_t* msg)
+static inline int8_t mavlink_msg_chaser_cmd_get_command(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int32_t(msg,  0);
+	return _MAV_RETURN_int8_t(msg,  0);
 }
 
 /**
- * @brief Get field lon from chaser_cmd message
+ * @brief Get field mode from chaser_cmd message
  *
- * @return longitude (degree * 10^7)
+ * @return chaser mode
  */
-static inline int32_t mavlink_msg_chaser_cmd_get_lon(const mavlink_message_t* msg)
+static inline int8_t mavlink_msg_chaser_cmd_get_mode(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int32_t(msg,  4);
-}
-
-/**
- * @brief Get field alt from chaser_cmd message
- *
- * @return altitude (cm)
- */
-static inline int16_t mavlink_msg_chaser_cmd_get_alt(const mavlink_message_t* msg)
-{
-	return _MAV_RETURN_int16_t(msg,  8);
+	return _MAV_RETURN_int8_t(msg,  1);
 }
 
 /**
@@ -212,9 +191,8 @@ static inline int16_t mavlink_msg_chaser_cmd_get_alt(const mavlink_message_t* ms
 static inline void mavlink_msg_chaser_cmd_decode(const mavlink_message_t* msg, mavlink_chaser_cmd_t* chaser_cmd)
 {
 #if MAVLINK_NEED_BYTE_SWAP
-	chaser_cmd->lat = mavlink_msg_chaser_cmd_get_lat(msg);
-	chaser_cmd->lon = mavlink_msg_chaser_cmd_get_lon(msg);
-	chaser_cmd->alt = mavlink_msg_chaser_cmd_get_alt(msg);
+	chaser_cmd->command = mavlink_msg_chaser_cmd_get_command(msg);
+	chaser_cmd->mode = mavlink_msg_chaser_cmd_get_mode(msg);
 #else
 	memcpy(chaser_cmd, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif

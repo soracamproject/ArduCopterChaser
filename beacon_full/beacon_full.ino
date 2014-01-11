@@ -1,19 +1,9 @@
 #include <BC_Compat.h>
 #include <FastSerial.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
-
-//モード(ArduCopterのdefine.hと合わせること)
-#define C_TAKEOFF       14
-#define C_LAND          16
+#include "../../ArduCopter/chaser_defines.h"
 
 //XBee用
-#define STATE_PREARM    0
-#define STATE_ARMED     1
-#define STATE_TAKEOFF   2
-#define STATE_CHASER    3
-#define STATE_LAND      4
-#define STATE_END       5
-
 FastSerialPort0(Serial);
 
 //I2C-GPS用
@@ -55,76 +45,58 @@ void setup()
 	gps_data.lat.coord = 0;
 	gps_data.lon.coord = 0;
 	gps_data.alt.coord = 0;
-	
-	delay(20000);
-	//delay(5000);		//デバッグ用
 }
 
 
 void loop(){
 	static uint32_t now = 0;
-	static uint8_t state = STATE_PREARM;
+	static uint8_t state = BEACON_INIT;
 	
 	switch(state){
-		case STATE_PREARM:
-			//ARMコマンド送信
-			send_arm_cmd();
+		case BEACON_INIT:
+			delay(10000);
 			
-			//3秒待つ
-			delay(3000);
+			send_init_cmd();
 			
-			//状態更新
-			state = STATE_ARMED;
+			delay(10000);
+			
+			state = BEACON_READY;
 			
 			break;
 			
-		case STATE_ARMED:
-			//自動テイクオフコマンド送信
+		case BEACON_READY:
+			send_ready_cmd();
+			
+			delay(10000);
+			
+			state = BEACON_TAKEOFF;
+			
+			break;
+			
+		case BEACON_TAKEOFF:
 			send_takeoff_cmd();
 			
-			//20秒待つ
 			delay(20000);
 			
-			//状態更新
-			state = STATE_CHASER;
-			//state = STATE_LAND;		//LANDモードデバッグ用
-			
-			break;
-			
-		case STATE_CHASER:
-			gps_data.lat.coord = 1;
-			gps_data.lon.coord = 1;
-			
-			//GPSデータ取得
-			get_gps_data();
-			
-			//機体に送信
-			send_chaser_cmd(gps_data.lat.coord,gps_data.lon.coord,700);
-			//Serial.println(gps_data.lat.coord);		//デバッグ用
-			//Serial.println(gps_data.lon.coord);		//デバッグ用
-			
-			//ちょっと待たない
-			//delay(500);
+			state = BEACON_LAND;
 			
 			break;
 
-		case STATE_LAND:
-			// 通常時は入らない
-			
-			// ランディングコマンド送信
+		case BEACON_LAND:
 			send_land_cmd();
 			
-			// 2秒待つ
 			delay(2000);
 			
-			// 状態更新
-			state = STATE_END;
+			state = BEACON_END;
 			
 			break;
-
+		
+		case BEACON_END:
+			// 何もしない
+			break;
 		
 		default:
-			//入らないはず、何もしない
+			// 何もしない
 			break;
 	}
 }
@@ -165,88 +137,6 @@ static void get_gps_data(){
 	
 	i2c_rep_start((I2C_ADDRESS<<1)|1);//スタートコンディションの再発行+コントロールバイトの送信
 	gps_data.alt.data[1] = i2c_readNak();  //ROMデータ受信＋ストップコンディションの発行
-}
-
-// アームコマンド送信
-void send_arm_cmd(){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t target_system = 1;		// 1が必要（MISSION PLANNERのFull Param ListでSYSで検索）
-	uint8_t target_component = MAV_COMP_ID_SYSTEM_CONTROL;
-	uint16_t command = MAV_CMD_COMPONENT_ARM_DISARM;
-	uint8_t confirmation = 1;		// 実績値1
-	float param1 = 1.0f;			// ARM(1),DISARM(0)
-	float param2 = 0.0f;			// 使用しない
-	float param3 = 0.0f;			// 使用しない
-	float param4 = 0.0f;			// 使用しない
-	float param5 = 0.0f;			// 使用しない
-	float param6 = 0.0f;			// 使用しない
-	float param7 = 0.0f;			// 使用しない
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_command_long_pack(system_id, component_id, &msg, target_system, target_component, command,
-								confirmation, param1, param2, param3, param4, param5, param6, param7);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-
-// 自動テイクオフコマンド送信
-void send_takeoff_cmd(){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t target_system = 1;		// 実績値1
-	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-	uint32_t custom_mode = C_TAKEOFF;
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_set_mode_pack(system_id, component_id, &msg, target_system, base_mode, custom_mode);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-
-// CHASERコマンド送信
-void send_chaser_cmd(int32_t lat, int32_t lon, int16_t alt){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, lat, lon, alt);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-
-// ランディングコマンド送信
-void send_land_cmd(){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t target_system = 1;		// 実績値1
-	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-	uint32_t custom_mode = C_LAND;
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_set_mode_pack(system_id, component_id, &msg, target_system, base_mode, custom_mode);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
 }
 
 
