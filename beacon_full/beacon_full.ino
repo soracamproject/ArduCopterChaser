@@ -48,9 +48,9 @@ void setup()
 	
 	// 緊急終了処置
 	// 再起動すると実行されるという意味で
-	emergency_end_process();
+	//emergency_end_process();
 	
-	delay(5000);
+	delay(2000);
 }
 
 
@@ -61,15 +61,6 @@ void loop(){
 	switch(state){
 		case BEACON_INIT:
 			send_init_cmd();
-			
-			delay(3000);
-			
-			send_arm_cmd(1.0f);
-			
-			delay(5000);
-			
-			send_ready_cmd(2);
-			
 			delay(3000);
 			
 			state = BEACON_READY;
@@ -77,13 +68,14 @@ void loop(){
 			break;
 			
 		case BEACON_READY:
-			send_ready_cmd(1);
-			
-			delay(3000);
-			
 			send_arm_cmd(1.0f);		// アーム命令
+			delay(10000);
 			
-			delay(3000);
+			send_ready_cmd(2);
+			delay(5000);
+			
+			send_ready_cmd(1);
+			delay(5000);
 			
 			state = BEACON_TAKEOFF;
 			
@@ -91,7 +83,6 @@ void loop(){
 			
 		case BEACON_TAKEOFF:
 			send_takeoff_cmd();
-			
 			delay(20000);
 			
 			state = BEACON_LAND;
@@ -100,7 +91,6 @@ void loop(){
 
 		case BEACON_LAND:
 			send_land_cmd();
-			
 			delay(2000);
 			
 			state = BEACON_END;

@@ -457,9 +457,9 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 		chaser_destination.x,		//float,airspeed
 		chaser_destination.y,		//float,groundspeed
 		0,							//int16_t,heading
-		0,							//uint16_t,throttle
+		g.rc_3.control_in,							//uint16_t,throttle
 		controller_desired_alt,		//float,alt
-		0.0f						//float,climb
+		wp_nav.get_desired_alt()	//float,climb
 	);
 #else
 	// 通常通信版
@@ -2173,7 +2173,7 @@ mission_failed:
 			
 			case 2:
 			{
-				hal.rcin->set_override(3, 1500);
+				g.rc_3.control_in = 500;
 				break;
 			}
 			

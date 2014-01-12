@@ -126,14 +126,14 @@ static bool set_chaser_mode(uint8_t mode) {
 		
 		case CHASER_READY:
 			if (GPS_ok()) {
-				// LOITERと同様
-				set_yaw_mode(LOITER_YAW);
-				set_roll_pitch_mode(LOITER_RP);
-				set_throttle_mode(LOITER_THR);
-				set_nav_mode(LOITER_NAV);
+				// オリジナル
+				set_yaw_mode(YAW_HOLD);
+				set_roll_pitch_mode(ROLL_PITCH_AUTO);
+				set_throttle_mode(THROTTLE_AUTO);
+				set_nav_mode(NAV_WP);
 				
 				Vector3f pos = inertial_nav.get_position();
-				wp_nav.set_loiter_target(pos);
+				wp_nav.set_destination(pos);
 				
 				success = true;
 			}

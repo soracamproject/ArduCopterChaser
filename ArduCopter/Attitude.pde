@@ -1125,9 +1125,9 @@ get_throttle_althold_with_slew(int32_t target_alt, int16_t min_climb_rate, int16
 {
     float alt_change = target_alt-controller_desired_alt;
     // adjust desired alt if motors have not hit their limits
-    if ((alt_change<0 && !motors.limit.throttle_lower) || (alt_change>0 && !motors.limit.throttle_upper)) {
+    //if ((alt_change<0 && !motors.limit.throttle_lower) || (alt_change>0 && !motors.limit.throttle_upper)) {
         controller_desired_alt += constrain_float(alt_change, min_climb_rate*0.02f, max_climb_rate*0.02f);
-    }
+    //}
 
     // do not let target altitude get too far from current altitude
     controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-750,current_loc.alt+750);
