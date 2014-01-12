@@ -4,23 +4,25 @@
 
 typedef struct __mavlink_chaser_cmd_t
 {
- int8_t command; ///< command for chacer 
- int8_t mode; ///< chaser mode
+ int16_t throttle; ///< throttle(0-1000)
+ int8_t command; ///< 0:do nothing, 1:change mode, 2:change throttle
+ int8_t state; ///< chaser state
 } mavlink_chaser_cmd_t;
 
-#define MAVLINK_MSG_ID_CHASER_CMD_LEN 2
-#define MAVLINK_MSG_ID_200_LEN 2
+#define MAVLINK_MSG_ID_CHASER_CMD_LEN 4
+#define MAVLINK_MSG_ID_200_LEN 4
 
-#define MAVLINK_MSG_ID_CHASER_CMD_CRC 172
-#define MAVLINK_MSG_ID_200_CRC 172
+#define MAVLINK_MSG_ID_CHASER_CMD_CRC 50
+#define MAVLINK_MSG_ID_200_CRC 50
 
 
 
 #define MAVLINK_MESSAGE_INFO_CHASER_CMD { \
 	"CHASER_CMD", \
-	2, \
-	{  { "command", NULL, MAVLINK_TYPE_INT8_T, 0, 0, offsetof(mavlink_chaser_cmd_t, command) }, \
-         { "mode", NULL, MAVLINK_TYPE_INT8_T, 0, 1, offsetof(mavlink_chaser_cmd_t, mode) }, \
+	3, \
+	{  { "throttle", NULL, MAVLINK_TYPE_INT16_T, 0, 0, offsetof(mavlink_chaser_cmd_t, throttle) }, \
+         { "command", NULL, MAVLINK_TYPE_INT8_T, 0, 2, offsetof(mavlink_chaser_cmd_t, command) }, \
+         { "state", NULL, MAVLINK_TYPE_INT8_T, 0, 3, offsetof(mavlink_chaser_cmd_t, state) }, \
          } \
 }
 
@@ -31,23 +33,26 @@ typedef struct __mavlink_chaser_cmd_t
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param command command for chacer 
- * @param mode chaser mode
+ * @param command 0:do nothing, 1:change mode, 2:change throttle
+ * @param state chaser state
+ * @param throttle throttle(0-1000)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       int8_t command, int8_t mode)
+						       int8_t command, int8_t state, int16_t throttle)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int8_t(buf, 0, command);
-	_mav_put_int8_t(buf, 1, mode);
+	_mav_put_int16_t(buf, 0, throttle);
+	_mav_put_int8_t(buf, 2, command);
+	_mav_put_int8_t(buf, 3, state);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
 	mavlink_chaser_cmd_t packet;
+	packet.throttle = throttle;
 	packet.command = command;
-	packet.mode = mode;
+	packet.state = state;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif
@@ -66,24 +71,27 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t co
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
- * @param command command for chacer 
- * @param mode chaser mode
+ * @param command 0:do nothing, 1:change mode, 2:change throttle
+ * @param state chaser state
+ * @param throttle throttle(0-1000)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           int8_t command,int8_t mode)
+						           int8_t command,int8_t state,int16_t throttle)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int8_t(buf, 0, command);
-	_mav_put_int8_t(buf, 1, mode);
+	_mav_put_int16_t(buf, 0, throttle);
+	_mav_put_int8_t(buf, 2, command);
+	_mav_put_int8_t(buf, 3, state);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
 	mavlink_chaser_cmd_t packet;
+	packet.throttle = throttle;
 	packet.command = command;
-	packet.mode = mode;
+	packet.state = state;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif
@@ -106,7 +114,7 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack_chan(uint8_t system_id, uint8
  */
 static inline uint16_t mavlink_msg_chaser_cmd_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_chaser_cmd_t* chaser_cmd)
 {
-	return mavlink_msg_chaser_cmd_pack(system_id, component_id, msg, chaser_cmd->command, chaser_cmd->mode);
+	return mavlink_msg_chaser_cmd_pack(system_id, component_id, msg, chaser_cmd->command, chaser_cmd->state, chaser_cmd->throttle);
 }
 
 /**
@@ -120,24 +128,26 @@ static inline uint16_t mavlink_msg_chaser_cmd_encode(uint8_t system_id, uint8_t 
  */
 static inline uint16_t mavlink_msg_chaser_cmd_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_chaser_cmd_t* chaser_cmd)
 {
-	return mavlink_msg_chaser_cmd_pack_chan(system_id, component_id, chan, msg, chaser_cmd->command, chaser_cmd->mode);
+	return mavlink_msg_chaser_cmd_pack_chan(system_id, component_id, chan, msg, chaser_cmd->command, chaser_cmd->state, chaser_cmd->throttle);
 }
 
 /**
  * @brief Send a chaser_cmd message
  * @param chan MAVLink channel to send the message
  *
- * @param command command for chacer 
- * @param mode chaser mode
+ * @param command 0:do nothing, 1:change mode, 2:change throttle
+ * @param state chaser state
+ * @param throttle throttle(0-1000)
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int8_t command, int8_t mode)
+static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int8_t command, int8_t state, int16_t throttle)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int8_t(buf, 0, command);
-	_mav_put_int8_t(buf, 1, mode);
+	_mav_put_int16_t(buf, 0, throttle);
+	_mav_put_int8_t(buf, 2, command);
+	_mav_put_int8_t(buf, 3, state);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, buf, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -146,8 +156,9 @@ static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int8_t co
 #endif
 #else
 	mavlink_chaser_cmd_t packet;
+	packet.throttle = throttle;
 	packet.command = command;
-	packet.mode = mode;
+	packet.state = state;
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, (const char *)&packet, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -165,21 +176,31 @@ static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, int8_t co
 /**
  * @brief Get field command from chaser_cmd message
  *
- * @return command for chacer 
+ * @return 0:do nothing, 1:change mode, 2:change throttle
  */
 static inline int8_t mavlink_msg_chaser_cmd_get_command(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int8_t(msg,  0);
+	return _MAV_RETURN_int8_t(msg,  2);
 }
 
 /**
- * @brief Get field mode from chaser_cmd message
+ * @brief Get field state from chaser_cmd message
  *
- * @return chaser mode
+ * @return chaser state
  */
-static inline int8_t mavlink_msg_chaser_cmd_get_mode(const mavlink_message_t* msg)
+static inline int8_t mavlink_msg_chaser_cmd_get_state(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int8_t(msg,  1);
+	return _MAV_RETURN_int8_t(msg,  3);
+}
+
+/**
+ * @brief Get field throttle from chaser_cmd message
+ *
+ * @return throttle(0-1000)
+ */
+static inline int16_t mavlink_msg_chaser_cmd_get_throttle(const mavlink_message_t* msg)
+{
+	return _MAV_RETURN_int16_t(msg,  0);
 }
 
 /**
@@ -191,8 +212,9 @@ static inline int8_t mavlink_msg_chaser_cmd_get_mode(const mavlink_message_t* ms
 static inline void mavlink_msg_chaser_cmd_decode(const mavlink_message_t* msg, mavlink_chaser_cmd_t* chaser_cmd)
 {
 #if MAVLINK_NEED_BYTE_SWAP
+	chaser_cmd->throttle = mavlink_msg_chaser_cmd_get_throttle(msg);
 	chaser_cmd->command = mavlink_msg_chaser_cmd_get_command(msg);
-	chaser_cmd->mode = mavlink_msg_chaser_cmd_get_mode(msg);
+	chaser_cmd->state = mavlink_msg_chaser_cmd_get_state(msg);
 #else
 	memcpy(chaser_cmd, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #endif

@@ -508,6 +508,11 @@ static void init_disarm_motors()
 
     // disable gps velocity based centrefugal force compensation
     ahrs.set_correct_centrifugal(false);
+	
+	// CHASERモード時用モードチェンジ
+	if (control_mode == CHASER) {
+		set_mode(STABILIZE);
+	}
 }
 
 /*****************************************

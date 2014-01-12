@@ -48,7 +48,7 @@ void setup()
 	
 	// 緊急終了処置
 	// 再起動すると実行されるという意味で
-	//emergency_end_process();
+	emergency_end_process();
 	
 	delay(2000);
 }
@@ -60,7 +60,7 @@ void loop(){
 	
 	switch(state){
 		case BEACON_INIT:
-			send_init_cmd();
+			send_change_chaser_state_cmd(CHASER_INIT);
 			delay(3000);
 			
 			state = BEACON_READY;
@@ -71,26 +71,30 @@ void loop(){
 			send_arm_cmd(1.0f);		// アーム命令
 			delay(10000);
 			
-			send_ready_cmd(2);
-			delay(5000);
+			send_throttle_for_chaser_cmd(300);
+			delay(3000);
 			
-			send_ready_cmd(1);
-			delay(5000);
+			send_throttle_for_chaser_cmd(0);
+			delay(3000);
+			
+			send_change_chaser_state_cmd(CHASER_READY);
+			delay(3000);
 			
 			state = BEACON_TAKEOFF;
 			
 			break;
 			
 		case BEACON_TAKEOFF:
-			send_takeoff_cmd();
+			send_change_chaser_state_cmd(CHASER_TAKEOFF);
 			delay(20000);
 			
 			state = BEACON_LAND;
+			state = BEACON_END;		// デバッグ用
 			
 			break;
 
 		case BEACON_LAND:
-			send_land_cmd();
+			send_change_chaser_state_cmd(CHASER_LAND);
 			delay(2000);
 			
 			state = BEACON_END;
@@ -108,7 +112,9 @@ void loop(){
 }
 
 static void emergency_end_process(){
-	send_arm_cmd(0.0f);		// ディスアーム命令
+	send_throttle_for_chaser_cmd(0);
+	delay(2000);
+	send_change_chaser_state_cmd(CHASER_LAND);
 }
 
 static void get_gps_data(){

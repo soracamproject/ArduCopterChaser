@@ -459,7 +459,7 @@ static bool set_mode(uint8_t mode)
 
 		case CHASER:		// CHASERモード
 			success = true;
-			set_chaser_mode(CHASER_INIT);
+			set_chaser_state(CHASER_INIT);
 			break;
 
         default:

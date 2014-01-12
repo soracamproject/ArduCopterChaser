@@ -82,16 +82,17 @@ GCS_Mavlink.pde
    void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
 　GCS_MAVLINK::handleMessageの末尾にcase MAVLINK_MSG_ID_CHASER_CMDの項目を追加。
    send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
+motors.pde
+　init_disarm_motors関数内にCHASER用モード変更を追加
 navigation.pde
 　set_nav_modeのスイッチにNAV_CHASERを追加
 　update_nav_modeのスイッチにNAV_CHASERを追加
 system.pde
-　mode_requires_GPS関数内にCHASER追加　←おそらくGPS F/SをONにしていないと効かないと思われるが要検討★★
 　set_mode関数内にCHASERモードを追加
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml
-　末尾にCHASER_CMDを追加
+　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加
 AC_WPNav.h
 　CHASER関連define追加
 　update_loiter_for_chaserを追加

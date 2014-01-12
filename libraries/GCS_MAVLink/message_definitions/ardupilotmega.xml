@@ -428,8 +428,9 @@
 
 	  <message id="200" name="CHASER_CMD">
         <description>Send chaser information. </description>
-        <field type="int8_t" name="command">command for chacer </field>
-        <field type="int8_t" name="mode">chaser mode</field>
+        <field type="int8_t" name="command">0:do nothing, 1:change mode, 2:change throttle</field>
+        <field type="int8_t" name="state">chaser state</field>
+        <field type="int16_t" name="throttle">throttle(0-1000)</field>
       </message>
 
 	  <message id="201" name="CHASER_BEACON_LOCATION">

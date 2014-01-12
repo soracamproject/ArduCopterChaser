@@ -25,75 +25,37 @@ void send_arm_cmd(float param1){
 	Serial.write(buf, len);
 }
 
-
-// INITコマンド送信(CHASERモードに入れる)
-void send_init_cmd(){
+// CHASER操作コマンド送信
+// uint8_t state			chaser_state（chaser_defines.h参照）
+void send_change_chaser_state_cmd(uint8_t state){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 1;			// とりあえず1で実行ということにする
-	uint8_t mode = CHASER_INIT;
+	uint8_t command = 1;			// 1でモードチェンジ
+	uint16_t throttle = 0;			// なんでもよい
 	
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint16_t len;
 	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, mode);
-	
+	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, state, throttle);
 	len = mavlink_msg_to_send_buffer(buf, &msg);
 	
 	Serial.write(buf, len);
 }
 
-// READYコマンド送信
-// command: (1)Ready, (2)モータを少し回す
-void send_ready_cmd(uint8_t command){
+// CHASER用スロットル操作コマンド送信
+// uint16_t throttle	0-1000
+void send_throttle_for_chaser_cmd(uint16_t throttle){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
-	uint8_t mode = CHASER_READY;
+	uint8_t command = 2;			// 2でスロットル操作
+	uint8_t state = 0;				// なんでもよい
 	
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint16_t len;
 	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, mode);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-
-
-// テイクオフコマンド送信
-void send_takeoff_cmd(){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 1;			// とりあえず1で実行ということにする
-	uint8_t mode = CHASER_TAKEOFF;
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, mode);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-
-// ランディングコマンド送信
-void send_land_cmd(){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 1;			// とりあえず1で実行ということにする
-	uint8_t mode = CHASER_LAND;
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, mode);
-	
+	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, state, throttle);
 	len = mavlink_msg_to_send_buffer(buf, &msg);
 	
 	Serial.write(buf, len);
@@ -101,24 +63,5 @@ void send_land_cmd(){
 
 
 
-/////////////////////////////////////////////////////////
-// 以下、過去のものや参考物
-/////////////////////////////////////////////////////////
 
-/*
-// CHASERコマンド送信
-void send_chaser_cmd(int32_t lat, int32_t lon, int16_t alt){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, lat, lon, alt);
-	
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
-}
-*/
+

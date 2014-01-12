@@ -457,9 +457,9 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 		chaser_destination.x,		//float,airspeed
 		chaser_destination.y,		//float,groundspeed
 		0,							//int16_t,heading
-		g.rc_3.control_in,							//uint16_t,throttle
-		controller_desired_alt,		//float,alt
-		wp_nav.get_desired_alt()	//float,climb
+		0,							//uint16_t,throttle
+		0.0f,						//float,alt
+		0.0f						//float,climb
 	);
 #else
 	// 通常通信版
@@ -2131,13 +2131,14 @@ mission_failed:
 		mavlink_msg_chaser_cmd_decode(msg, &packet);
 		
 		uint8_t command = packet.command;
-		uint8_t mode = packet.mode;
+		uint8_t state = packet.state;
+		uint16_t throttle = packet.throttle;
 		
 		// 実行コマンド分岐
 		switch(command) {
 			case 1:
 			{
-				switch(mode) {
+				switch(state) {
 					case CHASER_INIT:
 						if(control_mode != CHASER) {
 							set_mode(CHASER);
@@ -2145,23 +2146,23 @@ mission_failed:
 						break;
 					
 					case CHASER_READY:
-						if(control_mode == CHASER && chaser_mode == CHASER_INIT) {
+						if(control_mode == CHASER && chaser_state == CHASER_INIT) {
 							// 機体モードがCHASERかつCHASERモードがINITの時のみ実施
-							set_chaser_mode(mode);
+							set_chaser_state(state);
 						}
 						break;
 					
 					case CHASER_TAKEOFF:
-						if(control_mode == CHASER && chaser_mode == CHASER_READY) {
+						if(control_mode == CHASER && chaser_state == CHASER_READY) {
 							// 機体モードがCHASERかつCHASERモードがREADYの時のみ実施
-							set_chaser_mode(mode);
+							set_chaser_state(state);
 						}
 						break;
 					
 					case CHASER_LAND:
-						if(control_mode == CHASER && chaser_mode == CHASER_TAKEOFF) {
-							// 機体モードがCHASERかつCHASERモードがTAKEOFFの時のみ実施
-							set_chaser_mode(mode);
+						if(control_mode == CHASER) {
+							// 機体モードがCHASERの時のみ実施
+							set_chaser_state(state);
 						}
 						break;
 					
@@ -2173,7 +2174,10 @@ mission_failed:
 			
 			case 2:
 			{
-				g.rc_3.control_in = 500;
+				if (control_mode == CHASER) {
+					throttle = constrain_int16(throttle, 0, CHASER_MANUAL_THROTTLE_MAX);		// 暫定で制限
+					g.rc_3.control_in = throttle;
+				}
 				break;
 			}
 			
@@ -2182,6 +2186,8 @@ mission_failed:
 				break;
 			}
 		}
+		
+		break;
 	}
 
     }     // end switch

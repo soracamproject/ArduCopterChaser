@@ -16,6 +16,7 @@
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
 #define CHASER_BEACON_MOVE_DB     150.0f		// CHASER時の不感帯直径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
+#define CHASER_MANUAL_THROTTLE_MAX 600			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定

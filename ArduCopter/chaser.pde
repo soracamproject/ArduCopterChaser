@@ -109,11 +109,11 @@ static bool mode_requires_GPS_chaser(uint8_t mode) {
 	return false;
 }
 
-// CHASERモードをセット（＝変更）する
-static bool set_chaser_mode(uint8_t mode) {
+// CHASERステートをセット（＝変更）する
+static bool set_chaser_state(uint8_t state) {
 	bool success = false;
 	
-	switch(mode) {
+	switch(state) {
 		case CHASER_INIT:
 			// STABILIZEと同様
 			set_yaw_mode(STABILIZE_YAW);
@@ -158,8 +158,9 @@ static bool set_chaser_mode(uint8_t mode) {
 			break;
 		
 		case CHASER_LAND:
-			// LANDモードを流用
-			do_land(NULL);		// NULLでその場に降ろす（暫定）
+			// NULLで降ろす（風に流される、おそらく）
+			// disarmまで完了したらStabilizeに戻るはず
+			do_land(NULL);
 			break;
 		
 		default:
@@ -169,7 +170,7 @@ static bool set_chaser_mode(uint8_t mode) {
 	
 	// CHASERモード更新
 	if (success) {
-		chaser_mode = mode;
+		chaser_state = state;
 	}
 	
 	// 変更が成功したかどうかを返す
