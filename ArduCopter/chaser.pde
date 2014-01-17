@@ -33,9 +33,10 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
 	float dt = (now - last)/1000.0f;			// 前回からの経過時間[sec]
+	float dt_latch = (now - last_latch)/1000.0f;
 	
 	// 経過時間が0以下で無ければ処理を実行する
-	if (dt > 0.0) {
+	if (dt > 0.0 && dt_latch > 0.0) {
 		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
 		Vector3f pos = pv_location_to_vector(*cmd);
 		
@@ -101,7 +102,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				
 				if (chaser_state == CHASER_CHASE) {
 					// chaser_origin,chaser_destinationを更新する
-					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, (now - last_latch)/1000.0f);
+					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt_latch);
 					
 					// update_chaser()を呼ぶ
 					// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
