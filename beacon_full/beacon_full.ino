@@ -17,18 +17,18 @@ uint8_t rawADC[6];
 struct GPS_DATA{
 	union
 	{
-		uint32_t coord;
-		uint8_t data[4];
+		int32_t coord;
+		int8_t data[4];
 	}lat;
 	union
 	{
-		uint32_t coord;
-		uint8_t data[4];
+		int32_t coord;
+		int8_t data[4];
 	}lon;
 	union
 	{
-		uint16_t coord;
-		uint8_t data[2];
+		int16_t coord;
+		int8_t data[2];
 	}alt;
 };
 
@@ -70,10 +70,10 @@ void loop(){
 			break;
 			
 		case BEACON_READY:			
-			send_arm_cmd_for_chaser();		// アーム命令
+			send_arm_cmd_for_chaser();
 			delay(10000);
 			
-			send_change_throttle_cmd_for_chaser(100);
+			send_change_throttle_cmd_for_chaser(200);
 			delay(3000);
 			
 			send_change_throttle_cmd_for_chaser(0);
@@ -102,12 +102,12 @@ void loop(){
 			get_gps_data();
 			
 			// ビーコン位置情報送信
-			send_beacon_loc_cmd();
+			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
 			
 			// 一定時間たったら次のステートに移行
 			if ((millis()-t_first_time_ms) >= 20000) {
 				state = BEACON_STAY;
-				state = BEACON_END;		//デバッグ用
+				//state = BEACON_END;		//デバッグ用
 				first_time = true;
 			}
 			break;
@@ -128,10 +128,10 @@ void loop(){
 			get_gps_data();
 			
 			// ビーコン位置情報送信
-			send_beacon_loc_cmd();
+			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
 			
 			// 一定時間たったら次のステートに移行
-			if ((millis()-t_first_time_ms) >= 5000) {
+			if ((millis()-t_first_time_ms) >= 10000) {
 				state = BEACON_CHASE;
 				first_time = true;
 			}
@@ -153,7 +153,7 @@ void loop(){
 			get_gps_data();
 			
 			// ビーコン位置情報送信
-			send_beacon_loc_cmd();
+			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
 			
 			// 一定時間たったら次のステートに移行
 			if ((millis()-t_first_time_ms) >= 600000) {
@@ -171,21 +171,6 @@ void loop(){
 			break;
 		
 		case BEACON_DEBUG:
-			send_change_chaser_state_cmd(CHASER_INIT);
-			delay(5000);
-			send_arm_cmd(1.0f);
-			delay(10000);
-			send_change_throttle_cmd_for_chaser(300);
-			delay(3000);
-			send_change_throttle_cmd_for_chaser(0);
-			delay(3000);
-			send_change_chaser_state_cmd(CHASER_READY);
-			delay(3000);
-			send_change_chaser_state_cmd(CHASER_TAKEOFF);
-			delay(10000);
-			send_arm_cmd(1.0f);
-			delay(2000);
-			
 			state = BEACON_END;
 			
 			break;

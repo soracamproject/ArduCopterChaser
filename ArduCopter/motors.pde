@@ -116,7 +116,6 @@ static void auto_disarm_check()
 // init_arm_motors - performs arming process including initialisation of barometer and gyros
 static void init_arm_motors()
 {
-	chaser_arm_counter_dbg++;
 	// arming marker
     // Flag used to track if we have armed the motors the first time.
     // This is used to decide if we should run the ground_start routine
@@ -216,8 +215,6 @@ static void init_arm_motors()
 
     // reenable failsafe
     failsafe_enable();
-	
-	chaser_arm_counter_dbg++;
 }
 
 // perform pre-arm checks and set ap.pre_arm_check flag

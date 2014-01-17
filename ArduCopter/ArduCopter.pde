@@ -798,17 +798,15 @@ static Vector3f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_des
 static Vector3f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）
 static Vector3f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
-static bool chaser_reset = false;			// chaserモードをリセットするフラグ（command_logic内、do_chaserで使う、現在は使っていない、今後のため）
-static bool chaser_est_ok = false;			// 位置予測できるかのフラグ（位置配列が埋まって1回後）
-static bool chaser_est_started = false;		// 予測開始フラグ（位置配列が埋まって1回目の処置が終わったら立つ）
+static bool chaser_beacon_loc_reset = false;		// ビーコン位置情報をリセットするフラグ
+static bool chaser_beacon_loc_ok = false;	// ビーコン位置情報が埋まっている状態
+static bool chaser_started = false;			// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
 
 static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（inertial_navで取ってくる）
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
-
-static uint8_t chaser_arm_counter_dbg=0;	// デバッグ用アームカウンタ（墜落要因検討）
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring

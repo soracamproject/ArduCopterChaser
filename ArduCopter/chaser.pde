@@ -4,41 +4,30 @@
 // 関数群
 // ***************************************
 
-static void do_chaser(const struct Location *cmd)
+static void update_chaser_beacon_location(const struct Location *cmd)
 {
-	bool first_time = false;								// 初めてCHASERモードに入ったかどうか
+	static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
 	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
 	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
 	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
 	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
 	static uint32_t last = 0;								// 前回格納時刻[ms]
+	static uint32_t last_latch = 0;							// 前回ラッチ時刻[ms]
 	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
 	
-	// 現在CHASERモードでない場合CHASERモードにする
-	//if (control_mode != CHASER) {
-	//	first_time = true;
-	//	set_mode(CHASER);
-	//}
 	
-	// 初回もしくはCHASERモードリセット時はビーコン位置配列をクリアする
-	if (first_time || chaser_reset) {
-		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {
-			beacon_loc[i].zero();
-		}
+	// リセットフラグが立っている場合はビーコン位置配列をクリアする（現在は使っていない）
+	if (chaser_beacon_loc_reset) {
+		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_loc[i].zero();}
 		beacon_loc_relaxed_last.zero();
 		beacon_loc_relaxed_latch.zero();
 		
 		index = 0;
 		relax_stored_num = 0;
-		chaser_est_ok = false;
-		chaser_reset = false;
-		chaser_est_started = false;
-		
+		chaser_beacon_loc_ok = false;
 		latch_count = 0;
 		
-		Vector3f init_pos = inertial_nav.get_position();
-		init_pos.z = CHASER_ALT;
-		wp_nav.set_loiter_target(init_pos);
+		chaser_beacon_loc_reset = false;
 	}
 	
 	// 前回からの経過時間を計算する
@@ -76,12 +65,13 @@ static void do_chaser(const struct Location *cmd)
 			beacon_loc_relaxed.y = beacon_loc_y_sum / CHASER_TARGET_RELAX_NUM;
 			beacon_loc_relaxed.z = CHASER_ALT;
 			
-			if (!chaser_est_ok) {
+			if (!chaser_beacon_loc_ok) {
 				// 予測不可時（呼び出し1回目）の処置
 				// ビーコン位置配列なまし値前回値とラッチ値を更新し、予測OKとする
 				beacon_loc_relaxed_last = beacon_loc_relaxed;
 				beacon_loc_relaxed_latch = beacon_loc_relaxed;
-				chaser_est_ok = true;
+				last_latch = now;
+				chaser_beacon_loc_ok = true;
 			} else {
 				// 予測可能時の処置
 				
@@ -95,27 +85,28 @@ static void do_chaser(const struct Location *cmd)
 					if (latch_count >= CHASER_BEACON_MOVE_DB_COUNT_THRES) {
 						beacon_loc_relaxed = beacon_loc_relaxed_latch;
 						latch_count = CHASER_BEACON_MOVE_DB_COUNT_THRES;
-					} else {
-						beacon_loc_relaxed_latch = beacon_loc_relaxed;
 					}
 				} else {
 					beacon_loc_relaxed_latch = beacon_loc_relaxed;
+					last_latch = now;
 					latch_count = 0;
 				}
 				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
-				if (!chaser_est_started) {
+				if (!chaser_started && chaser_state == CHASER_CHASE) {
 					chaser_target = inertial_nav.get_position();
 					chaser_target_vel.zero();
-					chaser_est_started = true;
+					chaser_started = true;
 				}
-				// chaser_origin,chaser_destinationを更新する
-				// 前回と異なり、予測はできる状態という考え方
-				update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt);
 				
-				// update_chaser()を呼ぶ
-				// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
-				update_chaser();
+				if (chaser_state == CHASER_CHASE) {
+					// chaser_origin,chaser_destinationを更新する
+					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, (now - last_latch)/1000.0f);
+					
+					// update_chaser()を呼ぶ
+					// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
+					update_chaser();
+				}
 				
 				// ビーコン位置配列なまし前回値を更新する
 				beacon_loc_relaxed_last = beacon_loc_relaxed;
@@ -138,8 +129,10 @@ static void update_chaser() {
 	
 	// CHASERモードの準備ができていない場合はloiterっぽい状態にする
 	// loiterコントローラを呼ぶのみで終了
-	if (!chaser_est_started) {
-		wp_nav.update_loiter();
+	if (!chaser_started) {
+		// もしビーコン位置配列が埋まっている場合はYAWのみ見る（超暫定）
+		if (chaser_beacon_loc_ok) {chaser_yaw_target = calc_chaser_yaw_target(beacon_loc_relaxed_last);}
+		wp_nav.update_loiter_for_chaser();
 		return;
 	}
 	
@@ -151,7 +144,7 @@ static void update_chaser() {
 		target_distance.z = 0;
 		chaser_target.x = chaser_origin.x + target_distance.x;
 		chaser_target.y = chaser_origin.y + target_distance.y;
-		chaser_target.z = CHASER_ALT;
+		chaser_target.z = CHASER_ALT - safe_sqrt(sq(chaser_target.x)+sq(chaser_target.y))*tan(radians(CHASER_ALT_GRADIDENT));		// ダミー高さとして勾配一定で高さを作り出す
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
 		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
@@ -187,7 +180,7 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	// beaconの到達予測位置をdestinationとする
 	chaser_destination.x = 2*beacon_loc.x - beacon_loc_last.x;
 	chaser_destination.y = 2*beacon_loc.y - beacon_loc_last.y;
-	chaser_destination.z = CHASER_ALT;
+	chaser_destination.z = 0;
 	
 	// track関連の計算
 	chaser_track_length.x = chaser_destination.x - chaser_origin.x;
@@ -262,6 +255,8 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_TAKEOFF:
 			if (GPS_ok()) {
+				chaser_beacon_loc_reset = true;
+				
 				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
@@ -279,13 +274,26 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_STAY:
 			if (GPS_ok()) {
-				set_yaw_mode(YAW_HOLD);		// 本当はYAW_CHASERにしたいけどとりあえず暫定
+				chaser_started = false;
+				
+				set_yaw_mode(YAW_CHASER);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
-				set_nav_mode(NAV_WP);
+				set_nav_mode(NAV_CHASER);
 				
 				Vector3f pos = inertial_nav.get_position();
-				wp_nav.set_destination(pos);
+				wp_nav.set_loiter_target(pos);
+				
+				success = true;
+			}
+			break;
+			
+		case CHASER_CHASE:
+			if (GPS_ok()) {
+				set_yaw_mode(YAW_CHASER);
+				set_roll_pitch_mode(ROLL_PITCH_AUTO);
+				set_throttle_mode(THROTTLE_AUTO);
+				set_nav_mode(NAV_CHASER);
 				
 				success = true;
 			}

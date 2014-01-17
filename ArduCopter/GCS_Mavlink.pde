@@ -457,7 +457,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 		chaser_destination.x,		//float,airspeed
 		chaser_destination.y,		//float,groundspeed
 		0,							//int16_t,heading
-		chaser_arm_counter_dbg,		//uint16_t,throttle
+		0,							//uint16_t,throttle
 		0.0f,						//float,alt
 		0.0f						//float,climb
 	);
@@ -2123,8 +2123,9 @@ mission_failed:
     }
 #endif // AC_FENCE ENABLED
 */
-
-	//CHASERモード用
+	// ==============================
+	// CHASER関連
+	// ==============================
 	case MAVLINK_MSG_ID_CHASER_CMD:
 	{
 		mavlink_chaser_cmd_t packet;
@@ -2134,7 +2135,24 @@ mission_failed:
 		
 		break;
 	}
-
+	
+	case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION:
+	{
+		mavlink_chaser_beacon_location_t packet;
+		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
+		
+		tell_command.lat = packet.lat;
+		tell_command.lng = packet.lon;
+		tell_command.alt = packet.alt;
+		
+		//受け取った値が上下限に収まっていたらビーコン位置情報を更新する
+		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
+		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
+			update_chaser_beacon_location(&tell_command);
+		}
+		
+		break;
+	}
     }     // end switch
 } // end handle mavlink
 
