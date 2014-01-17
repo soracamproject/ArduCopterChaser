@@ -8,7 +8,7 @@
 // ==============================
 
 #define CHASER_TARGET_RELAX_NUM   4				// ビーコン位置のなまし数
-#define CHASER_ALT                800.0f		// CHASER時の高さ（とりあえず固定版）、do_c_takeoffでも使用中
+#define CHASER_ALT                200.0f		// CHASER時の高さ（とりあえず固定版）
 #define CHASER_TARGET_ACCEL       300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX     1500.0f		// ターゲットの移動速度の最大値[m/s]
 #define CHASER_YAW_SLEW_RATE      45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
@@ -47,6 +47,7 @@
 #define BEACON_STAY          3
 #define BEACON_CHASE         4
 #define BEACON_LAND          5
+#define BEACON_DEBUG         8
 #define BEACON_END           9
 
 

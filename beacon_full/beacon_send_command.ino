@@ -1,5 +1,5 @@
 // アームコマンド送信 ARM(1),DISARM(0)
-void send_arm_cmd(float param1){
+static void send_arm_cmd(float param1){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
 	uint8_t target_system = 1;		// 1が必要（MISSION PLANNERのFull Param ListでSYSで検索）
@@ -27,18 +27,18 @@ void send_arm_cmd(float param1){
 
 // CHASERステート変更コマンド送信
 // uint8_t state			chaser_state（chaser_defines.h参照）
-void send_change_chaser_state_cmd(uint8_t state){
+static void send_change_chaser_state_cmd(uint8_t state){
 	send_chaser_cmd(1,state,0);
 }
 
 // CHASER用スロットル操作コマンド送信
 // uint16_t throttle		スロットル値（0-1000, control_modeがCHASER時のみ作用する）
-void send_change_throttle_cmd_for_chaser(uint16_t throttle){
+static void send_change_throttle_cmd_for_chaser(uint16_t throttle){
 	send_chaser_cmd(2,0,throttle);
 }
 
 // CHASER用アーム操作コマンド送信
-void send_arm_cmd_for_chaser(){
+static void send_arm_cmd_for_chaser(){
 	send_chaser_cmd(3,0,0);
 }
 
@@ -46,7 +46,7 @@ void send_arm_cmd_for_chaser(){
 // uint8_t command			0: 何もしない, 1: CHASERステート変更, 2: スロットル値変更, 3: アーム命令
 // uint8_t state			chaser_state（chaser_defines.h参照）
 // uint16_t throttle		スロットル値（0-1000, control_modeがCHASER時のみ作用する）
-void send_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle){
+static void send_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
 	
@@ -59,6 +59,12 @@ void send_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle){
 	
 	Serial.write(buf, len);
 }
+
+static void send_beacon_loc_cmd(){
+	
+}
+
+
 
 
 

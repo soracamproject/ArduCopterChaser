@@ -81,8 +81,6 @@ chaser_defines.h
 　すべて　新規ファイル
 chaser.pde
 　すべて　新規作成ファイル
-commands_logic.pde
-　do_chaser関数を新規作成
 config.h
 　#define OPTFLOW          ENABLED　→　DISABLED　容量削減のため
 　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため
@@ -99,6 +97,7 @@ GCS_Mavlink.pde
 　GCS_MAVLINK::handleMessageの末尾にcase MAVLINK_MSG_ID_CHASER_CMDの項目を追加。
    send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
 motors.pde
+　init_arm_motors関数内にデバッグ用項目追加（chaser_arm_counter_abgのインクリメント、一時的）
 　init_disarm_motors関数内にCHASER用モード変更を追加
 navigation.pde
 　set_nav_modeのスイッチにNAV_CHASERを追加

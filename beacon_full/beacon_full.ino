@@ -55,23 +55,25 @@ void setup()
 
 
 void loop(){
-	static uint32_t now = 0;
+	static uint32_t t_first_time_ms = 0;
+	static bool first_time = true;
 	static uint8_t state = BEACON_INIT;
+	//state = BEACON_DEBUG;		// デバッグモード
 	
 	switch(state){
 		case BEACON_INIT:
 			send_change_chaser_state_cmd(CHASER_INIT);
-			delay(3000);
+			delay(5000);
 			
 			state = BEACON_READY;
-			//state = BEACON_END;	//デバッグ用
+			
 			break;
 			
-		case BEACON_READY:
-			send_arm_cmd(1.0f);		// アーム命令
+		case BEACON_READY:			
+			send_arm_cmd_for_chaser();		// アーム命令
 			delay(10000);
 			
-			send_change_throttle_cmd_for_chaser(300);
+			send_change_throttle_cmd_for_chaser(100);
 			delay(3000);
 			
 			send_change_throttle_cmd_for_chaser(0);
@@ -85,14 +87,81 @@ void loop(){
 			break;
 			
 		case BEACON_TAKEOFF:
-			send_change_chaser_state_cmd(CHASER_TAKEOFF);
-			delay(20000);
+			// ステート変更時に実施されるもの
+			if (first_time) {
+				t_first_time_ms = millis();
+				send_change_chaser_state_cmd(CHASER_TAKEOFF);
+				first_time = false;
+			}
 			
-			state = BEACON_LAND;
-			state = BEACON_END;		// デバッグ用
+			// GPSデータ初期化（ロスト対策）
+			gps_data.lat.coord = 1;
+			gps_data.lon.coord = 1;
 			
+			// GPSデータ取得
+			get_gps_data();
+			
+			// ビーコン位置情報送信
+			send_beacon_loc_cmd();
+			
+			// 一定時間たったら次のステートに移行
+			if ((millis()-t_first_time_ms) >= 20000) {
+				state = BEACON_STAY;
+				state = BEACON_END;		//デバッグ用
+				first_time = true;
+			}
 			break;
-
+			
+		case BEACON_STAY:
+			// ステート変更時に実施されるもの
+			if (first_time) {
+				t_first_time_ms = millis();
+				send_change_chaser_state_cmd(CHASER_STAY);
+				first_time = false;
+			}
+			
+			// GPSデータ初期化（ロスト対策）
+			gps_data.lat.coord = 1;
+			gps_data.lon.coord = 1;
+			
+			// GPSデータ取得
+			get_gps_data();
+			
+			// ビーコン位置情報送信
+			send_beacon_loc_cmd();
+			
+			// 一定時間たったら次のステートに移行
+			if ((millis()-t_first_time_ms) >= 5000) {
+				state = BEACON_CHASE;
+				first_time = true;
+			}
+			break;
+			
+		case BEACON_CHASE:
+			// ステート変更時に実施されるもの
+			if (first_time) {
+				t_first_time_ms = millis();
+				send_change_chaser_state_cmd(CHASER_CHASE);
+				first_time = false;
+			}
+			
+			// GPSデータ初期化（ロスト対策）
+			gps_data.lat.coord = 1;
+			gps_data.lon.coord = 1;
+			
+			// GPSデータ取得
+			get_gps_data();
+			
+			// ビーコン位置情報送信
+			send_beacon_loc_cmd();
+			
+			// 一定時間たったら次のステートに移行
+			if ((millis()-t_first_time_ms) >= 600000) {
+				state = BEACON_LAND;
+				first_time = true;
+			}
+			break;
+			
 		case BEACON_LAND:
 			send_change_chaser_state_cmd(CHASER_LAND);
 			delay(2000);
@@ -101,6 +170,26 @@ void loop(){
 			
 			break;
 		
+		case BEACON_DEBUG:
+			send_change_chaser_state_cmd(CHASER_INIT);
+			delay(5000);
+			send_arm_cmd(1.0f);
+			delay(10000);
+			send_change_throttle_cmd_for_chaser(300);
+			delay(3000);
+			send_change_throttle_cmd_for_chaser(0);
+			delay(3000);
+			send_change_chaser_state_cmd(CHASER_READY);
+			delay(3000);
+			send_change_chaser_state_cmd(CHASER_TAKEOFF);
+			delay(10000);
+			send_arm_cmd(1.0f);
+			delay(2000);
+			
+			state = BEACON_END;
+			
+			break;
+			
 		case BEACON_END:
 			// 何もしない
 			break;

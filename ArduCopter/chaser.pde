@@ -4,6 +4,128 @@
 // 関数群
 // ***************************************
 
+static void do_chaser(const struct Location *cmd)
+{
+	bool first_time = false;								// 初めてCHASERモードに入ったかどうか
+	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
+	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
+	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
+	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
+	static uint32_t last = 0;								// 前回格納時刻[ms]
+	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
+	
+	// 現在CHASERモードでない場合CHASERモードにする
+	//if (control_mode != CHASER) {
+	//	first_time = true;
+	//	set_mode(CHASER);
+	//}
+	
+	// 初回もしくはCHASERモードリセット時はビーコン位置配列をクリアする
+	if (first_time || chaser_reset) {
+		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {
+			beacon_loc[i].zero();
+		}
+		beacon_loc_relaxed_last.zero();
+		beacon_loc_relaxed_latch.zero();
+		
+		index = 0;
+		relax_stored_num = 0;
+		chaser_est_ok = false;
+		chaser_reset = false;
+		chaser_est_started = false;
+		
+		latch_count = 0;
+		
+		Vector3f init_pos = inertial_nav.get_position();
+		init_pos.z = CHASER_ALT;
+		wp_nav.set_loiter_target(init_pos);
+	}
+	
+	// 前回からの経過時間を計算する
+	uint32_t now = hal.scheduler->millis();
+	float dt = (now - last)/1000.0f;			// 前回からの経過時間[sec]
+	
+	// 経過時間が0以下で無ければ処理を実行する
+	if (dt > 0.0) {
+		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
+		Vector3f pos = pv_location_to_vector(*cmd);
+		
+		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
+		beacon_loc[index] = pos;
+		index++;
+		if (index == CHASER_TARGET_RELAX_NUM) {
+			index = 0;
+		}
+		relax_stored_num++;
+		if (relax_stored_num >= CHASER_TARGET_RELAX_NUM) {
+			relax_stored_num = CHASER_TARGET_RELAX_NUM;
+		}
+		
+		// 格納時刻を更新
+		last = now;
+		
+		// 配列が全て埋まっている場合のみchaser_origin,chaser_destinationを更新する
+		if (relax_stored_num == CHASER_TARGET_RELAX_NUM) {
+			// xyは平均位置、zはとりあえず固定
+			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {
+				beacon_loc_x_sum += beacon_loc[i].x;
+				beacon_loc_y_sum += beacon_loc[i].y;
+			}
+			Vector3f beacon_loc_relaxed;
+			beacon_loc_relaxed.x = beacon_loc_x_sum / CHASER_TARGET_RELAX_NUM;
+			beacon_loc_relaxed.y = beacon_loc_y_sum / CHASER_TARGET_RELAX_NUM;
+			beacon_loc_relaxed.z = CHASER_ALT;
+			
+			if (!chaser_est_ok) {
+				// 予測不可時（呼び出し1回目）の処置
+				// ビーコン位置配列なまし値前回値とラッチ値を更新し、予測OKとする
+				beacon_loc_relaxed_last = beacon_loc_relaxed;
+				beacon_loc_relaxed_latch = beacon_loc_relaxed;
+				chaser_est_ok = true;
+			} else {
+				// 予測可能時の処置
+				
+				// 不感帯内かの判断
+				float beacon_movement = safe_sqrt(
+				  (beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)*(beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)
+				 +(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y)*(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y));
+				
+				if (beacon_movement < CHASER_BEACON_MOVE_DB) {
+					latch_count++;
+					if (latch_count >= CHASER_BEACON_MOVE_DB_COUNT_THRES) {
+						beacon_loc_relaxed = beacon_loc_relaxed_latch;
+						latch_count = CHASER_BEACON_MOVE_DB_COUNT_THRES;
+					} else {
+						beacon_loc_relaxed_latch = beacon_loc_relaxed;
+					}
+				} else {
+					beacon_loc_relaxed_latch = beacon_loc_relaxed;
+					latch_count = 0;
+				}
+				
+				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
+				if (!chaser_est_started) {
+					chaser_target = inertial_nav.get_position();
+					chaser_target_vel.zero();
+					chaser_est_started = true;
+				}
+				// chaser_origin,chaser_destinationを更新する
+				// 前回と異なり、予測はできる状態という考え方
+				update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt);
+				
+				// update_chaser()を呼ぶ
+				// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
+				update_chaser();
+				
+				// ビーコン位置配列なまし前回値を更新する
+				beacon_loc_relaxed_last = beacon_loc_relaxed;
+			}
+		} else {
+			// 無し
+		}
+	}
+}
+
 // ターゲット位置を動かしloiterコントローラを呼ぶ
 static void update_chaser() {
 	static uint32_t last = 0;		// 前回この関数を呼び出した時刻[ms]
@@ -195,6 +317,10 @@ void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
 		case 1:
 			switch(state) {
 				case CHASER_INIT:
+					if (chaser_state_change_check(state)) {
+						set_mode(CHASER);
+					}
+					break;
 				case CHASER_READY:
 				case CHASER_TAKEOFF:
 				case CHASER_STAY:
