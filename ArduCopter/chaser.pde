@@ -126,7 +126,6 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_READY:
 			if (GPS_ok()) {
-				// オリジナル
 				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
@@ -141,7 +140,6 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_TAKEOFF:
 			if (GPS_ok()) {
-				// オリジナル
 				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
@@ -152,6 +150,20 @@ static bool set_chaser_state(uint8_t state) {
 				wp_nav.set_destination(pos);
 				
 				reset_I_all();		//フリップを防ぐためで要検討項目らしい（APMから持ってきている）
+				
+				success = true;
+			}
+			break;
+		
+		case CHASER_STAY:
+			if (GPS_ok()) {
+				set_yaw_mode(YAW_HOLD);		// 本当はYAW_CHASERにしたいけどとりあえず暫定
+				set_roll_pitch_mode(ROLL_PITCH_AUTO);
+				set_throttle_mode(THROTTLE_AUTO);
+				set_nav_mode(NAV_WP);
+				
+				Vector3f pos = inertial_nav.get_position();
+				wp_nav.set_destination(pos);
 				
 				success = true;
 			}
@@ -176,4 +188,87 @@ static bool set_chaser_state(uint8_t state) {
 	// 変更が成功したかどうかを返す
 	return success;
 }
+
+void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
+	// 実行コマンド分岐
+	switch(command) {
+		case 1:
+			switch(state) {
+				case CHASER_INIT:
+				case CHASER_READY:
+				case CHASER_TAKEOFF:
+				case CHASER_STAY:
+				case CHASER_CHASE:
+				case CHASER_LAND:
+					if (chaser_state_change_check(state)) {
+						set_chaser_state(state);
+					}
+					break;
+				
+				default:
+					break;
+			}
+			break;
+		
+		case 2:
+			// CHASERモード時のみスロットル値を変更する
+			// アーム後マニュアルスロットルモードでスロットル値を軽く変更しないとテイクオフできない
+			if (control_mode == CHASER) {
+				throttle = constrain_int16(throttle, 0, CHASER_MANUAL_THROTTLE_MAX);		// 暫定で制限
+				g.rc_3.control_in = throttle;
+			}
+			break;
+		
+		case 3:
+			// CHASERモードかつCHASER_INITステートかつディスアーム時のみアームする
+			if ((control_mode==CHASER && chaser_state==CHASER_INIT) && !motors.armed()) {
+				// run pre_arm_checks and arm_checks and display failures
+				pre_arm_checks(true);
+				if(ap.pre_arm_check && arm_checks(true)) {
+					init_arm_motors();
+				}
+			}
+			break;
+			
+		default:
+			break;
+	}
+}
+
+static bool chaser_state_change_check(uint8_t state) {
+	switch(state) {
+		case CHASER_INIT:
+			if(control_mode != CHASER) {return true;}
+			break;
+		
+		case CHASER_READY:
+			if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}
+			break;
+		
+		case CHASER_TAKEOFF:
+			if(control_mode==CHASER && chaser_state==CHASER_READY) {return true;}
+			break;
+		
+		case CHASER_STAY:
+			if(control_mode==CHASER && (chaser_state==CHASER_TAKEOFF || chaser_state==CHASER_CHASE)) {return true;}
+			break;
+		
+		case CHASER_CHASE:
+			if(control_mode==CHASER && chaser_state==CHASER_STAY) {return true;}
+			break;
+		
+		case CHASER_LAND:
+			if(control_mode == CHASER) {return true;}
+			break;
+		
+		default:
+			break;
+	}
+	
+	return false;
+}
+
+
+
+
 

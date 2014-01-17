@@ -71,10 +71,10 @@ void loop(){
 			send_arm_cmd(1.0f);		// アーム命令
 			delay(10000);
 			
-			send_throttle_for_chaser_cmd(300);
+			send_change_throttle_cmd_for_chaser(300);
 			delay(3000);
 			
-			send_throttle_for_chaser_cmd(0);
+			send_change_throttle_cmd_for_chaser(0);
 			delay(3000);
 			
 			send_change_chaser_state_cmd(CHASER_READY);
@@ -112,7 +112,7 @@ void loop(){
 }
 
 static void emergency_end_process(){
-	send_throttle_for_chaser_cmd(0);
+	send_change_throttle_cmd_for_chaser(0);
 	delay(2000);
 	send_change_chaser_state_cmd(CHASER_LAND);
 }

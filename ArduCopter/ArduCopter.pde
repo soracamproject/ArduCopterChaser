@@ -806,7 +806,9 @@ static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[cent
 
 static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（inertial_navで取ってくる）
 
-static int8_t chaser_state;					// CHASERステート（定義はchaser_defines.h参照）
+static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
+
+static uint8_t chaser_arm_counter_dbg=0;	// デバッグ用アームカウンタ（墜落要因検討）
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring

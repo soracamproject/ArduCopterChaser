@@ -25,31 +25,30 @@ void send_arm_cmd(float param1){
 	Serial.write(buf, len);
 }
 
-// CHASER操作コマンド送信
+// CHASERステート変更コマンド送信
 // uint8_t state			chaser_state（chaser_defines.h参照）
 void send_change_chaser_state_cmd(uint8_t state){
-	uint8_t system_id = 20;			// 実績値20
-	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 1;			// 1でモードチェンジ
-	uint16_t throttle = 0;			// なんでもよい
-	
-	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	uint16_t len;
-	
-	mavlink_msg_chaser_cmd_pack(system_id, component_id, &msg, command, state, throttle);
-	len = mavlink_msg_to_send_buffer(buf, &msg);
-	
-	Serial.write(buf, len);
+	send_chaser_cmd(1,state,0);
 }
 
 // CHASER用スロットル操作コマンド送信
-// uint16_t throttle	0-1000
-void send_throttle_for_chaser_cmd(uint16_t throttle){
+// uint16_t throttle		スロットル値（0-1000, control_modeがCHASER時のみ作用する）
+void send_change_throttle_cmd_for_chaser(uint16_t throttle){
+	send_chaser_cmd(2,0,throttle);
+}
+
+// CHASER用アーム操作コマンド送信
+void send_arm_cmd_for_chaser(){
+	send_chaser_cmd(3,0,0);
+}
+
+// CHASER操作コマンド送信
+// uint8_t command			0: 何もしない, 1: CHASERステート変更, 2: スロットル値変更, 3: アーム命令
+// uint8_t state			chaser_state（chaser_defines.h参照）
+// uint16_t throttle		スロットル値（0-1000, control_modeがCHASER時のみ作用する）
+void send_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
-	uint8_t command = 2;			// 2でスロットル操作
-	uint8_t state = 0;				// なんでもよい
 	
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
@@ -60,7 +59,6 @@ void send_throttle_for_chaser_cmd(uint16_t throttle){
 	
 	Serial.write(buf, len);
 }
-
 
 
 

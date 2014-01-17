@@ -457,7 +457,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 		chaser_destination.x,		//float,airspeed
 		chaser_destination.y,		//float,groundspeed
 		0,							//int16_t,heading
-		0,							//uint16_t,throttle
+		chaser_arm_counter_dbg,		//uint16_t,throttle
 		0.0f,						//float,alt
 		0.0f						//float,climb
 	);
@@ -2130,62 +2130,7 @@ mission_failed:
 		mavlink_chaser_cmd_t packet;
 		mavlink_msg_chaser_cmd_decode(msg, &packet);
 		
-		uint8_t command = packet.command;
-		uint8_t state = packet.state;
-		uint16_t throttle = packet.throttle;
-		
-		// 実行コマンド分岐
-		switch(command) {
-			case 1:
-			{
-				switch(state) {
-					case CHASER_INIT:
-						if(control_mode != CHASER) {
-							set_mode(CHASER);
-						}
-						break;
-					
-					case CHASER_READY:
-						if(control_mode == CHASER && chaser_state == CHASER_INIT) {
-							// 機体モードがCHASERかつCHASERモードがINITの時のみ実施
-							set_chaser_state(state);
-						}
-						break;
-					
-					case CHASER_TAKEOFF:
-						if(control_mode == CHASER && chaser_state == CHASER_READY) {
-							// 機体モードがCHASERかつCHASERモードがREADYの時のみ実施
-							set_chaser_state(state);
-						}
-						break;
-					
-					case CHASER_LAND:
-						if(control_mode == CHASER) {
-							// 機体モードがCHASERの時のみ実施
-							set_chaser_state(state);
-						}
-						break;
-					
-					default:
-						break;
-				}
-				break;
-			}
-			
-			case 2:
-			{
-				if (control_mode == CHASER) {
-					throttle = constrain_int16(throttle, 0, CHASER_MANUAL_THROTTLE_MAX);		// 暫定で制限
-					g.rc_3.control_in = throttle;
-				}
-				break;
-			}
-			
-			default:
-			{
-				break;
-			}
-		}
+		handle_chaser_cmd(packet.command, packet.state, packet.throttle);
 		
 		break;
 	}
