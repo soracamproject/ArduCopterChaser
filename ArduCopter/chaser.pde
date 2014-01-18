@@ -373,7 +373,7 @@ void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
 static bool chaser_state_change_check(uint8_t state) {
 	switch(state) {
 		case CHASER_INIT:
-			if(control_mode != CHASER) {return true;}
+			if(control_mode == STABILIZE) {return true;}
 			break;
 		
 		case CHASER_READY:

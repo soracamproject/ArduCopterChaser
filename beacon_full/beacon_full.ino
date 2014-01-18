@@ -73,12 +73,11 @@ void loop(){
 			send_arm_cmd_for_chaser();
 			delay(10000);
 			
-			send_change_throttle_cmd_for_chaser(200);
+			send_change_throttle_cmd_for_chaser(250);
 			delay(3000);
-			
 			send_change_throttle_cmd_for_chaser(0);
 			delay(3000);
-			
+						
 			send_change_chaser_state_cmd(CHASER_READY);
 			delay(3000);
 			
@@ -196,7 +195,7 @@ static void get_gps_data(){
 	i2c_rep_start(I2C_ADDRESS<<1);//スタートコンディションの発行＋コントロールバイトの送信
 	i2c_write(I2C_ROM_ADDRESS);//ROMアドレス送信
 	//delay(1500);
-	delay(700);
+	delay(800);
 	
 	i2c_rep_start((I2C_ADDRESS<<1)|1);//スタートコンディションの再発行+コントロールバイトの送信
 	gps_data.lat.data[0] = i2c_readNak();  //ROMデータ受信＋ストップコンディションの発行

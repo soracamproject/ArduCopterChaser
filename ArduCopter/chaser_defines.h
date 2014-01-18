@@ -8,16 +8,16 @@
 // ==============================
 
 #define CHASER_TARGET_RELAX_NUM    4			// ビーコン位置のなまし数
-#define CHASER_ALT                 500.0f		// CHASER時の高さ（とりあえず固定版）
+#define CHASER_ALT                 650.0f		// CHASER時の高さ（とりあえず固定版）
 #define CHASER_TARGET_ACCEL        300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX      1500.0f		// ターゲットの移動速度の最大値[m/s]
 #define CHASER_YAW_SLEW_RATE       45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
 #define CHASER_OVERRUN_SEC         0.0f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
-#define CHASER_BEACON_MOVE_DB      200.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
+#define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
-#define CHASER_ALT_GRADIDENT       10			// CHASER時ダミー高さ計算用勾配[deg]（homeからこの角度で下る）
+#define CHASER_ALT_GRADIDENT       8			// CHASER時ダミー高さ計算用勾配[deg]（homeからこの角度で下る）
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
