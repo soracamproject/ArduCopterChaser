@@ -277,7 +277,7 @@ static bool set_chaser_state(uint8_t state) {
 			if (GPS_ok()) {
 				chaser_started = false;
 				
-				set_yaw_mode(YAW_CHASER);
+				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);
@@ -291,7 +291,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 		case CHASER_CHASE:
 			if (GPS_ok()) {
-				set_yaw_mode(YAW_CHASER);
+				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);
