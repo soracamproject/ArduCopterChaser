@@ -457,9 +457,9 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 		chaser_destination.x,		//float,airspeed
 		chaser_destination.y,		//float,groundspeed
 		baro_alt,					//int16_t,heading
-		0,							//uint16_t,throttle
+		sonar_alt,							//uint16_t,throttle
 		chaser_copter_pos.z,			//float,alt
-		0.0f						//float,climb
+		chaser_baro_temp						//float,climb
 	);
 #else
 	// 通常通信版

@@ -808,6 +808,8 @@ static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（i
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
+static float chaser_baro_temp;				// chaserデバッグ用の機体位置
+
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
 ////////////////////////////////////////////////////////////////////////////////
@@ -2168,6 +2170,10 @@ static void update_altitude()
 
     // read in sonar altitude
     sonar_alt           = read_sonar();
+	
+	// chaserデバッグ用気圧計温度
+	chaser_baro_temp    = barometer.get_temperature();
+	
 #endif  // HIL_MODE == HIL_MODE_ATTITUDE
 
     // write altitude info to dataflash logs
