@@ -133,7 +133,8 @@ static void update_chaser() {
 	if (!chaser_started) {
 		// もしビーコン位置配列が埋まっている場合はYAWのみ見る（超暫定）
 		if (chaser_beacon_loc_ok) {chaser_yaw_target = calc_chaser_yaw_target(beacon_loc_relaxed_last);}
-		wp_nav.update_loiter_for_chaser();
+		chaser_dest_vel.zero();
+		wp_nav.update_loiter_for_chaser(chaser_dest_vel);
 		return;
 	}
 	
@@ -171,7 +172,7 @@ static void update_chaser() {
 		wp_nav.set_loiter_target(chaser_target);
 	}
 	// loiterコントローラを呼ぶ
-	wp_nav.update_loiter_for_chaser();
+	wp_nav.update_loiter_for_chaser(chaser_dest_vel);
 }
 
 static void update_chaser_origin_destination(const Vector3f beacon_loc, const Vector3f beacon_loc_last, float dt) {
@@ -277,7 +278,7 @@ static bool set_chaser_state(uint8_t state) {
 			if (GPS_ok()) {
 				chaser_started = false;
 				
-				set_yaw_mode(YAW_CHASER);
+				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);
@@ -291,7 +292,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 		case CHASER_CHASE:
 			if (GPS_ok()) {
-				set_yaw_mode(YAW_CHASER);
+				set_yaw_mode(YAW_HOLD);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);

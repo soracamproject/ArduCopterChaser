@@ -77,6 +77,7 @@ ArduCopter.pde
 　"CHASERモード用グローバル変数"の項目を追加
 　set_yaw_mode関数内にYAW_CHASERのcaseを追加
 　update_yaw_mode関数内にYAW_CHASERのcaseを追加
+　update_altitude関数内に気圧計の温度取得を追加（デバッグ用）
 chaser_defines.h
 　すべて　新規ファイル
 chaser.pde

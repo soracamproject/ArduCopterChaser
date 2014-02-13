@@ -304,7 +304,7 @@ void AC_WPNav::update_loiter()
 }
 
 /// update_loiter_for_chaser CHASER時のloiterコントローラ。
-void AC_WPNav::update_loiter_for_chaser()
+void AC_WPNav::update_loiter_for_chaser(const Vector3f& target_vel_ff)
 {
     // calculate dt
     uint32_t now = hal.scheduler->millis();
@@ -318,29 +318,27 @@ void AC_WPNav::update_loiter_for_chaser()
     }
 
     // reset step back to 0 if 0.1 seconds has passed and we completed the last full cycle
-    if (dt > 0.095f && _loiter_step > 3) {
+    if (dt > 0.095f && _loiter_step > 2) {
         _loiter_step = 0;
     }
 
     // run loiter steps
     switch (_loiter_step) {
         case 0:
-            // 何もしない
+            // 一段ずらした
             _loiter_dt = dt;
             _loiter_last_update = now;
+			
+			// run loiter's position to velocity step
+            get_loiter_position_to_velocity_chaser(_loiter_dt, target_vel_ff);
             _loiter_step++;
             break;
         case 1:
-            // run loiter's position to velocity step
-            get_loiter_position_to_velocity_chaser(_loiter_dt);
-            _loiter_step++;
-            break;
-        case 2:
             // run loiter's velocity to acceleration step
             get_loiter_velocity_to_acceleration(desired_vel.x, desired_vel.y, _loiter_dt);
             _loiter_step++;
             break;
-        case 3:
+        case 2:
             // run loiter's acceleration to lean angle step
             get_loiter_acceleration_to_lean_angles(desired_accel.x, desired_accel.y);
             _loiter_step++;
@@ -663,7 +661,7 @@ void AC_WPNav::get_loiter_position_to_velocity(float dt, float max_speed_cms)
 }
 
 // CHASERモード用関数
-void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt)
+void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt, const Vector3f& target_vel_ff)
 {
 	Vector3f curr = _inav->get_position();
 	float dist_error_total;
@@ -698,6 +696,10 @@ void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt)
 		// xy方向に分解
 		desired_vel.x = vel_total*dist_error.x/dist_error_total;
 		desired_vel.y = vel_total*dist_error.y/dist_error_total;
+		
+		// フィードフォワード制御
+		desired_vel.x += target_vel_ff.x;
+		desired_vel.y += target_vel_ff.y;
 	}
 	
 	// call velocity to acceleration controller

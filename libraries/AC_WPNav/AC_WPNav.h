@@ -38,9 +38,9 @@
 /// ========================================
 /// CHASER用定義
 /// ========================================
-#define WPNAV_CHASER_LOITER_KP          1.5f		// CHASER時のLoiterのP項[-]
-#define WPNAV_CHASER_LOITER_VEL_MAX     1200.0f		// CHASER時の最大速度[cm/s]
-#define WPNAV_CHASER_LOITER_ACCEL       980.0f		// CHASER時の加速度[cm/s/s]
+#define WPNAV_CHASER_LOITER_KP          0.5f		// CHASER時のLoiterのP項[-]
+#define WPNAV_CHASER_LOITER_VEL_MAX     300.0f		// CHASER時の最大速度[cm/s]
+#define WPNAV_CHASER_LOITER_ACCEL       100.0f		// CHASER時の加速度[cm/s/s]
 
 
 class AC_WPNav
@@ -161,7 +161,7 @@ public:
 	/// ========================================
 	
 	/// update_loiter_for_chaser CHASER時のloiterコントローラ。速度限界が高い。10Hzで呼ぶこと。
-	void update_loiter_for_chaser();
+	void update_loiter_for_chaser(const Vector3f& target_vel_ff);
 
 
 protected:
@@ -204,7 +204,7 @@ protected:
 	/// ========================================
 	
 	/// get_loiter_position_to_velocity - CHASER用
-	void get_loiter_position_to_velocity_chaser(float dt);
+	void get_loiter_position_to_velocity_chaser(float dt, const Vector3f& target_vel_ff);
 
 
     // references to inertial nav and ahrs libraries
