@@ -2,8 +2,38 @@
 // *************************************************************************************************
 // ごちゃまぜで定義
 // *************************************************************************************************
-#define GPS_SERIAL					0
 #define GPS_BAUD					38400
+
+// ***********************************************************************************
+// GPS関連変数
+// ***********************************************************************************
+static int32_t  GPS_read[2] = {0,0};
+static uint8_t  GPS_numSats = 0;
+static int16_t  GPS_altitude = 0;                                // GPS altitude      - unit: meter
+static uint8_t  GPS_2dfix = 0;
+static uint8_t  GPS_3dfix = 0;
+static uint16_t	GPS_ground_speed = 0;             // ground speed from gps m/s*100
+static uint16_t GPS_ground_ground_course = 0;	          // GPS ground course
+static uint32_t GPS_time = 0;
+static uint32_t GPS_debug = 0;
+
+#define LAT  0
+#define LON  1
+
+struct flags_struct {
+  uint8_t GPS_FIX :1 ;
+} f;
+
+
+// ***********************************************************************************
+// LED関連変数
+// ***********************************************************************************
+static uint32_t lastframe_time = 0;
+static uint32_t _statusled_timer = 0;
+static int8_t   _statusled_blinks = 0;
+static boolean  _statusled_state = 0;
+
+#define BLINK_INTERVAL  90
 
 
 // *************************************************************************************************
@@ -45,7 +75,7 @@ prog_char UBLOX_INIT[] PROGMEM = {                          // PROGMEM array mus
 };
 
 
-void GPS_SerialInit() {
+void init_gps() {
 	Serial.begin(GPS_BAUD);
 	delay(1000);
 	//Set speed
@@ -75,6 +105,22 @@ void GPS_SerialInit() {
 	}
 }
 
+void get_gps_new_data() {
+	while (Serial.available()) {
+		if (GPS_UBLOX_newFrame(Serial.read())) {
+			// We have a valid GGA frame and we have lat and lon in GPS_read_lat and GPS_read_lon, apply moving average filter
+			// this is a little bit tricky since the 1e7/deg precision easily overflow a long, so we apply the filter to the fractions
+			// only, and strip the full degrees part. This means that we have to disable the filter if we are very close to a degree line
+			
+			// Think this line was in the wrong place. The way it used to be the lastframe_time was only updated when we had a (3D fix && we have 5 or more sats).
+			// This stops the single led blink from indicating a good packet, and the double led blink from indicating a 2D fix
+			lastframe_time = millis();	// とりあえずコメントアウト
+			
+			gps_data.lat.coord = GPS_read[LAT];
+			gps_data.lon.coord = GPS_read[LON];
+		}
+	}
+}
 
 // **************************************************************************************
 // UBLOX関連の変数
