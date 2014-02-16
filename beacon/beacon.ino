@@ -6,9 +6,11 @@
 // ***********************************************************************************
 // シリアルポート
 // ***********************************************************************************
-FastSerialPort0(Serial);	// GPS用
-FastSerialPort3(Serial3);	// XBee用
+FastSerialPort1(gps_serial);	// GPS用
+FastSerialPort2(xbee_serial);	// XBee用
 
+//#define gps_serial Serial1
+//#define xbee_serial Serial2
 
 // ***********************************************************************************
 // GPS関連変数
@@ -33,7 +35,7 @@ void setup()
 	beacon_loc_data.baro = 0;
 	
 	// XBee初期化
-	Serial3.begin(57600);
+	xbee_serial.begin(57600);
 	
 	// 緊急終了処置
 	// 再起動すると実行されるという意味で
@@ -155,7 +157,11 @@ void loop(){
 		case BEACON_DEBUG:
 			//state = BEACON_END;
 			get_gps_new_data();
-			Serial.write(beacon_loc_data.lat);
+			//beacon_loc_data.lat = 1;
+			beacon_loc_data.lon = 343434567;
+			xbee_serial.println(beacon_loc_data.lat);
+			xbee_serial.println(beacon_loc_data.lon);
+			delay(1000);
 			
 			break;
 			

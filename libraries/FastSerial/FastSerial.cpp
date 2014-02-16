@@ -47,8 +47,8 @@ FastSerial::Buffer	__FastSerial__rxBuffer[FS_MAX_PORTS];
 FastSerial::Buffer	__FastSerial__txBuffer[FS_MAX_PORTS];
 
 // Default buffer sizes
-#define RX_BUFFER_SIZE  128
-#define TX_BUFFER_SIZE  64
+#define RX_BUFFER_SIZE  256		//福田変更、元は128
+#define TX_BUFFER_SIZE  128		//福田変更、元は64
 #define BUFFER_MAX      512
 
 // Constructor /////////////////////////////////////////////////////////////////

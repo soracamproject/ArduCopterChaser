@@ -1,9 +1,9 @@
 // *************************************************************************************************
 // GPS,LED関連define
 // *************************************************************************************************
-#define GPS_BAUD					38400
-#define LAT  0
-#define LON  1
+#define GPS_BAUD        38400
+#define LAT             0
+#define LON             1
 #define BLINK_INTERVAL  90
 
 // ***********************************************************************************
@@ -17,7 +17,7 @@ static uint8_t  GPS_3dfix = 0;
 static uint16_t	GPS_ground_speed = 0;             // ground speed from gps m/s*100
 static uint16_t GPS_ground_ground_course = 0;	          // GPS ground course
 static uint32_t GPS_time = 0;
-static uint32_t GPS_debug = 0;
+static uint32_t GPS_debug = 1234;
 
 // ***********************************************************************************
 // LED関連変数
@@ -167,7 +167,7 @@ void print_P(const char *str)
   while (true) {
     val=pgm_read_byte(str);
     if (!val) break;
-    Serial.write(val);
+    gps_serial.write(val);
     str++;
   }
 }
@@ -195,11 +195,11 @@ prog_char UBLOX_INIT[] PROGMEM = {                          // PROGMEM array mus
 
 
 void init_gps() {
-	Serial.begin(GPS_BAUD);
+	gps_serial.begin(GPS_BAUD);
 	delay(1000);
 	//Set speed
 	for(uint8_t i=0;i<5;i++){
-		Serial.begin(init_speed[i]);          // switch UART speed for sending SET BAUDRATE command (NMEA mode)
+		gps_serial.begin(init_speed[i]);          // switch UART speed for sending SET BAUDRATE command (NMEA mode)
 		#if (GPS_BAUD==19200)
 			print_P(PSTR("$PUBX,41,1,0003,0001,19200,0*23\r\n"));     // 19200 baud - minimal speed for 5Hz update rate
 		#endif  
@@ -215,9 +215,9 @@ void init_gps() {
 		delay(300);		//Wait for init 
 	}
 	delay(200);
-	Serial.begin(GPS_BAUD);
+	gps_serial.begin(GPS_BAUD);
 	for(uint8_t i=0; i<sizeof(UBLOX_INIT); i++) {                        // send configuration data in UBX protocol
-		Serial.write(pgm_read_byte(UBLOX_INIT+i));
+		gps_serial.write(pgm_read_byte(UBLOX_INIT+i));
 		delay(5);	//simulating a 38400baud pace (or less), otherwise commands are not accepted by the device. 
 					//I found this delay essential for the V1 CN-06 GPS (The one without EEPROM)
 					//Also essential is the bridging of pins 13- and 14 on the NEO-6M module	
@@ -225,8 +225,10 @@ void init_gps() {
 }
 
 void get_gps_new_data() {
-	while (Serial.available()) {
-		if (GPS_UBLOX_newFrame(Serial.read())) {
+	beacon_loc_data.lat = 111;
+	while (gps_serial.available()) {
+		beacon_loc_data.lat++;
+		if (GPS_UBLOX_newFrame(gps_serial.read())) {
 			// We have a valid GGA frame and we have lat and lon in GPS_read_lat and GPS_read_lon, apply moving average filter
 			// this is a little bit tricky since the 1e7/deg precision easily overflow a long, so we apply the filter to the fractions
 			// only, and strip the full degrees part. This means that we have to disable the filter if we are very close to a degree line
@@ -260,31 +262,37 @@ bool GPS_UBLOX_newFrame(uint8_t data)
         switch(_step) {
 
         case 1:
+			//beacon_loc_data.lat = 333;
             if (PREAMBLE2 == data) {
                 _step++;
                 break;
             }
             _step = 0;
         case 0:
+			//beacon_loc_data.lat = data;
             if(PREAMBLE1 == data) _step++;
             break;
 
         case 2:
+			beacon_loc_data.lat = 555;
             _step++;
 	    _class = data;
 	    _ck_b = _ck_a = data;			// reset the checksum accumulators
             break;
         case 3:
+			beacon_loc_data.lat = 666;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
             _msg_id = data;
             break;
         case 4:
+			beacon_loc_data.lat = 777;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
             _payload_length = data;				// payload length low byte
             break;
         case 5:
+			beacon_loc_data.lat = 888;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
 
@@ -296,6 +304,7 @@ bool GPS_UBLOX_newFrame(uint8_t data)
             _payload_counter = 0;				// prepare to receive payload
             break;
         case 6:
+			beacon_loc_data.lat = 999;
             _ck_b += (_ck_a += data);			// checksum byte
 			if (_payload_counter < sizeof(_buffer)) {
 				_buffer.bytes[_payload_counter] = data;
@@ -304,10 +313,12 @@ bool GPS_UBLOX_newFrame(uint8_t data)
                 _step++;
             break;
         case 7:
+			beacon_loc_data.lat = 101010;
             _step++;
             if (_ck_a != data) _step = 0;						// bad checksum
             break;
         case 8:
+			beacon_loc_data.lat = 111111;
             _step = 0;
             if (_ck_b != data)  break; 							// bad checksum
 			//GPS_read[LAT] = GPS_debug;		//デバッグ用
