@@ -3,40 +3,34 @@
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
-//XBee用
+// ***********************************************************************************
+// シリアルポート
+// ***********************************************************************************
 FastSerialPort0(Serial);	// GPS用
 FastSerialPort3(Serial3);	// XBee用
 
-uint8_t rawADC[6];
 
-//GPS用
-struct GPS_DATA{
-	union
-	{
-		int32_t coord;
-		int8_t data[4];
-	}lat;
-	union
-	{
-		int32_t coord;
-		int8_t data[4];
-	}lon;
-	union
-	{
-		int16_t coord;
-		int8_t data[2];
-	}alt;
-};
+// ***********************************************************************************
+// GPS関連変数
+// ***********************************************************************************
+static struct {
+	int32_t lat;
+	int32_t lon;
+	int16_t baro;
+} beacon_loc_data;
 
-static GPS_DATA gps_data;
 
+
+// ***********************************************************************************
+// 主要部分
+// ***********************************************************************************
 void setup()
 {
 	// GPS初期化
 	init_gps();
-	gps_data.lat.coord = 0;
-	gps_data.lon.coord = 0;
-	gps_data.alt.coord = 0;
+	beacon_loc_data.lat = 0;
+	beacon_loc_data.lon = 0;
+	beacon_loc_data.baro = 0;
 	
 	// XBee初期化
 	Serial3.begin(57600);
@@ -89,14 +83,14 @@ void loop(){
 			}
 			
 			// GPSデータ初期化（ロスト対策）
-			gps_data.lat.coord = 1;
-			gps_data.lon.coord = 1;
+			beacon_loc_data.lat = 1;
+			beacon_loc_data.lon = 1;
 			
 			// GPSデータ取得
 			//get_gps_data();
 			
 			// ビーコン位置情報送信
-			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
+			send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,0);
 			
 			// 一定時間たったら次のステートに移行
 			if ((millis()-t_first_time_ms) >= 20000) {
@@ -115,11 +109,11 @@ void loop(){
 			}
 			
 			// GPSデータ初期化（ロスト対策）
-			gps_data.lat.coord = 1;
-			gps_data.lon.coord = 1;
+			beacon_loc_data.lat = 1;
+			beacon_loc_data.lon = 1;
 			
 			// ビーコン位置情報送信
-			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
+			send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,0);
 			
 			// 一定時間たったら次のステートに移行
 			if ((millis()-t_first_time_ms) >= 10000) {
@@ -137,11 +131,11 @@ void loop(){
 			}
 			
 			// GPSデータ初期化（ロスト対策）
-			gps_data.lat.coord = 1;
-			gps_data.lon.coord = 1;
+			beacon_loc_data.lat = 1;
+			beacon_loc_data.lat = 1;
 			
 			// ビーコン位置情報送信
-			send_beacon_loc(gps_data.lat.coord,gps_data.lon.coord,0);
+			send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,0);
 			
 			// 一定時間たったら次のステートに移行
 			if ((millis()-t_first_time_ms) >= 600000) {
@@ -161,7 +155,7 @@ void loop(){
 		case BEACON_DEBUG:
 			//state = BEACON_END;
 			get_gps_new_data();
-			Serial.write(gps_data.lat.coord);
+			Serial.write(beacon_loc_data.lat);
 			
 			break;
 			

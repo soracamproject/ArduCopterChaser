@@ -1,8 +1,10 @@
-
 // *************************************************************************************************
-// ごちゃまぜで定義
+// GPS,LED関連define
 // *************************************************************************************************
 #define GPS_BAUD					38400
+#define LAT  0
+#define LON  1
+#define BLINK_INTERVAL  90
 
 // ***********************************************************************************
 // GPS関連変数
@@ -17,14 +19,6 @@ static uint16_t GPS_ground_ground_course = 0;	          // GPS ground course
 static uint32_t GPS_time = 0;
 static uint32_t GPS_debug = 0;
 
-#define LAT  0
-#define LON  1
-
-struct flags_struct {
-  uint8_t GPS_FIX :1 ;
-} f;
-
-
 // ***********************************************************************************
 // LED関連変数
 // ***********************************************************************************
@@ -33,7 +27,132 @@ static uint32_t _statusled_timer = 0;
 static int8_t   _statusled_blinks = 0;
 static boolean  _statusled_state = 0;
 
-#define BLINK_INTERVAL  90
+// **************************************************************************************
+// UBLOX関連の変数（必要性を精査できていない）
+// **************************************************************************************
+struct ubx_header {
+	uint8_t preamble1;
+	uint8_t preamble2;
+	uint8_t msg_class;
+	uint8_t msg_id;
+	uint16_t length;
+};
+
+struct ubx_nav_posllh {
+	uint32_t	time;				// GPS msToW
+	int32_t		longitude;
+	int32_t		latitude;
+	int32_t		altitude_ellipsoid;
+	int32_t		altitude_msl;
+	int32_t	horizontal_accuracy;
+	uint32_t	vertical_accuracy;
+};
+
+struct ubx_nav_status {
+	uint32_t	time;				// GPS msToW
+	uint8_t		fix_type;
+	uint8_t		fix_status;
+	uint8_t		differential_status;
+	uint8_t		res;
+	uint32_t	time_to_first_fix;
+	uint32_t	uptime;				// milliseconds
+};
+
+struct ubx_nav_solution {
+	uint32_t	time;
+	int32_t		time_nsec;
+	int16_t		week;
+	uint8_t		fix_type;
+	uint8_t		fix_status;
+	int32_t		ecef_x;
+	int32_t		ecef_y;
+	int32_t		ecef_z;
+	uint32_t	position_accuracy_3d;
+	int32_t		ecef_x_velocity;
+	int32_t		ecef_y_velocity;
+	int32_t		ecef_z_velocity;
+	uint32_t	speed_accuracy;
+	uint16_t	position_DOP;
+	uint8_t		res;
+	uint8_t		satellites;
+	uint32_t	res2;
+};
+
+struct ubx_nav_velned {
+	uint32_t	time;				// GPS msToW
+	int32_t		ned_north;
+	int32_t		ned_east;
+	int32_t		ned_down;
+	uint32_t	speed_3d;
+	uint32_t	speed_2d;
+	int32_t		heading_2d;
+	uint32_t	speed_accuracy;
+	uint32_t	heading_accuracy;
+};
+
+enum ubs_protocol_bytes {
+	PREAMBLE1 = 0xb5,
+	PREAMBLE2 = 0x62,
+	CLASS_NAV = 0x01,
+	CLASS_ACK = 0x05,
+	CLASS_CFG = 0x06,
+	MSG_ACK_NACK = 0x00,
+	MSG_ACK_ACK = 0x01,
+	MSG_POSLLH = 0x2,
+	MSG_STATUS = 0x3,
+	MSG_SOL = 0x6,
+	MSG_VELNED = 0x12,
+	MSG_CFG_PRT = 0x00,
+	MSG_CFG_RATE = 0x08,
+	MSG_CFG_SET_RATE = 0x01,
+	MSG_CFG_NAV_SETTINGS = 0x24
+};
+
+enum ubs_nav_fix_type {
+	FIX_NONE = 0,
+	FIX_DEAD_RECKONING = 1,
+	FIX_2D = 2,
+	FIX_3D = 3,
+	FIX_GPS_DEAD_RECKONING = 4,
+	FIX_TIME = 5
+};
+
+enum ubx_nav_status_bits {
+	NAV_STATUS_FIX_VALID = 1
+};
+
+// Packet checksum accumulators
+static uint8_t		_ck_a;
+static uint8_t		_ck_b;
+
+// State machine state
+static uint8_t		_step;
+static uint8_t		_msg_id;
+static uint16_t	_payload_length;
+static uint16_t	_payload_counter;
+
+static bool        next_fix;
+
+static uint8_t     _class;
+
+// do we have new position information?
+static bool		_new_position;
+
+// do we have new speed information?
+static bool		_new_speed;
+
+static uint8_t	    _disable_counter;
+
+// Receive buffer
+static union {
+	ubx_nav_posllh		posllh;
+	ubx_nav_status		status;
+	ubx_nav_solution	solution;
+	ubx_nav_velned		velned;
+	uint8_t				bytes[];
+} _buffer;
+
+
 
 
 // *************************************************************************************************
@@ -116,133 +235,11 @@ void get_gps_new_data() {
 			// This stops the single led blink from indicating a good packet, and the double led blink from indicating a 2D fix
 			lastframe_time = millis();	// とりあえずコメントアウト
 			
-			gps_data.lat.coord = GPS_read[LAT];
-			gps_data.lon.coord = GPS_read[LON];
+			beacon_loc_data.lat = GPS_read[LAT];
+			beacon_loc_data.lon = GPS_read[LON];
 		}
 	}
 }
-
-// **************************************************************************************
-// UBLOX関連の変数
-// **************************************************************************************
-
-struct ubx_header {
-	uint8_t preamble1;
-	uint8_t preamble2;
-	uint8_t msg_class;
-	uint8_t msg_id;
-	uint16_t length;
-};
-
-struct ubx_nav_posllh {
-	uint32_t	time;				// GPS msToW
-	int32_t		longitude;
-	int32_t		latitude;
-	int32_t		altitude_ellipsoid;
-	int32_t		altitude_msl;
-	int32_t	horizontal_accuracy;
-	uint32_t	vertical_accuracy;
-};
-    struct ubx_nav_status {
-        uint32_t	time;				// GPS msToW
-        uint8_t		fix_type;
-        uint8_t		fix_status;
-        uint8_t		differential_status;
-        uint8_t		res;
-        uint32_t	time_to_first_fix;
-        uint32_t	uptime;				// milliseconds
-    };
-    struct ubx_nav_solution {
-        uint32_t	time;
-        int32_t		time_nsec;
-        int16_t		week;
-        uint8_t		fix_type;
-        uint8_t		fix_status;
-        int32_t		ecef_x;
-        int32_t		ecef_y;
-        int32_t		ecef_z;
-        uint32_t	position_accuracy_3d;
-        int32_t		ecef_x_velocity;
-        int32_t		ecef_y_velocity;
-        int32_t		ecef_z_velocity;
-        uint32_t	speed_accuracy;
-        uint16_t	position_DOP;
-        uint8_t		res;
-        uint8_t		satellites;
-        uint32_t	res2;
-    };
-    struct ubx_nav_velned {
-        uint32_t	time;				// GPS msToW
-        int32_t		ned_north;
-        int32_t		ned_east;
-        int32_t		ned_down;
-        uint32_t	speed_3d;
-        uint32_t	speed_2d;
-        int32_t		heading_2d;
-        uint32_t	speed_accuracy;
-        uint32_t	heading_accuracy;
-    };
-
-    enum ubs_protocol_bytes {
-        PREAMBLE1 = 0xb5,
-        PREAMBLE2 = 0x62,
-        CLASS_NAV = 0x01,
-        CLASS_ACK = 0x05,
-        CLASS_CFG = 0x06,
-		MSG_ACK_NACK = 0x00,
-		MSG_ACK_ACK = 0x01,
-        MSG_POSLLH = 0x2,
-        MSG_STATUS = 0x3,
-        MSG_SOL = 0x6,
-        MSG_VELNED = 0x12,
-        MSG_CFG_PRT = 0x00,
-        MSG_CFG_RATE = 0x08,
-        MSG_CFG_SET_RATE = 0x01,
-		MSG_CFG_NAV_SETTINGS = 0x24
-    };
-    enum ubs_nav_fix_type {
-        FIX_NONE = 0,
-        FIX_DEAD_RECKONING = 1,
-        FIX_2D = 2,
-        FIX_3D = 3,
-        FIX_GPS_DEAD_RECKONING = 4,
-        FIX_TIME = 5
-    };
-    enum ubx_nav_status_bits {
-        NAV_STATUS_FIX_VALID = 1
-    };
-
-    // Packet checksum accumulators
-    static uint8_t		_ck_a;
-    static uint8_t		_ck_b;
-
-    // State machine state
-    static uint8_t		_step;
-    static uint8_t		_msg_id;
-    static uint16_t	_payload_length;
-    static uint16_t	_payload_counter;
-
-    static bool        next_fix;
-    
-    static uint8_t     _class;
-
-	// do we have new position information?
-	static bool		_new_position;
-
-	// do we have new speed information?
-	static bool		_new_speed;
-
-	static uint8_t	    _disable_counter;
-
-    // Receive buffer
-    static union {
-        ubx_nav_posllh		posllh;
-        ubx_nav_status		status;
-        ubx_nav_solution	solution;
-        ubx_nav_velned		velned;
-        uint8_t	bytes[];
-    } _buffer;
-
 
 
 // **************************************************************************************
