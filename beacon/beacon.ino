@@ -157,8 +157,6 @@ void loop(){
 		case BEACON_DEBUG:
 			//state = BEACON_END;
 			get_gps_new_data();
-			//beacon_loc_data.lat = 1;
-			beacon_loc_data.lon = 343434567;
 			xbee_serial.println(beacon_loc_data.lat);
 			xbee_serial.println(beacon_loc_data.lon);
 			delay(1000);

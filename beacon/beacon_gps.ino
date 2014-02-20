@@ -225,9 +225,7 @@ void init_gps() {
 }
 
 void get_gps_new_data() {
-	beacon_loc_data.lat = 111;
 	while (gps_serial.available()) {
-		beacon_loc_data.lat++;
 		if (GPS_UBLOX_newFrame(gps_serial.read())) {
 			// We have a valid GGA frame and we have lat and lon in GPS_read_lat and GPS_read_lon, apply moving average filter
 			// this is a little bit tricky since the 1e7/deg precision easily overflow a long, so we apply the filter to the fractions
@@ -235,7 +233,7 @@ void get_gps_new_data() {
 			
 			// Think this line was in the wrong place. The way it used to be the lastframe_time was only updated when we had a (3D fix && we have 5 or more sats).
 			// This stops the single led blink from indicating a good packet, and the double led blink from indicating a 2D fix
-			lastframe_time = millis();	// とりあえずコメントアウト
+			lastframe_time = millis();
 			
 			beacon_loc_data.lat = GPS_read[LAT];
 			beacon_loc_data.lon = GPS_read[LON];
@@ -262,37 +260,31 @@ bool GPS_UBLOX_newFrame(uint8_t data)
         switch(_step) {
 
         case 1:
-			//beacon_loc_data.lat = 333;
             if (PREAMBLE2 == data) {
                 _step++;
                 break;
             }
             _step = 0;
         case 0:
-			//beacon_loc_data.lat = data;
             if(PREAMBLE1 == data) _step++;
             break;
 
         case 2:
-			beacon_loc_data.lat = 555;
             _step++;
 	    _class = data;
 	    _ck_b = _ck_a = data;			// reset the checksum accumulators
             break;
         case 3:
-			beacon_loc_data.lat = 666;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
             _msg_id = data;
             break;
         case 4:
-			beacon_loc_data.lat = 777;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
             _payload_length = data;				// payload length low byte
             break;
         case 5:
-			beacon_loc_data.lat = 888;
             _step++;
             _ck_b += (_ck_a += data);			// checksum byte
 
@@ -304,7 +296,6 @@ bool GPS_UBLOX_newFrame(uint8_t data)
             _payload_counter = 0;				// prepare to receive payload
             break;
         case 6:
-			beacon_loc_data.lat = 999;
             _ck_b += (_ck_a += data);			// checksum byte
 			if (_payload_counter < sizeof(_buffer)) {
 				_buffer.bytes[_payload_counter] = data;
@@ -313,15 +304,12 @@ bool GPS_UBLOX_newFrame(uint8_t data)
                 _step++;
             break;
         case 7:
-			beacon_loc_data.lat = 101010;
             _step++;
             if (_ck_a != data) _step = 0;						// bad checksum
             break;
         case 8:
-			beacon_loc_data.lat = 111111;
             _step = 0;
             if (_ck_b != data)  break; 							// bad checksum
-			//GPS_read[LAT] = GPS_debug;		//デバッグ用
 			if (UBLOX_parse_gps())  { parsed = true; }
         } //end switch
    return parsed;
@@ -334,7 +322,6 @@ bool UBLOX_parse_gps(void){
 			GPS_time = _buffer.posllh.time;
 			GPS_read[LON] = _buffer.posllh.longitude;
 			GPS_read[LAT] = _buffer.posllh.latitude;
-			//GPS_read[LAT] = GPS_debug;
 			GPS_altitude = _buffer.posllh.altitude_msl / 10 /100;      //alt in m
 			GPS_3dfix = next_fix;
 			_new_position = true;
