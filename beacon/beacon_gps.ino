@@ -17,7 +17,7 @@ static uint8_t  GPS_3dfix = 0;
 static uint16_t	GPS_ground_speed = 0;             // ground speed from gps m/s*100
 static uint16_t GPS_ground_ground_course = 0;	          // GPS ground course
 static uint32_t GPS_time = 0;
-static uint32_t GPS_debug = 1234;
+
 
 // ***********************************************************************************
 // LED関連変数
@@ -318,7 +318,6 @@ bool GPS_UBLOX_newFrame(uint8_t data)
 bool UBLOX_parse_gps(void){
 	switch (_msg_id) {
 		case MSG_POSLLH:
-			GPS_debug++;
 			GPS_time = _buffer.posllh.time;
 			GPS_read[LON] = _buffer.posllh.longitude;
 			GPS_read[LAT] = _buffer.posllh.latitude;
