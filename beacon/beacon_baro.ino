@@ -72,7 +72,7 @@ void baro_init(){
 	i2c_MS561101BA_readCalibration();
 	delay(10);
 	i2c_MS561101BA_UT_Start(); 
-	ms561101ba_ctx.deadline = curr_time+10000; 
+	ms561101ba_ctx.deadline = now_us+10000; 
 }
 
 // read uncompensated temperature value: send command first
@@ -137,8 +137,8 @@ uint8_t baro_update() {                          // first UT conversion is start
 		i2c_MS561101BA_Calculate();
 	return 2;
 	}
-	if ((int16_t)(curr_time - ms561101ba_ctx.deadline)<0) return 0;
-	ms561101ba_ctx.deadline = curr_time+10000;  // UT and UP conversion take 8.5ms so we do next reading after 10ms 
+	if ((int16_t)(now_us - ms561101ba_ctx.deadline)<0) return 0;
+	ms561101ba_ctx.deadline = now_us+10000;  // UT and UP conversion take 8.5ms so we do next reading after 10ms 
 	if (ms561101ba_ctx.state == 0) {
 		i2c_MS561101BA_UT_Read();
 		i2c_MS561101BA_UP_Start();
