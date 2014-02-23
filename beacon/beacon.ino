@@ -1,5 +1,6 @@
 #include <BC_Compat.h>
 #include <FastSerial.h>
+#include <Bounce2.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
@@ -55,33 +56,61 @@ int16_t i2c_errors_count = 0;
 #define LED3   7
 #define LED4   9
 
+// ***********************************************************************************
+// ボタン関連変数および宣言
+// ***********************************************************************************
+#define BUTTON1   33
+#define BUTTON2   32
+Bounce button1 = Bounce();
+Bounce button2 = Bounce();
+
 
 // ***********************************************************************************
 // 主要部分
 // ***********************************************************************************
 void setup()
 {
+	// LED初期化と全点灯
+	pinMode(LED1, OUTPUT);	// R
+	pinMode(LED2, OUTPUT);	// Y
+	pinMode(LED3, OUTPUT);	// G
+	pinMode(LED4, OUTPUT);	// B
+	digitalWrite(LED1, HIGH);
+	digitalWrite(LED2, HIGH);
+	digitalWrite(LED3, HIGH);
+	digitalWrite(LED4, HIGH);
+	
 	// GPS初期化
 	init_gps();
 	
 	// XBee初期化
 	xbee_serial.begin(57600);
 	
-	// LED初期化
-	pinMode(LED1, OUTPUT);	// R
-	pinMode(LED2, OUTPUT);	// Y
-	pinMode(LED3, OUTPUT);	// G
-	pinMode(LED4, OUTPUT);	// B
+	
+	// BUTTON初期化
+	pinMode(BUTTON1, INPUT);
+	pinMode(BUTTON2, INPUT);
+	digitalWrite(BUTTON1,HIGH);		//内部プルアップ
+	digitalWrite(BUTTON2,HIGH);		//内部プルアップ
+	button1.attach(BUTTON1);
+	button2.attach(BUTTON2);
+	button1.interval(5);			//たぶんチャタ防止間隔5ms
+	button2.interval(5);			//たぶんチャタ防止間隔5ms
+	
+	// LED全消灯
 	digitalWrite(LED1, LOW);
 	digitalWrite(LED2, LOW);
 	digitalWrite(LED3, LOW);
 	digitalWrite(LED4, LOW);
 	
-	// とりあえず10秒待ち
-	delay(1000);
+	// とりあえず2秒待ち
+	delay(2000);
 	
 	state = BEACON_DEBUG;		// デバッグモード
 	
+	// 前回時間の初期化
+	prev_us = micros();
+	prev_ms = millis();
 }
 
 // *****開発の考え方（暫定）*****
@@ -324,6 +353,14 @@ void loop(){
 			}
 			
 			// ２．毎回実行される部分
+			button1.update();
+			if(button1.read() == HIGH){
+				digitalWrite(LED1, LOW);
+				digitalWrite(LED2, LOW);
+				digitalWrite(LED3, LOW);
+				digitalWrite(LED4, LOW);
+				first_time = true;
+			}
 			
 			// ３．サブステートコントロール部分
 			switch(sc[state].substate){
@@ -362,18 +399,6 @@ void loop(){
 				break;
 				
 				case 4:
-				// 5秒待ってLED全消灯
-				if((now_ms - sc[state].prev_ms) > 5000){
-					digitalWrite(LED1, LOW);
-					digitalWrite(LED2, LOW);
-					digitalWrite(LED3, LOW);
-					digitalWrite(LED4, LOW);
-					sc[state].substate++;
-					sc[state].prev_ms = now_ms;
-				}
-				break;
-				
-				case 5:
 				// 何もしない
 				break;
 			}
