@@ -32,21 +32,23 @@ static struct{
 static struct {
 	int32_t lat;
 	int32_t lon;
-	int16_t baro;
+	int32_t pressure;
 } beacon_loc_data;
 
 // ***********************************************************************************
 // 気圧センサ(baro)関連変数
 // ***********************************************************************************
-int32_t baro_pressure;
-int16_t baro_temp;
-int32_t baro_pressure_sum;
+// 圧力の単位は[x100 mbar][x1000kPa] ※101300、つまり[Pa]
+// 温度の単位は[x100 deg.C] ※2300が23deg.C
+int32_t baro_pressure_raw;	// センサ生値（取得中に使用）
+int32_t baro_pressure_sum;	// 平均を取るための積算値（16個積算して4ビットシフト）
+int32_t baro_pressure;		// センサ平均値
+int16_t baro_temp;			// センサ温度（何も手を入れていない）
 
 // ***********************************************************************************
 // I2C関連変数
 // ***********************************************************************************
 int16_t i2c_errors_count = 0;
-
 
 // ***********************************************************************************
 // LED関連変数および宣言
@@ -86,6 +88,8 @@ void setup()
 	// XBee初期化
 	xbee_serial.begin(57600);
 	
+	// Baro初期化
+	baro_init();
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -399,6 +403,16 @@ void loop(){
 				break;
 				
 				case 4:
+				// 1秒おきに位置情報送信（テキストで）
+				if((now_ms - sc[state].prev_ms) > 1000){
+					xbee_serial.println(beacon_loc_data.lat);
+					xbee_serial.println(beacon_loc_data.lon);
+					xbee_serial.println(beacon_loc_data.pressure);
+					
+				}
+				break;
+				
+				case 5:
 				// 何もしない
 				break;
 			}
@@ -434,5 +448,8 @@ void loop(){
 	} else {
 		// **ToDo**
 		// センサ値取得部
+		baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
+		beacon_loc_data.pressure = baro_pressure;
+		get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data 
 	}
 }

@@ -6,14 +6,14 @@ typedef struct __mavlink_chaser_beacon_location_t
 {
  int32_t lat; ///< latitude (degree * 10^7)
  int32_t lon; ///< longitude (degree * 10^7)
- int16_t alt; ///< altitude (cm)
+ int32_t pressure; ///< pressure (*100 mbar = Pa)
 } mavlink_chaser_beacon_location_t;
 
-#define MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN 10
-#define MAVLINK_MSG_ID_201_LEN 10
+#define MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN 12
+#define MAVLINK_MSG_ID_201_LEN 12
 
-#define MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_CRC 228
-#define MAVLINK_MSG_ID_201_CRC 228
+#define MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_CRC 103
+#define MAVLINK_MSG_ID_201_CRC 103
 
 
 
@@ -22,7 +22,7 @@ typedef struct __mavlink_chaser_beacon_location_t
 	3, \
 	{  { "lat", NULL, MAVLINK_TYPE_INT32_T, 0, 0, offsetof(mavlink_chaser_beacon_location_t, lat) }, \
          { "lon", NULL, MAVLINK_TYPE_INT32_T, 0, 4, offsetof(mavlink_chaser_beacon_location_t, lon) }, \
-         { "alt", NULL, MAVLINK_TYPE_INT16_T, 0, 8, offsetof(mavlink_chaser_beacon_location_t, alt) }, \
+         { "pressure", NULL, MAVLINK_TYPE_INT32_T, 0, 8, offsetof(mavlink_chaser_beacon_location_t, pressure) }, \
          } \
 }
 
@@ -35,24 +35,24 @@ typedef struct __mavlink_chaser_beacon_location_t
  *
  * @param lat latitude (degree * 10^7)
  * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param pressure pressure (*100 mbar = Pa)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_beacon_location_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       int32_t lat, int32_t lon, int16_t alt)
+						       int32_t lat, int32_t lon, int32_t pressure)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN];
 	_mav_put_int32_t(buf, 0, lat);
 	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int32_t(buf, 8, pressure);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN);
 #else
 	mavlink_chaser_beacon_location_t packet;
 	packet.lat = lat;
 	packet.lon = lon;
-	packet.alt = alt;
+	packet.pressure = pressure;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN);
 #endif
@@ -73,25 +73,25 @@ static inline uint16_t mavlink_msg_chaser_beacon_location_pack(uint8_t system_id
  * @param msg The MAVLink message to compress the data into
  * @param lat latitude (degree * 10^7)
  * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param pressure pressure (*100 mbar = Pa)
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_beacon_location_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           int32_t lat,int32_t lon,int16_t alt)
+						           int32_t lat,int32_t lon,int32_t pressure)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN];
 	_mav_put_int32_t(buf, 0, lat);
 	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int32_t(buf, 8, pressure);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN);
 #else
 	mavlink_chaser_beacon_location_t packet;
 	packet.lat = lat;
 	packet.lon = lon;
-	packet.alt = alt;
+	packet.pressure = pressure;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN);
 #endif
@@ -114,7 +114,7 @@ static inline uint16_t mavlink_msg_chaser_beacon_location_pack_chan(uint8_t syst
  */
 static inline uint16_t mavlink_msg_chaser_beacon_location_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_chaser_beacon_location_t* chaser_beacon_location)
 {
-	return mavlink_msg_chaser_beacon_location_pack(system_id, component_id, msg, chaser_beacon_location->lat, chaser_beacon_location->lon, chaser_beacon_location->alt);
+	return mavlink_msg_chaser_beacon_location_pack(system_id, component_id, msg, chaser_beacon_location->lat, chaser_beacon_location->lon, chaser_beacon_location->pressure);
 }
 
 /**
@@ -128,7 +128,7 @@ static inline uint16_t mavlink_msg_chaser_beacon_location_encode(uint8_t system_
  */
 static inline uint16_t mavlink_msg_chaser_beacon_location_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_chaser_beacon_location_t* chaser_beacon_location)
 {
-	return mavlink_msg_chaser_beacon_location_pack_chan(system_id, component_id, chan, msg, chaser_beacon_location->lat, chaser_beacon_location->lon, chaser_beacon_location->alt);
+	return mavlink_msg_chaser_beacon_location_pack_chan(system_id, component_id, chan, msg, chaser_beacon_location->lat, chaser_beacon_location->lon, chaser_beacon_location->pressure);
 }
 
 /**
@@ -137,17 +137,17 @@ static inline uint16_t mavlink_msg_chaser_beacon_location_encode_chan(uint8_t sy
  *
  * @param lat latitude (degree * 10^7)
  * @param lon longitude (degree * 10^7)
- * @param alt altitude (cm)
+ * @param pressure pressure (*100 mbar = Pa)
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_beacon_location_send(mavlink_channel_t chan, int32_t lat, int32_t lon, int16_t alt)
+static inline void mavlink_msg_chaser_beacon_location_send(mavlink_channel_t chan, int32_t lat, int32_t lon, int32_t pressure)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN];
 	_mav_put_int32_t(buf, 0, lat);
 	_mav_put_int32_t(buf, 4, lon);
-	_mav_put_int16_t(buf, 8, alt);
+	_mav_put_int32_t(buf, 8, pressure);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION, buf, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_CRC);
@@ -158,7 +158,7 @@ static inline void mavlink_msg_chaser_beacon_location_send(mavlink_channel_t cha
 	mavlink_chaser_beacon_location_t packet;
 	packet.lat = lat;
 	packet.lon = lon;
-	packet.alt = alt;
+	packet.pressure = pressure;
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION, (const char *)&packet, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN, MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_CRC);
@@ -194,13 +194,13 @@ static inline int32_t mavlink_msg_chaser_beacon_location_get_lon(const mavlink_m
 }
 
 /**
- * @brief Get field alt from chaser_beacon_location message
+ * @brief Get field pressure from chaser_beacon_location message
  *
- * @return altitude (cm)
+ * @return pressure (*100 mbar = Pa)
  */
-static inline int16_t mavlink_msg_chaser_beacon_location_get_alt(const mavlink_message_t* msg)
+static inline int32_t mavlink_msg_chaser_beacon_location_get_pressure(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int16_t(msg,  8);
+	return _MAV_RETURN_int32_t(msg,  8);
 }
 
 /**
@@ -214,7 +214,7 @@ static inline void mavlink_msg_chaser_beacon_location_decode(const mavlink_messa
 #if MAVLINK_NEED_BYTE_SWAP
 	chaser_beacon_location->lat = mavlink_msg_chaser_beacon_location_get_lat(msg);
 	chaser_beacon_location->lon = mavlink_msg_chaser_beacon_location_get_lon(msg);
-	chaser_beacon_location->alt = mavlink_msg_chaser_beacon_location_get_alt(msg);
+	chaser_beacon_location->pressure = mavlink_msg_chaser_beacon_location_get_pressure(msg);
 #else
 	memcpy(chaser_beacon_location, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_CHASER_BEACON_LOCATION_LEN);
 #endif

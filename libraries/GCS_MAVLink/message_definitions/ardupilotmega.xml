@@ -437,7 +437,7 @@
         <description>Send beacon location for chaser. </description>
         <field type="int32_t" name="lat">latitude (degree * 10^7)</field>
         <field type="int32_t" name="lon">longitude (degree * 10^7)</field>
-        <field type="int16_t" name="alt">altitude (cm)</field>
+        <field type="int32_t" name="pressure">pressure (*100 mbar = Pa)</field>
       </message>
 
 

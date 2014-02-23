@@ -27,9 +27,6 @@
 
 #define OSR MS561101BA_OSR_4096
 
-// 格納配列サイズ（たぶん調整必要、LPFとかで使ってたような・・・）
-#define BARO_TAB_SIZE   21
-
 
 // ***********************************************************************************
 // baro関連変数
@@ -127,7 +124,7 @@ void i2c_MS561101BA_Calculate() {
 	}
 	
 	baro_temp += 2000;
-	baro_pressure = (( (ms561101ba_ctx.up.val * sens ) /((uint32_t)1<<21)) - off)/((uint32_t)1<<15);
+	baro_pressure_raw = (( (ms561101ba_ctx.up.val * sens ) /((uint32_t)1<<21)) - off)/((uint32_t)1<<15);
 }
 
 //return 0: no data available, no computation ;  1: new value available  ; 2: no new value, but computation time
@@ -154,13 +151,14 @@ uint8_t baro_update() {                          // first UT conversion is start
 }
 
 void baro_common() {
-	static int32_t baroHistTab[BARO_TAB_SIZE];
-	static uint8_t baroHistIdx;
+	static int32_t baro_hist[16];
+	static uint8_t baro_hist_index = 0;
 	
-	uint8_t indexplus1 = (baroHistIdx + 1);
-	if (indexplus1 == BARO_TAB_SIZE) indexplus1 = 0;
-	baroHistTab[baroHistIdx] = baro_pressure;
-	baro_pressure_sum += baroHistTab[baroHistIdx];
-	baro_pressure_sum -= baroHistTab[indexplus1];
-	baroHistIdx = indexplus1;  
+	uint8_t baro_hist_index_next = (baro_hist_index + 1);
+	if (baro_hist_index_next == 16) baro_hist_index_next = 0;
+	baro_hist[baro_hist_index] = baro_pressure_raw;
+	baro_pressure_sum += baro_hist[baro_hist_index];
+	baro_pressure_sum -= baro_hist[baro_hist_index_next];
+	baro_pressure = baro_pressure_sum>>4;	// 4ビットシフト演算（＝16分の1）
+	baro_hist_index = baro_hist_index_next;
 }

@@ -2143,7 +2143,7 @@ mission_failed:
 		
 		tell_command.lat = packet.lat;
 		tell_command.lng = packet.lon;
-		tell_command.alt = packet.alt;
+		tell_command.alt = packet.pressure;		// altを気圧値として使用（暫定）
 		
 		//受け取った値が上下限に収まっていたらビーコン位置情報を更新する
 		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX

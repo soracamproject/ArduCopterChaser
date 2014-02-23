@@ -1453,13 +1453,13 @@ static void mavlink_test_chaser_beacon_location(uint8_t system_id, uint8_t compo
 	mavlink_chaser_beacon_location_t packet_in = {
 		963497464,
 	}963497672,
-	}17651,
+	}963497880,
 	};
 	mavlink_chaser_beacon_location_t packet1, packet2;
         memset(&packet1, 0, sizeof(packet1));
         	packet1.lat = packet_in.lat;
         	packet1.lon = packet_in.lon;
-        	packet1.alt = packet_in.alt;
+        	packet1.pressure = packet_in.pressure;
         
         
 
@@ -1469,12 +1469,12 @@ static void mavlink_test_chaser_beacon_location(uint8_t system_id, uint8_t compo
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_beacon_location_pack(system_id, component_id, &msg , packet1.lat , packet1.lon , packet1.alt );
+	mavlink_msg_chaser_beacon_location_pack(system_id, component_id, &msg , packet1.lat , packet1.lon , packet1.pressure );
 	mavlink_msg_chaser_beacon_location_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_beacon_location_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.lat , packet1.lon , packet1.alt );
+	mavlink_msg_chaser_beacon_location_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.lat , packet1.lon , packet1.pressure );
 	mavlink_msg_chaser_beacon_location_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
@@ -1487,7 +1487,7 @@ static void mavlink_test_chaser_beacon_location(uint8_t system_id, uint8_t compo
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
         
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_beacon_location_send(MAVLINK_COMM_1 , packet1.lat , packet1.lon , packet1.alt );
+	mavlink_msg_chaser_beacon_location_send(MAVLINK_COMM_1 , packet1.lat , packet1.lon , packet1.pressure );
 	mavlink_msg_chaser_beacon_location_decode(last_msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 }

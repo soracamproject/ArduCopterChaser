@@ -34,7 +34,7 @@ static void send_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle){
 }
 
 // CHASER用ビーコン位置情報送信
-static void send_beacon_loc(int32_t lat, int32_t lon, int16_t alt){
+static void send_beacon_loc(int32_t lat, int32_t lon, int32_t pressure){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200
 	
@@ -42,7 +42,7 @@ static void send_beacon_loc(int32_t lat, int32_t lon, int16_t alt){
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint16_t len;
 	
-	mavlink_msg_chaser_beacon_location_pack(system_id, component_id, &msg, lat, lon, alt);
+	mavlink_msg_chaser_beacon_location_pack(system_id, component_id, &msg, lat, lon, pressure);
 	len = mavlink_msg_to_send_buffer(buf, &msg);
 	
 	xbee_serial.write(buf, len);
