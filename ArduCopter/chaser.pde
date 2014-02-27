@@ -150,7 +150,15 @@ static void update_chaser() {
 		target_distance.z = 0;
 		chaser_target.x = chaser_origin.x + target_distance.x;
 		chaser_target.y = chaser_origin.y + target_distance.y;
+		
+		// CHASERソナー高度制御開発版
+		if (chaser_sonar_alt < CHASER_SONAR_ALT_LOWER) {
+			chaser_dammy_alt += CHASER_SONAR_CLIMB_RATE;
+		} else if(chaser_sonar_alt > CHASER_SONAR_ALT_UPPER) {
+			chaser_dammy_alt -= CHASER_SONAR_CLIMB_RATE;
+		}
 		chaser_target.z = chaser_dammy_alt;
+		
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
 		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {

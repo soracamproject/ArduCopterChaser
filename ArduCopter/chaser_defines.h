@@ -18,6 +18,11 @@
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
 
+// ソナーバージョン用開発版
+#define CHASER_SONAR_ALT_LOWER     200			// この高度を下回ったら目標高度を上げにかかる[cm]
+#define CHASER_SONAR_ALT_UPPER     300			// この高度を上回ったら目標高度を上げにかかる[cm]
+#define CHASER_SONAR_CLIMB_RATE    10			// 目標高度変更幅[cm/10Hz] ※10Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/10の値を入れる
+
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
 // 刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
