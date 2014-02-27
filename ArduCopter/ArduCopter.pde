@@ -2182,7 +2182,7 @@ static void update_altitude()
 	//   fc=1Hz, T=0.05s -> alpha = 0.23906f
 	//   fc=1Hz, T=0.1s  -> alpha = 0.38587f
 	//   fc=2Hz, T=0.02s -> alpha = 0.20085f
-	chaser_sonar_alt = chaser_sonar_alt + 0.38587f * (sonar_alt - chaser_sonar_alt);
+	chaser_sonar_alt = chaser_sonar_alt + 0.38587f * ((float)sonar_alt - chaser_sonar_alt);
 	
 	// chaserデバッグ用気圧計温度
 	chaser_baro_temp    = barometer.get_temperature();
