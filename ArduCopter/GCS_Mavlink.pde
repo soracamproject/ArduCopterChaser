@@ -455,7 +455,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 	mavlink_msg_vfr_hud_send(
 		chan,
 		chaser_destination.x,		//float,airspeed
-		chaser_destination.y,		//float,groundspeed
+		chaser_sonar_alt,			//float,groundspeed
 		baro_alt,					//int16_t,heading
 		sonar_alt,					//uint16_t,throttle
 		chaser_copter_pos.z,		//float,alt
