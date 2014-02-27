@@ -804,13 +804,14 @@ static bool chaser_started = false;			// CHASER開始フラグ（CHASERステー
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
 
-static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（inertial_navで取ってくる）
-static float chaser_baro_temp;				// chaserデバッグ用の気圧センサ温度[deg.C]
+static Vector3f chaser_copter_pos;			// CHASERデバッグ用の機体位置（inertial_navで取ってくる）
+static float chaser_baro_temp;				// CHASERデバッグ用の気圧センサ温度[deg.C]
 static float chaser_beacon_alt;				// CHASERデバッグ用ビーコン高さ[cm]
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
 static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
+static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
@@ -2156,7 +2157,7 @@ static void update_trig(void){
     // 270 = cos_yaw:  0.00, sin_yaw: -1.00,
 }
 
-// read baro and sonar altitude at 20hz
+// read baro and sonar altitude at 20hz // どうも10Hzな気がする・・・
 static void update_altitude()
 {
 #if HIL_MODE == HIL_MODE_ATTITUDE
@@ -2172,6 +2173,16 @@ static void update_altitude()
 
     // read in sonar altitude
     sonar_alt           = read_sonar();
+	
+	// CHASER用にsonar_altにLPFをかける
+	// 計算式：
+	//   alpha = (2*pi*fc*T)/(2*pi*fc*T+1)
+	//   fc:カットオフ周波数[Hz], T：データ取得周期[s]
+	// 参考値：
+	//   fc=1Hz, T=0.05s -> alpha = 0.23906f
+	//   fc=1Hz, T=0.1s  -> alpha = 0.38587f
+	//   fc=2Hz, T=0.02s -> alpha = 0.20085f
+	chaser_sonar_alt = chaser_sonar_alt + 0.38587f * (sonar_alt - chaser_sonar_alt);
 	
 	// chaserデバッグ用気圧計温度
 	chaser_baro_temp    = barometer.get_temperature();

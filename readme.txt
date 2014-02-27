@@ -4,6 +4,7 @@
 <機体>
 ・CHASER時の目標高度の斜度による自動生成機能を削除
 ・ビーコン圧力値からビーコン高度を計算する機能を追加し、ログ送信に追加（代わりに気圧センサ温度を削除）
+・CHASER用ソナー高度計算機能追加（単なるLPFをかけるだけ、現在は1HzのLPF、update_altitudeで計算(10Hz)）
 
 <ビーコン>
 ・大枠作成完了
@@ -108,7 +109,9 @@ ArduCopter.pde
 　"CHASERモード用グローバル変数"の項目を追加
 　set_yaw_mode関数内にYAW_CHASERのcaseを追加
 　update_yaw_mode関数内にYAW_CHASERのcaseを追加
-　update_altitude関数内に気圧計の温度取得を追加（デバッグ用）
+　update_altitude関数内に
+　　1. 気圧計の温度取得を追加（デバッグ用）
+      2. chaser_sonar_altを計算する項目を追加（LPF）
 chaser_defines.h
 　すべて　新規ファイル
 chaser.pde
