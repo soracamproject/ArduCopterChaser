@@ -376,8 +376,8 @@ void loop(){
 				break;
 				
 				case 1:
-				// 5秒待ってLED2点灯
-				if((now_ms - sc[state].prev_ms) > 5000){
+				// 1秒待ってLED2点灯
+				if((now_ms - sc[state].prev_ms) > 1000){
 					digitalWrite(LED2, HIGH);
 					sc[state].substate++;
 					sc[state].prev_ms = now_ms;
@@ -385,8 +385,8 @@ void loop(){
 				break;
 				
 				case 2:
-				// 5秒待ってLED3点灯
-				if((now_ms - sc[state].prev_ms) > 5000){
+				// 1秒待ってLED3点灯
+				if((now_ms - sc[state].prev_ms) > 1000){
 					digitalWrite(LED3, HIGH);
 					sc[state].substate++;
 					sc[state].prev_ms = now_ms;
@@ -394,8 +394,8 @@ void loop(){
 				break;
 				
 				case 3:
-				// 5秒待ってLED4点灯
-				if((now_ms - sc[state].prev_ms) > 5000){
+				// 1秒待ってLED4点灯
+				if((now_ms - sc[state].prev_ms) > 1000){
 					digitalWrite(LED4, HIGH);
 					sc[state].substate++;
 					sc[state].prev_ms = now_ms;
@@ -405,10 +405,7 @@ void loop(){
 				case 4:
 				// 1秒おきに位置情報送信（テキストで）
 				if((now_ms - sc[state].prev_ms) > 1000){
-					xbee_serial.println(beacon_loc_data.lat);
-					xbee_serial.println(beacon_loc_data.lon);
-					xbee_serial.println(beacon_loc_data.pressure);
-					
+					send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				}
 				break;
 				

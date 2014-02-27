@@ -437,6 +437,16 @@ float get_beacon_altitude(float beacon_pressure) {
 	return altitude;
 }
 
+// ビーコン位置情報デバッグ用関数
+// デバッグフラグON時のみコンパイル
+#if CHASER_LOCATION_DEBUG == 1
+static void chaser_beacon_location_debug(const struct Location *cmd){
+	chaser_target = pv_location_to_vector(*cmd);
+	chaser_target.z = get_beacon_altitude(chaser_target.z);		//ここで圧力[Pa]を高度[cm]に変換
+}
+#endif
+
+
 
 
 

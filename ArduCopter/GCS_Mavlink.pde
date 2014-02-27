@@ -2138,6 +2138,8 @@ mission_failed:
 	
 	case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION:
 	{
+#if CHASER_LOCATION_DEBUG == 0
+		// 通常モード
 		mavlink_chaser_beacon_location_t packet;
 		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
 		
@@ -2152,6 +2154,19 @@ mission_failed:
 		}
 		
 		break;
+#else
+		// ビーコン位置情報デバッグモード
+		mavlink_chaser_beacon_location_t packet;
+		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
+		
+		tell_command.lat = packet.lat;
+		tell_command.lng = packet.lon;
+		tell_command.alt = packet.pressure;		// altを気圧値として使用（暫定）
+		
+		chaser_beacon_location_debug(&tell_command);
+		
+		break;
+#endif
 	}
     }     // end switch
 } // end handle mavlink

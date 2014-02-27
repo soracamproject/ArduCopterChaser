@@ -44,6 +44,11 @@
 // 1にすると通信変数を割付し直し必要な分だけ50Hz目標で通信する
 #define CHASER_DEBUG              1
 
+// 位置情報デバッグ有効無効フラグ
+// 0で通常のCHASE
+// 1で位置情報を送って解析するのみのモード
+#define CHASER_LOCATION_DEBUG     1
+
 // CHASERモード
 #define CHASER_INIT          0
 #define CHASER_READY         1
