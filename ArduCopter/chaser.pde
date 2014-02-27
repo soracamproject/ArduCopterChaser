@@ -11,6 +11,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
 	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
 	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
+	float beacon_loc_z_sum = 0;								// ビーコン位置配列の各位置のz座標の合計[cm]
 	static uint32_t last = 0;								// 前回格納時刻[ms]
 	static uint32_t last_latch = 0;							// 前回ラッチ時刻[ms]
 	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
@@ -39,6 +40,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	if (dt > 0.0 && dt_latch > 0.0) {
 		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
 		Vector3f pos = pv_location_to_vector(*cmd);
+		pos.z = get_beacon_altitude(pos.z);		//ここで圧力[Pa]を高度[cm]に変換
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
 		beacon_loc[index] = pos;
@@ -56,15 +58,17 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		
 		// 配列が全て埋まっている場合のみchaser_origin,chaser_destinationを更新する
 		if (relax_stored_num == CHASER_TARGET_RELAX_NUM) {
-			// xyは平均位置、zはとりあえず固定
+			// xyz全て平均位置
 			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {
 				beacon_loc_x_sum += beacon_loc[i].x;
 				beacon_loc_y_sum += beacon_loc[i].y;
+				beacon_loc_z_sum += beacon_loc[i].z;
 			}
 			Vector3f beacon_loc_relaxed;
 			beacon_loc_relaxed.x = beacon_loc_x_sum / CHASER_TARGET_RELAX_NUM;
 			beacon_loc_relaxed.y = beacon_loc_y_sum / CHASER_TARGET_RELAX_NUM;
-			beacon_loc_relaxed.z = CHASER_ALT;
+			beacon_loc_relaxed.z = beacon_loc_z_sum / CHASER_TARGET_RELAX_NUM;
+			chaser_beacon_alt = beacon_loc_relaxed.z;
 			
 			if (!chaser_beacon_loc_ok) {
 				// 予測不可時（呼び出し1回目）の処置
@@ -146,7 +150,7 @@ static void update_chaser() {
 		target_distance.z = 0;
 		chaser_target.x = chaser_origin.x + target_distance.x;
 		chaser_target.y = chaser_origin.y + target_distance.y;
-		chaser_target.z = CHASER_ALT - safe_sqrt(sq(chaser_target.x)+sq(chaser_target.y))*tan(radians(CHASER_ALT_GRADIDENT));		// ダミー高さとして勾配一定で高さを作り出す
+		chaser_target.z = chaser_dammy_alt;
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
 		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
@@ -265,7 +269,7 @@ static bool set_chaser_state(uint8_t state) {
 				set_nav_mode(NAV_WP);
 				
 				Vector3f pos = inertial_nav.get_position();
-				pos.z = CHASER_ALT;
+				pos.z = chaser_dammy_alt;
 				wp_nav.set_destination(pos);
 				
 				reset_I_all();		//フリップを防ぐためで要検討項目らしい（APMから持ってきている）
@@ -402,6 +406,21 @@ static bool chaser_state_change_check(uint8_t state) {
 	}
 	
 	return false;
+}
+
+// ビーコンの圧力を機体のground_pressureとground_temperatureを使って高度[cm]に変換する
+// 引数：beacon_pressure [Pa, x100mbar] ※int32_tで飛んできたやつをそのままfloatに叩き込んでるはず
+// 注意：機体高度はAP_Baroで+_alt_offset（mission plannerから設定可能）を足してる。_alt_offsetがある場合値が変わるので注意
+//       また機体高度計算の方は返り値[m]だけどこっちは[cm]にしてる
+float get_beacon_altitude(float beacon_pressure) {
+	float scaling, temp, altitude;
+	
+	// on AVR use a less exact, but faster, calculation
+	scaling = barometer.get_ground_pressure() / beacon_pressure;
+	temp = barometer.get_ground_temperature() + 273.15f;
+	altitude = logf(scaling) * temp * 2927.1267f;
+	
+	return altitude;
 }
 
 

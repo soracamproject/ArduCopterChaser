@@ -805,10 +805,12 @@ static bool chaser_started = false;			// CHASER開始フラグ（CHASERステー
 static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
 
 static Vector3f chaser_copter_pos;			// chaserデバッグ用の機体位置（inertial_navで取ってくる）
+static float chaser_baro_temp;				// chaserデバッグ用の気圧センサ温度[deg.C]
+static float chaser_beacon_alt;				// CHASERデバッグ用ビーコン高さ[cm]
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
-static float chaser_baro_temp;				// chaserデバッグ用の機体位置
+static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring

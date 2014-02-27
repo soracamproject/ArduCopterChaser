@@ -17,21 +17,20 @@
 #define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
-#define CHASER_ALT_GRADIDENT       0			// CHASER時ダミー高さ計算用勾配[deg]（homeからこの角度で下る）
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
 // 刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
-//#define CHASER_LAT_MIN            349682650			//経度下限
-//#define CHASER_LAT_MAX            350551540			//緯度上限
-//#define CHASER_LON_MIN            1369701330		//経度下限
-//#define CHASER_LON_MAX            1370635160		//経度上限
+#define CHASER_LAT_MIN            349682650			//経度下限
+#define CHASER_LAT_MAX            350551540			//緯度上限
+#define CHASER_LON_MIN            1369701330		//経度下限
+#define CHASER_LON_MAX            1370635160		//経度上限
 
 // スノーウェーブパーク、鷲ヶ岳用
-#define CHASER_LAT_MIN            358993800			//経度下限
-#define CHASER_LAT_MAX            360388670			//緯度上限
-#define CHASER_LON_MIN            1367319150		//経度下限
-#define CHASER_LON_MAX            1370295750		//経度上限
+//#define CHASER_LAT_MIN            358993800			//経度下限
+//#define CHASER_LAT_MAX            360388670			//緯度上限
+//#define CHASER_LON_MIN            1367319150		//経度下限
+//#define CHASER_LON_MAX            1370295750		//経度上限
 
 
 // CHASERデバッグ用通信有効無効フラグ
