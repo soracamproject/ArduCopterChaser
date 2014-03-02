@@ -153,12 +153,18 @@ uint8_t baro_update() {                          // first UT conversion is start
 void baro_common() {
 	static int32_t baro_hist[16];
 	static uint8_t baro_hist_index = 0;
+	int32_t baro_pressure_sum = 0;
 	
 	uint8_t baro_hist_index_next = (baro_hist_index + 1);
-	if (baro_hist_index_next == 16) baro_hist_index_next = 0;
+	if (baro_hist_index_next == 16){
+		baro_hist_index_next = 0;
+	}
 	baro_hist[baro_hist_index] = baro_pressure_raw;
-	baro_pressure_sum += baro_hist[baro_hist_index];
-	baro_pressure_sum -= baro_hist[baro_hist_index_next];
+	
+	for(uint8_t i=0; i<16; i++){
+		baro_pressure_sum += baro_hist[baro_hist_index];
+	}
 	baro_pressure = baro_pressure_sum>>4;	// 4ビットシフト演算（＝16分の1）
+	
 	baro_hist_index = baro_hist_index_next;
 }

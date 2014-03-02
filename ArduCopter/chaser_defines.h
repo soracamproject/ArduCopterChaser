@@ -19,7 +19,7 @@
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
 
 // ソナーバージョン用開発版
-//#define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
+#define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
 #define CHASER_SONAR_ALT_LOWER     200			// この高度を下回ったら目標高度を上げにかかる[cm]
 #define CHASER_SONAR_ALT_UPPER     300			// この高度を上回ったら目標高度を上げにかかる[cm]
 #define CHASER_SONAR_CLIMB_RATE    10			// 目標高度変更幅[cm/10Hz] ※10Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/10の値を入れる
@@ -47,7 +47,7 @@
 // 位置情報デバッグ有効無効フラグ
 // 0で通常のCHASE
 // 1で位置情報を送って解析するのみのモード
-#define CHASER_LOCATION_DEBUG     1
+#define CHASER_LOCATION_DEBUG     0
 
 // CHASERモード
 #define CHASER_INIT          0

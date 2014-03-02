@@ -263,16 +263,16 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 	// CHASERデバッグ版
 	mavlink_msg_nav_controller_output_send(
 		chan,
-		//chaser_copter_pos.x,	//float,nav_roll
-		barometer.get_pressure(),
-		//chaser_copter_pos.y,	//float,nav_pitch
-		barometer.get_ground_pressure(),
-		nav_yaw,					//int16_t,nav_bearing
-		chaser_yaw_target,					//int16_t,target_bearing
-		0,					//uint16_t,wp_dist
-		chaser_target.x,	//float,alt_error
-		chaser_target.y,	//float,aspd_error
-		chaser_target.z				//float,xtrack_error
+		chaser_copter_pos.x,			//float,nav_roll
+		//barometer.get_pressure(),
+		chaser_copter_pos.y,			//float,nav_pitch
+		//barometer.get_ground_pressure(),
+		nav_yaw,						//int16_t,nav_bearing
+		chaser_yaw_target,				//int16_t,target_bearing
+		0,								//uint16_t,wp_dist
+		chaser_target.x,				//float,alt_error
+		chaser_target.y,				//float,aspd_error
+		chaser_target.z					//float,xtrack_error
 	);
 #else
 	// 通常通信版

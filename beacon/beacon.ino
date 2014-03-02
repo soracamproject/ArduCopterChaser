@@ -94,8 +94,8 @@ void setup()
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
 	pinMode(BUTTON2, INPUT);
-	digitalWrite(BUTTON1,HIGH);		//内部プルアップ
-	digitalWrite(BUTTON2,HIGH);		//内部プルアップ
+	//digitalWrite(BUTTON1,HIGH);		//内部プルアップ
+	//digitalWrite(BUTTON2,HIGH);		//内部プルアップ
 	button1.attach(BUTTON1);
 	button2.attach(BUTTON2);
 	button1.interval(5);			//たぶんチャタ防止間隔5ms
@@ -108,9 +108,9 @@ void setup()
 	digitalWrite(LED4, LOW);
 	
 	// とりあえず2秒待ち
-	delay(2000);
+	//delay(2000);
 	
-	state = BEACON_DEBUG;		// デバッグモード
+	//state = BEACON_DEBUG;		// デバッグモード
 	
 	// 前回時間の初期化
 	prev_us = micros();
@@ -126,6 +126,9 @@ void loop(){
 	now_us = micros();
 	now_ms = millis();
 	
+	button1.update();
+	button2.update();
+	
 	if((now_us - prev_us) > 20000){		// 50Hz狙い
 		switch(state){
 			case BEACON_INIT:
@@ -134,17 +137,26 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
+				digitalWrite(LED1, LOW);
+				digitalWrite(LED2, LOW);
+				digitalWrite(LED3, LOW);
+				digitalWrite(LED4, LOW);
 			}
 			
 			// ２．毎回実行される部分
-			// *ToDo*
 			// スイッチ押されたらREADYステートへ
+			//button1.update();
+			//button2.update();
+			if(button1.read() == HIGH){
+				state = BEACON_READY;
+				first_time = true;
+			}
 			
 			// ３．サブステートコントロール部分
 			switch(sc[state].substate){
 				case 0:
 				// 何もしない
-				// INITステートではスイッチが押されたら次のステートへ_ms;
+				// INITステートではスイッチが押されたら次のステートへ;
 				break;
 			}
 			break;
@@ -155,6 +167,7 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
+				digitalWrite(LED1, HIGH);
 			}
 			
 			// ２．毎回実行される部分
@@ -189,16 +202,16 @@ void loop(){
 				}
 				break;
 				
-				case 3:
+				//case 3:
 				// 2秒待ってスロットルを上げる
-				if((now_ms - sc[state].prev_ms) > 2000){
-					send_change_throttle_cmd_for_chaser(0);
-					sc[state].substate++;
-					sc[state].prev_ms = now_ms;
-				}
-				break;
+				//if((now_ms - sc[state].prev_ms) > 2000){
+				//	send_change_throttle_cmd_for_chaser(0);
+				//	sc[state].substate++;
+				//	sc[state].prev_ms = now_ms;
+				//}
+				//break;
 				
-				case 4:
+				case 3:
 				// 2秒待ってスロットルを上げる
 				if((now_ms - sc[state].prev_ms) > 2000){
 					send_change_chaser_state_cmd(CHASER_READY);
@@ -207,7 +220,7 @@ void loop(){
 				}
 				break;
 				
-				case 5:
+				case 4:
 				// 2秒待って次のステートへ
 				if((now_ms - sc[state].prev_ms) > 2000){
 					state = BEACON_TAKEOFF;
@@ -223,11 +236,16 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
+				digitalWrite(LED1, LOW);
+				digitalWrite(LED2, HIGH);
 			}
 			
 			// ２．毎回実行される部分
-			// *ToDo*
 			// ①beacon位置情報を定期的に送信
+			// 0.2秒おきに位置情報送信（テキストで）
+			//if((now_ms - sc[state].prev_ms) > 200){
+			//	send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+			//}
 			// ②フェールセーフ（検討中・・・）
 			
 			// ３．サブステートコントロール部分
@@ -235,14 +253,14 @@ void loop(){
 				case 0:
 				// テイクオフする
 				send_change_chaser_state_cmd(CHASER_TAKEOFF);
-				sc[state].substate = 1;
+				sc[state].substate++;
 				sc[state].prev_ms = now_ms;
 				break;
 				
 				case 1:
 				// 20秒待って次のステートへ
 				if((now_ms - sc[state].prev_ms) > 20000){
-					state = BEACON_TAKEOFF;
+					state = BEACON_STAY;
 					first_time = true;
 				}
 				break;
@@ -255,26 +273,37 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
-				// **ToDo**
-				// STAY_LED点灯
+				digitalWrite(LED2, LOW);
+				digitalWrite(LED3, HIGH);
 			}
 			
 			// ２．毎回実行される部分
-			// *ToDo*
 			// ①beacon位置情報を定期的に送信
+			//if((now_ms - sc[state].prev_ms) > 200){
+			//	send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+			//}
 			// ②スイッチ１が押されたらフェールセーフ（検討中・・・）
 			// ③スイッチ２が押されたらCHASEに移行(STAY_LED消灯)
+			//button1.update();
+			if(button1.read() == HIGH){
+				state = BEACON_CHASE;
+				first_time = true;
+			}
 			
 			// ３．サブステートコントロール部分
 			switch(sc[state].substate){
 				case 0:
 				// ステイする
 				send_change_chaser_state_cmd(CHASER_STAY);
-				sc[state].substate = 1;
+				sc[state].substate++;
 				sc[state].prev_ms = now_ms;
 				break;
 				
 				case 1:
+				if((now_ms - sc[state].prev_ms) > 200){
+					send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+					sc[state].prev_ms = now_ms;
+				}
 				// 何もしない
 				// BEACON_STAYの場合、移行はスイッチ操作で実施する
 				break;
@@ -287,26 +316,38 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
-				// **ToDo**
-				// CHASER_LED点灯
+				digitalWrite(LED3, LOW);
+				digitalWrite(LED4, HIGH);
 			}
 			
 			// ２．毎回実行される部分
 			// *ToDo*
 			// ①beacon位置情報を定期的に送信
-			// ②スイッチ１が押されたらLAND（検討中・・・）
-			// ③スイッチ２が押されたらSTAYに戻る(CHASER_LED消灯)
+			//if((now_ms - sc[state].prev_ms) > 200){
+			//	send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+			//}
+			// ②スイッチ２が押されたらLAND（検討中・・・）
+			//button2.update();
+			if(button2.read() == HIGH){
+				state = BEACON_LAND;
+				first_time = true;
+			}
+			// ③スイッチ１が押されたらSTAYに戻る(CHASER_LED消灯)
 			
 			// ３．サブステートコントロール部分
 			switch(sc[state].substate){
 				case 0:
 				// CHASEする
 				send_change_chaser_state_cmd(CHASER_CHASE);
-				sc[state].substate = 1;
+				sc[state].substate++;
 				sc[state].prev_ms = now_ms;
 				break;
 				
 				case 1:
+				if((now_ms - sc[state].prev_ms) > 200){
+					send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+					sc[state].prev_ms = now_ms;
+				}
 				// 何もしない
 				// BEACON_CHASEの場合、移行はスイッチ操作で実施する
 				break;
@@ -319,8 +360,10 @@ void loop(){
 				sc[state].substate = 0;
 				sc[state].prev_ms = now_ms;
 				first_time = false;
-				// **ToDo**
-				// LAND_LED点灯
+				digitalWrite(LED1, HIGH);
+				digitalWrite(LED2, HIGH);
+				digitalWrite(LED3, HIGH);
+				digitalWrite(LED4, HIGH);
 			}
 			
 			// ２．毎回実行される部分
@@ -339,10 +382,8 @@ void loop(){
 				case 1:
 				// 10秒待って次のステートへ
 				if((now_ms - sc[state].prev_ms) > 10000){
-					state = BEACON_END;
+					state = BEACON_INIT;
 					first_time = true;
-					// **ToDo**
-					// LAND_LED消灯
 				}
 				break;
 			}
@@ -415,6 +456,7 @@ void loop(){
 			}
 			break;
 			
+			// 今は使っていない
 			case BEACON_END:
 			// １．ステートに最初に入った際に実行される部分
 			if(first_time){

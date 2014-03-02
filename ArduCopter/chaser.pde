@@ -40,7 +40,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	if (dt > 0.0 && dt_latch > 0.0) {
 		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
 		Vector3f pos = pv_location_to_vector(*cmd);
-		pos.z = get_beacon_altitude(pos.z);		//ここで圧力[Pa]を高度[cm]に変換
+		//pos.z = get_beacon_altitude(pos.z);		//ここで圧力[Pa]を高度[cm]に変換
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
 		beacon_loc[index] = pos;
