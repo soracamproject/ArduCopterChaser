@@ -22,7 +22,7 @@
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
 #define CHASER_SONAR_ALT_LOWER     200			// この高度を下回ったら目標高度を上げにかかる[cm]
 #define CHASER_SONAR_ALT_UPPER     300			// この高度を上回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_CLIMB_RATE    10			// 目標高度変更幅[cm/10Hz] ※10Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/10の値を入れる
+#define CHASER_SONAR_CLIMB_RATE    1			// 目標高度変更幅[cm/100Hz] ※100Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/100の値を入れる
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
