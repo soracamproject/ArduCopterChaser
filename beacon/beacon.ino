@@ -1,5 +1,5 @@
 #include <BC_Compat.h>
-#include <FastSerial.h>
+//#include <FastSerial.h>
 #include <Bounce2.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
@@ -7,9 +7,10 @@
 // ***********************************************************************************
 // シリアルポート
 // ***********************************************************************************
-FastSerialPort1(gps_serial);	// GPS用
-FastSerialPort2(xbee_serial);	// XBee用
-
+//FastSerialPort1(gps_serial);	// GPS用
+//FastSerialPort2(xbee_serial);	// XBee用
+#define gps_serial  Serial
+#define xbee_serial Serial2
 
 // ***********************************************************************************
 // メイン変数
@@ -292,7 +293,11 @@ void loop(){
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
+				//uint32_t tmp_t_ms  = millis();	// 速度確認デバッグ用
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				//uint16_t tmp_dt_ms = millis();	// 速度確認デバッグ用
+				//xbee_serial.println(tmp_t_ms);	// 速度確認デバッグ用
+				//xbee_serial.println(tmp_dt_ms);	// 速度確認デバッグ用
 				prev_et_ms = now_ms;
 			}
 			if(button2.read() == HIGH){
