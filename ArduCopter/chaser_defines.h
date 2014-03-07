@@ -47,7 +47,7 @@
 // 位置情報デバッグ有効無効フラグ
 // 0で通常のCHASE
 // 1で位置情報を送って解析するのみのモード
-#define CHASER_LOCATION_DEBUG     0
+#define CHASER_LOCATION_DEBUG     1
 
 // CHASERモード
 #define CHASER_INIT          0

@@ -167,6 +167,13 @@ FastSerial::available(void)
         return((_rxBuffer->head - _rxBuffer->tail) & _rxBuffer->mask);
 }
 
+int16_t FastSerial::txspace(void) {
+	if (!_open)
+		return (-1);
+	return ((_txBuffer->mask+1) - ((_txBuffer->head - _txBuffer->tail) & _txBuffer->mask));
+}
+
+
 int
 FastSerial::read(void)
 {
@@ -236,6 +243,52 @@ FastSerial::write(uint8_t c)
         // enable the data-ready interrupt, as it may be off if the buffer is empty
         *_ucsrb |= _portTxBits;
 }
+
+/*
+  write size bytes to the write buffer
+ */
+size_t FastSerial::write(const uint8_t *buffer, size_t size)
+{
+	if (!_open) {
+		return 0;
+	}
+	
+	int16_t space = txspace();
+	if (space <= 0) {
+		return 0;
+	}
+	
+	if (size > (size_t)space) {
+		// throw away remainder if too much data
+		size = space;
+	}
+	
+	if (_txBuffer->tail > _txBuffer->head) {
+		// perform as single memcpy
+		memcpy(&_txBuffer->bytes[_txBuffer->head], buffer, size);
+		_txBuffer->head = (_txBuffer->head + size) & _txBuffer->mask;
+		// enable the data-ready interrupt, as it may be off if the buffer is empty
+		*_ucsrb |= _portTxBits;
+		return size;
+	}
+	
+	// perform as two memcpy calls
+	uint16_t n = (_txBuffer->mask+1) - _txBuffer->head;
+	if (n > size) n = size;
+	memcpy(&_txBuffer->bytes[_txBuffer->head], buffer, n);
+	_txBuffer->head = (_txBuffer->head + n) & _txBuffer->mask;
+	buffer += n;
+	n = size - n;
+	if (n > 0) {
+		memcpy(&_txBuffer->bytes[0], buffer, n);
+		_txBuffer->head = (_txBuffer->head + n) & _txBuffer->mask;
+	}
+	
+	// enable the data-ready interrupt, as it may be off if the buffer is empty
+	*_ucsrb |= _portTxBits;
+	return size;
+}
+
 
 // Buffer management ///////////////////////////////////////////////////////////
 

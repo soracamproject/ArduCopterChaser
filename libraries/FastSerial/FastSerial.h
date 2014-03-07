@@ -103,9 +103,12 @@ public:
         virtual void    end(void);
         virtual int     available(void);
         virtual int     read(void);
+		int16_t txspace();
         virtual int     peek(void);
         virtual void    flush(void);
-        virtual size_t    write(uint8_t c);
+		
+        virtual size_t  write(uint8_t c);
+		size_t  write(const uint8_t *buffer, size_t size);
         using BetterStream::write;
 
         // public so the interrupt handlers can see it
@@ -134,6 +137,7 @@ private:
 
         static bool     _allocBuffer(Buffer *buffer, unsigned int size);
         static void     _freeBuffer(Buffer *buffer);
+		
 };
 
 // Used by the per-port interrupt vectors
