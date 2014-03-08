@@ -174,7 +174,7 @@ void loop(){
 				case 1:
 				// 5秒待って機体をアームする
 				if((now_ms - prev_ss_ms) > 5000){
-					//send_arm_cmd_for_chaser();
+					send_arm_cmd_for_chaser();
 					SS_INCREMENT;
 				}
 				break;
@@ -224,8 +224,8 @@ void loop(){
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
-				xbee_serial.println(beacon_loc_data.lat);
-				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				//xbee_serial.println(beacon_loc_data.lat);
+				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				prev_et_ms = now_ms;
 			}
 			// **TODO**
