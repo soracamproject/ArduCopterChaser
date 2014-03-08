@@ -11,7 +11,9 @@
 #define CHASER_ALT                 650.0f		// CHASER時の高さ（とりあえず固定版）
 #define CHASER_TARGET_ACCEL        300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX      600.0f		// ターゲットの移動速度の最大値[m/s]
-#define CHASER_YAW_SLEW_RATE       45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
+#define CHASER_YAW_SLEW_RATE       30			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
+#define CHASER_YAW_LIMIT_CD1       1000			// YAW回転角度が片側この角度[centi_degree]以下では動かない
+#define CHASER_YAW_LIMIT_CD2       2000			// YAW回転角度が片側この角度[centi_degree]以下では制限がかかる
 #define CHASER_OVERRUN_SEC         0.0f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
 #define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
@@ -47,7 +49,7 @@
 // 位置情報デバッグ有効無効フラグ
 // 0で通常のCHASE
 // 1で位置情報を送って解析するのみのモード
-#define CHASER_LOCATION_DEBUG     1
+#define CHASER_LOCATION_DEBUG     0
 
 // CHASERモード
 #define CHASER_INIT          0

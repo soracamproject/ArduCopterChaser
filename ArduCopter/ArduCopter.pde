@@ -1590,8 +1590,8 @@ void update_yaw_mode(void)
         break;
 		
 	case YAW_CHASER:		// CHASERモード用
-		nav_yaw = get_yaw_slew(nav_yaw, chaser_yaw_target, CHASER_YAW_SLEW_RATE);	// 引数は順に現在、目標、制限速度
-        get_stabilize_yaw(nav_yaw);
+		nav_yaw = get_chaser_yaw_slew(nav_yaw, chaser_yaw_target, CHASER_YAW_SLEW_RATE);	// 引数は順に現在、目標、最大制限速度;
+		get_stabilize_yaw(nav_yaw);
 		break;
 	}
 }

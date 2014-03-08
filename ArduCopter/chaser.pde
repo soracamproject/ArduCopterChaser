@@ -447,6 +447,23 @@ static void chaser_beacon_location_debug(const struct Location *cmd){
 }
 #endif
 
+//ターゲット角度が小さい・距離が近い(未実装)の場合にyawの制限速度を変える
+static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw, int16_t slew_rate){
+	//nav_yawを求めるのと類似の関数で目標までのyawを求める(-18000～18000[centidegree])
+	int32_t chaser_target_yaw;
+	int32_t delta_yaw = wrap_180_cd(desired_yaw - current_yaw);
+	uint16_t delta_yaw_abs = labs(delta_yaw);
+	
+	if(delta_yaw_abs < CHASER_YAW_LIMIT_CD1){ //別途定義する角度以下であれば、制限速度ゼロ = 動かない
+		chaser_target_yaw = current_yaw;
+	} else if(delta_yaw_abs < CHASER_YAW_LIMIT_CD2){ //別途定義する角度域の場合は制限速度を抑える(線形)
+		int16_t tmp_slew_rate = slew_rate * (delta_yaw_abs - CHASER_YAW_LIMIT_CD1) / (float)(CHASER_YAW_LIMIT_CD2 - CHASER_YAW_LIMIT_CD1);	//LIMITED1の時0、LIMITED2の時従来の制限値になるような1次式
+		chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -tmp_slew_rate, tmp_slew_rate));
+	} else{
+		chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -slew_rate, slew_rate));
+	}
+	return chaser_target_yaw;
+}
 
 
 
