@@ -17,8 +17,8 @@
 #define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
-#define CHASER_YAW_RESTRICT_DIST1  300.0f		// YAW制御制限をかける距離下限値[cm]（この距離以下でYAWは動かない）
-#define CHASER_YAW_RESTRICT_DIST2  1000.0f		// YAW制御制限をかける距離上限値[cm]（この距離以下でYAWはそこそこ回転、以上で制限最小（ちょっとはかけてる）で回転）
+#define CHASER_YAW_RESTRICT_DIST1  0.0f			// YAW制御制限をかける距離下限値[cm]（この距離以下でYAWは動かない）
+#define CHASER_YAW_RESTRICT_DIST2  0.0f		// YAW制御制限をかける距離上限値[cm]（この距離以下でYAWはそこそこ回転、以上で制限最小（ちょっとはかけてる）で回転）
 
 // ソナーバージョン用開発版
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）

@@ -156,6 +156,7 @@ static void update_chaser() {
 		// sonar_alt_healthがたまっている（おそらくsonarが生きているという意味）場合のみ計算される
 		// 目標高度下限を下回るか、上限を上回ったら目標高度を修正していく
 		#ifdef USE_CHASER_SONAR_ALT
+		chaser_dammy_alt -= 0.1f;
 		if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
 			if (chaser_sonar_alt < CHASER_SONAR_ALT_LOWER) {
 				chaser_dammy_alt += CHASER_SONAR_CLIMB_RATE;
