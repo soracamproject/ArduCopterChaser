@@ -11,20 +11,20 @@
 #define CHASER_ALT                 650.0f		// CHASER時の高さ（とりあえず固定版）
 #define CHASER_TARGET_ACCEL        300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX      600.0f		// ターゲットの移動速度の最大値[m/s]
-#define CHASER_YAW_SLEW_RATE       30			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
-#define CHASER_YAW_LIMIT_CD1       1000			// YAW回転角度が片側この角度[centi_degree]以下では動かない
-#define CHASER_YAW_LIMIT_CD2       2000			// YAW回転角度が片側この角度[centi_degree]以下では制限がかかる
+#define CHASER_YAW_SLEW_RATE       45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
 #define CHASER_OVERRUN_SEC         0.0f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
 #define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
+#define CHASER_YAW_RESTRICT_DIST1  300.0f		// YAW制御制限をかける距離下限値[cm]（この距離以下でYAWは動かない）
+#define CHASER_YAW_RESTRICT_DIST2  1000.0f		// YAW制御制限をかける距離上限値[cm]（この距離以下でYAWはそこそこ回転、以上で制限最小（ちょっとはかけてる）で回転）
 
 // ソナーバージョン用開発版
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
-#define CHASER_SONAR_ALT_LOWER     200			// この高度を下回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_ALT_UPPER     300			// この高度を上回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_CLIMB_RATE    1			// 目標高度変更幅[cm/100Hz] ※100Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/100の値を入れる
+#define CHASER_SONAR_ALT_LOWER     250.0f		// この高度を下回ったら目標高度を上げにかかる[cm]
+#define CHASER_SONAR_ALT_UPPER     350.0f		// この高度を上回ったら目標高度を上げにかかる[cm]
+#define CHASER_SONAR_CLIMB_RATE    1.0f			// 目標高度変更幅[cm/100Hz] ※100Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/100の値を入れる
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定

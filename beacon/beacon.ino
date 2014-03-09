@@ -98,8 +98,8 @@ void setup()
 	pinMode(BUTTON2, INPUT);
 	button1.attach(BUTTON1);
 	button2.attach(BUTTON2);
-	button1.interval(5);			//たぶんチャタ防止間隔5ms
-	button2.interval(5);			//たぶんチャタ防止間隔5ms
+	button1.interval(50);			//たぶんチャタ防止間隔5ms
+	button2.interval(50);			//たぶんチャタ防止間隔5ms
 	
 	// LED全消灯
 	control_led(0,0,0,0);
@@ -161,7 +161,10 @@ void loop(){
 			
 			// ■毎回実行■
 			// *ToDo*
-			// スイッチ押されたらスロットル0でCHASER_INITに戻す（ディスアーム）
+			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
+			if(button2.read() == HIGH){
+				substate = 90;
+			}
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -181,7 +184,7 @@ void loop(){
 				
 				case 2:
 				// 10秒待ってスロットルを上げる
-				if((now_ms - prev_ss_ms) > 10000){
+				if((now_ms - prev_ss_ms) > 15000){
 					send_change_throttle_cmd_for_chaser(250);
 					SS_INCREMENT;
 				}
@@ -209,6 +212,22 @@ void loop(){
 					change_state(BEACON_TAKEOFF);
 				}
 				break;
+				
+				// 90番台は緊急終了
+				case 90:
+				// スロットル０
+				control_led(1,1,1,1);
+				send_change_throttle_cmd_for_chaser(0);
+				SS_INCREMENT;
+				break;
+				
+				case 91:
+				// 2秒待ってランドステートへ
+				if((now_ms - prev_ss_ms) > 2000){
+					change_state(BEACON_LAND);
+				}
+				break;
+				
 			}
 			break;
 			
@@ -227,6 +246,10 @@ void loop(){
 				//xbee_serial.println(beacon_loc_data.lat);
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				prev_et_ms = now_ms;
+			}
+			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
+			if(button2.read() == HIGH){
+				change_state(BEACON_LAND);
 			}
 			// **TODO**
 			// フェールセーフ

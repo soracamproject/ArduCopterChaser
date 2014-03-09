@@ -219,6 +219,20 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);
 	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
 	chaser_overrun_thres.z = 0;
+	
+	// YAW制御の閾値計算
+	float chaser_beacon_distance = safe_sqrt((beacon_loc.x-chaser_copter_pos.x)*(beacon_loc.x-chaser_copter_pos.x)
+											+(beacon_loc.y-chaser_copter_pos.y)*(beacon_loc.y-chaser_copter_pos.y));
+	if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST1) {
+		chaser_yaw_restrict_cd1 = 18000;
+		chaser_yaw_restrict_cd2 = 36000;	// なんでもいいはずだけど18000は0割りになるのでNG
+	} else if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST2) {
+		chaser_yaw_restrict_cd1 = 9000;
+		chaser_yaw_restrict_cd2 = 12000;
+	} else {
+		chaser_yaw_restrict_cd1 = 1000;
+		chaser_yaw_restrict_cd2 = 2000;
+	}
 }
 
 // 現在値からtargetへので目標角度を計算する
@@ -296,7 +310,7 @@ static bool set_chaser_state(uint8_t state) {
 			if (GPS_ok()) {
 				chaser_started = false;
 				
-				set_yaw_mode(YAW_HOLD);
+				set_yaw_mode(YAW_CHASER);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);
@@ -310,7 +324,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 		case CHASER_CHASE:
 			if (GPS_ok()) {
-				set_yaw_mode(YAW_HOLD);
+				set_yaw_mode(YAW_CHASER);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
 				set_throttle_mode(THROTTLE_AUTO);
 				set_nav_mode(NAV_CHASER);
@@ -454,10 +468,10 @@ static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw, int
 	int32_t delta_yaw = wrap_180_cd(desired_yaw - current_yaw);
 	uint16_t delta_yaw_abs = labs(delta_yaw);
 	
-	if(delta_yaw_abs < CHASER_YAW_LIMIT_CD1){ //別途定義する角度以下であれば、制限速度ゼロ = 動かない
+	if(delta_yaw_abs < chaser_yaw_restrict_cd1){ //別途定義する角度以下であれば、制限速度ゼロ = 動かない
 		chaser_target_yaw = current_yaw;
-	} else if(delta_yaw_abs < CHASER_YAW_LIMIT_CD2){ //別途定義する角度域の場合は制限速度を抑える(線形)
-		int16_t tmp_slew_rate = slew_rate * (delta_yaw_abs - CHASER_YAW_LIMIT_CD1) / (float)(CHASER_YAW_LIMIT_CD2 - CHASER_YAW_LIMIT_CD1);	//LIMITED1の時0、LIMITED2の時従来の制限値になるような1次式
+	} else if(delta_yaw_abs < chaser_yaw_restrict_cd2){ //別途定義する角度域の場合は制限速度を抑える(線形)
+		int16_t tmp_slew_rate = slew_rate * (delta_yaw_abs - chaser_yaw_restrict_cd1) / (float)(chaser_yaw_restrict_cd2 - chaser_yaw_restrict_cd1);	//cd1の時0、cd2の時従来の制限値になるような1次式
 		chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -tmp_slew_rate, tmp_slew_rate));
 	} else{
 		chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -slew_rate, slew_rate));
