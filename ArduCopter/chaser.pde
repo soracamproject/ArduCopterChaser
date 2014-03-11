@@ -231,8 +231,8 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 		chaser_yaw_restrict_cd1 = 9000;
 		chaser_yaw_restrict_cd2 = 12000;
 	} else {
-		chaser_yaw_restrict_cd1 = 1000;
-		chaser_yaw_restrict_cd2 = 2000;
+		chaser_yaw_restrict_cd1 = 500;
+		chaser_yaw_restrict_cd2 = 1000;
 	}
 }
 
