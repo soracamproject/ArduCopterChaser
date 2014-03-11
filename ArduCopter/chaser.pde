@@ -237,7 +237,7 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	
 	// YAW制御
 	float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel.x*chaser_dest_vel.x + chaser_dest_vel.y*chaser_dest_vel.y);
-	if (chaser_dest_vel_abs_xy > 1.0f) {
+	if (chaser_dest_vel_abs_xy > 100.0f) {
 		// 目標速度が1m/sより大の場合、その方向にyawを向ける
 		// （＝1m/s以下の場合はラッチ）
 		chaser_yaw_target = get_xy_bearing_cd(chaser_dest_vel);
