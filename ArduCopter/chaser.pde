@@ -136,7 +136,7 @@ static void update_chaser() {
 	// loiterコントローラを呼ぶのみで終了
 	if (!chaser_started) {
 		// もしビーコン位置配列が埋まっている場合はYAWのみ見る（超暫定）
-		if (chaser_beacon_loc_ok) {chaser_yaw_target = calc_chaser_yaw_target(beacon_loc_relaxed_last);}
+		//if (chaser_beacon_loc_ok) {chaser_yaw_target = calc_chaser_yaw_target(beacon_loc_relaxed_last);}
 		chaser_dest_vel.zero();
 		wp_nav.update_loiter_for_chaser(chaser_dest_vel);
 		return;
@@ -222,17 +222,25 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	chaser_overrun_thres.z = 0;
 	
 	// YAW制御の閾値計算
-	float chaser_beacon_distance = safe_sqrt((beacon_loc.x-chaser_copter_pos.x)*(beacon_loc.x-chaser_copter_pos.x)
-											+(beacon_loc.y-chaser_copter_pos.y)*(beacon_loc.y-chaser_copter_pos.y));
-	if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST1) {
-		chaser_yaw_restrict_cd1 = 18000;
-		chaser_yaw_restrict_cd2 = 36000;	// なんでもいいはずだけど18000は0割りになるのでNG
-	} else if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST2) {
-		chaser_yaw_restrict_cd1 = 9000;
-		chaser_yaw_restrict_cd2 = 12000;
-	} else {
-		chaser_yaw_restrict_cd1 = 500;
-		chaser_yaw_restrict_cd2 = 1000;
+	//float chaser_beacon_distance = safe_sqrt((beacon_loc.x-chaser_copter_pos.x)*(beacon_loc.x-chaser_copter_pos.x)
+	//										+(beacon_loc.y-chaser_copter_pos.y)*(beacon_loc.y-chaser_copter_pos.y));
+	//if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST1) {
+	//	chaser_yaw_restrict_cd1 = 18000;
+	//	chaser_yaw_restrict_cd2 = 36000;	// なんでもいいはずだけど18000は0割りになるのでNG
+	//} else if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST2) {
+	//	chaser_yaw_restrict_cd1 = 9000;
+	//	chaser_yaw_restrict_cd2 = 12000;
+	//} else {
+	//	chaser_yaw_restrict_cd1 = 500;
+	//	chaser_yaw_restrict_cd2 = 1000;
+	//}
+	
+	// YAW制御
+	float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel.x*chaser_dest_vel.x + chaser_dest_vel.y*chaser_dest_vel.y);
+	if (chaser_dest_vel_abs_xy > 1.0f) {
+		// 目標速度が1m/sより大の場合、その方向にyawを向ける
+		// （＝1m/s以下の場合はラッチ）
+		chaser_yaw_target = get_xy_bearing_cd(chaser_dest_vel);
 	}
 }
 
@@ -486,6 +494,12 @@ static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw, int
 		chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -slew_rate, slew_rate));
 	}
 	return chaser_target_yaw;
+}
+
+// 方向ベクトル(x,y)から角度(-18000～18000)[centi-deg.]を計算する
+// x:緯度方向:lat, y:経度方向:lng
+int32_t get_xy_bearing_cd(const Vector3f& xy_vector){
+	return (int32_t)atan2f(xy_vector.x, xy_vector.y)*5729.57795f;
 }
 
 

@@ -813,8 +813,8 @@ static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.
 static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 
-static uint16_t chaser_yaw_restrict_cd1 = 18000;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
-static uint16_t chaser_yaw_restrict_cd2 = 36000;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
+static uint16_t chaser_yaw_restrict_cd1 = 500;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
+static uint16_t chaser_yaw_restrict_cd2 = 1000;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
 													// ※18000を入れると0割りになるためとりあえず36000。cd1=18000なのでまったく動かないはず。
 
 
