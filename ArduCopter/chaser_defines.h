@@ -23,7 +23,7 @@
 // ソナーバージョン用開発版
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
 #define CHASER_SONAR_ALT_LOWER     250.0f		// この高度を下回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_ALT_UPPER     350.0f		// この高度を上回ったら目標高度を上げにかかる[cm]
+#define CHASER_SONAR_ALT_UPPER     300.0f		// この高度を上回ったら目標高度を上げにかかる[cm]
 #define CHASER_SONAR_CLIMB_RATE    1.0f			// 目標高度変更幅[cm/100Hz] ※100Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/100の値を入れる
 
 

@@ -138,6 +138,9 @@ void loop(){
 			
 			// ■毎回実行■
 			// ボタン1が押されたら次のステートへ
+			//if(button2.read() == HIGH){
+			//	change_state(BEACON_READY);
+			//}
 			if(button1.read() == HIGH){
 				change_state(BEACON_READY);
 			}
