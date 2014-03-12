@@ -499,7 +499,9 @@ static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw, int
 // 方向ベクトル(x,y)から角度(-18000～18000)[centi-deg.]を計算する
 // x:緯度方向:lat, y:経度方向:lng
 int32_t get_xy_bearing_cd(const Vector3f& xy_vector){
-	return (int32_t)atan2f(xy_vector.x, xy_vector.y)*5729.57795f;
+	// ToDo: 今度こそたぶんいいと思うけど要確認
+	// atan2fはatan2f(y,x)の順の引数
+	return (int32_t)atan2f(xy_vector.y, xy_vector.x)*5729.57795f;
 }
 
 
