@@ -199,6 +199,10 @@ static void update_chaser() {
 }
 
 static void update_chaser_origin_destination(const Vector3f beacon_loc, const Vector3f beacon_loc_last, float dt) {
+	static uint8_t yaw_relax_count = 0;
+	static float chaser_dest_vel_x_relax_sum = 0;
+	static float chaser_dest_vel_y_relax_sum = 0;
+	
 	// 起点を現在のターゲット位置にする
 	chaser_origin = chaser_target;
 	
@@ -226,11 +230,28 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	chaser_overrun_thres.z = 0;
 	
 	// YAW制御
-	float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel.x*chaser_dest_vel.x + chaser_dest_vel.y*chaser_dest_vel.y);
-	if (chaser_dest_vel_abs_xy > 100.0f) {
-		// 目標速度が1m/sより大の場合、その方向にyawを向ける
-		// （＝1m/s以下の場合はラッチ）
-		chaser_yaw_target = get_xy_bearing_cd(chaser_dest_vel);
+	// 指定した回数に1回毎に方角を出す
+	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
+		chaser_dest_vel_x_relax_sum += chaser_dest_vel.x;
+		chaser_dest_vel_y_relax_sum += chaser_dest_vel.y;
+		yaw_relax_count++;
+	} else {
+		float chaser_dest_vel_x_relaxed = chaser_dest_vel_x_relax_sum / (float)CHASER_YAW_DEST_RELAX_NUM;
+		float chaser_dest_vel_y_relaxed = chaser_dest_vel_y_relax_sum / (float)CHASER_YAW_DEST_RELAX_NUM;
+		
+		float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel_x_relaxed*chaser_dest_vel_x_relaxed + 
+												 chaser_dest_vel_y_relaxed*chaser_dest_vel_y_relaxed);
+		if (chaser_dest_vel_abs_xy > 100.0f) {
+			// 目標速度が1m/sより大の場合、その方向にyawを向ける（＝1m/s以下の場合はラッチ）
+			// 引数は順に(経度方向:lng、緯度方向:lat)
+			// atan2はatan2(y,x)でx軸からの角度(rad.)を出す
+			chaser_yaw_target = (int32_t)atan2f(chaser_dest_vel_y_relaxed, chaser_dest_vel_x_relaxed)*5729.57795f;;
+		}
+		
+		// 積算とカウントをリセット
+		chaser_dest_vel_x_relax_sum = 0;
+		chaser_dest_vel_y_relax_sum = 0;
+		yaw_relax_count = 0;
 	}
 }
 
@@ -479,16 +500,6 @@ static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw, int
 	}
 	return chaser_target_yaw;
 }
-
-// 方向ベクトル(x,y)から角度(-18000～18000)[centi-deg.]を計算する
-// x:緯度方向:lat, y:経度方向:lng
-int32_t get_xy_bearing_cd(const Vector3f& xy_vector){
-	// ToDo: 今度こそたぶんいいと思うけど要確認
-	// atan2fはatan2f(y,x)の順の引数
-	return (int32_t)atan2f(xy_vector.y, xy_vector.x)*5729.57795f;
-}
-
-
 
 
 void change_mount_stab_pitch(){

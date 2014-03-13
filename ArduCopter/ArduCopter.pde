@@ -802,7 +802,7 @@ static bool chaser_beacon_loc_reset = false;		// ビーコン位置情報をリ�
 static bool chaser_beacon_loc_ok = false;	// ビーコン位置情報が埋まっている状態
 static bool chaser_started = false;			// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
 
-static int32_t chaser_yaw_target;			// YAWの目標角度（-1800〜1800）[centi-degrees]
+static int32_t chaser_yaw_target;			// YAWの目標角度（-18000〜18000）[centi-degrees]
 
 static Vector3f chaser_copter_pos;			// CHASERデバッグ用の機体位置（inertial_navで取ってくる）
 static float chaser_baro_temp;				// CHASERデバッグ用の気圧センサ温度[deg.C]
@@ -813,9 +813,8 @@ static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.
 static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 
-static uint16_t chaser_yaw_restrict_cd1 = 500;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
-static uint16_t chaser_yaw_restrict_cd2 = 1000;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
-													// ※18000を入れると0割りになるためとりあえず36000。cd1=18000なのでまったく動かないはず。
+static uint16_t chaser_yaw_restrict_cd1 = CHASER_YAW_RESTRICT_CD1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
+static uint16_t chaser_yaw_restrict_cd2 = CHASER_YAW_RESTRICT_CD2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
 
 
 ////////////////////////////////////////////////////////////////////////////////
