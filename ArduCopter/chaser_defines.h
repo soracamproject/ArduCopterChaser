@@ -31,6 +31,8 @@
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
 
+#define CHASER_GIMBAL_ANGLE          -10		// CHASER時のジンバルの角度[deg.]
+
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
 // 刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）

@@ -300,7 +300,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 			// ジンバルをSTABで指定した角度にする
 			change_mount_stab_pitch();
-			change_mount_control_pitch_angle(-10); //degree  -45<pitch_angle<45
+			change_mount_control_pitch_angle(CHASER_GIMBAL_ANGLE); //degree  -45<pitch_angle<45
 			
 			success = true;
 			break;
@@ -344,7 +344,7 @@ static bool set_chaser_state(uint8_t state) {
 				
 				set_yaw_mode(YAW_CHASER);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
-				set_throttle_mode(THROTTLE_AUTO);
+				set_throttle_mode(THROTTLE_CHASER);
 				set_nav_mode(NAV_CHASER);
 				
 				Vector3f pos = inertial_nav.get_position();
@@ -358,7 +358,7 @@ static bool set_chaser_state(uint8_t state) {
 			if (GPS_ok()) {
 				set_yaw_mode(YAW_CHASER);
 				set_roll_pitch_mode(ROLL_PITCH_AUTO);
-				set_throttle_mode(THROTTLE_AUTO);
+				set_throttle_mode(THROTTLE_CHASER);
 				set_nav_mode(NAV_CHASER);
 				
 				success = true;
