@@ -812,6 +812,7 @@ static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.
 
 static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
+static uint8_t chaser_sonar_alt_health;		// CHASER用ソナー高度健常判断値（chaser_sonar_altで同じことをやっている）
 
 static uint16_t chaser_yaw_restrict_cd1 = CHASER_YAW_RESTRICT_CD1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
 static uint16_t chaser_yaw_restrict_cd2 = CHASER_YAW_RESTRICT_CD2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
@@ -1913,6 +1914,7 @@ bool set_throttle_mode( uint8_t new_throttle_mode )
 
         case THROTTLE_HOLD:
         case THROTTLE_AUTO:
+		case THROTTLE_CHASER:
             controller_desired_alt = get_initial_alt_hold(current_loc.alt, climb_rate);     // reset controller desired altitude to current altitude
             wp_nav.set_desired_alt(controller_desired_alt);                                 // same as above but for loiter controller
             if (throttle_mode_manual(throttle_mode)) {  // reset the alt hold I terms if previous throttle mode was manual
@@ -1922,7 +1924,7 @@ bool set_throttle_mode( uint8_t new_throttle_mode )
             throttle_initialised = true;
             break;
 
-        case THROTTLE_LAND:
+		case THROTTLE_LAND:
             reset_land_detector();  // initialise land detector
             controller_desired_alt = get_initial_alt_hold(current_loc.alt, climb_rate);   // reset controller desired altitude to current altitude
             throttle_initialised = true;
@@ -2080,7 +2082,20 @@ void update_throttle_mode(void)
             set_target_alt_for_reporting(0);
         }
         break;
-
+	
+	// THROTTLE_HOLDをベースにした制御
+	case THROTTLE_CHASER:
+		if(ap.auto_armed) {
+			get_throttle_rate_for_chaser();
+		}else{
+			// pilot's throttle must be at zero so keep motors off
+			set_throttle_out(0, false);
+			// deactivate accel based throttle controller
+			throttle_accel_deactivate();
+			set_target_alt_for_reporting(0);
+		}
+		break;
+	
     case THROTTLE_LAND:
         // landing throttle controller
         get_throttle_land();
@@ -2187,9 +2202,13 @@ static void update_altitude()
 	//   fc=1Hz, T=0.1s  -> alpha = 0.38587f
 	//   fc=2Hz, T=0.02s -> alpha = 0.20085f
 	chaser_sonar_alt = chaser_sonar_alt + 0.38587f * ((float)sonar_alt - chaser_sonar_alt);
-	
-	// chaserデバッグ用気圧計温度
-	chaser_baro_temp    = barometer.get_temperature();
+	if (chaser_sonar_alt >= sonar->min_distance && chaser_sonar_alt <= sonar->max_distance * SONAR_RELIABLE_DISTANCE_PCT) {
+		if ( chaser_sonar_alt_health < SONAR_ALT_HEALTH_MAX ) {
+			chaser_sonar_alt_health++;
+		}
+	}else{
+		chaser_sonar_alt_health = 0;
+	}
 	
 #endif  // HIL_MODE == HIL_MODE_ATTITUDE
 

@@ -42,6 +42,7 @@
 #define THROTTLE_AUTO                       3   // auto pilot altitude controller with target altitude held in next_WP.alt
 #define THROTTLE_LAND                       4   // landing throttle controller
 #define THROTTLE_MANUAL_HELI                5   // pilot manually controlled throttle for traditional helicopters
+#define THROTTLE_CHASER                     6   // CHASER用
 
 
 // sonar - for use with CONFIG_SONAR_SOURCE

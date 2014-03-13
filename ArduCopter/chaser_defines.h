@@ -24,9 +24,12 @@
 
 // ソナーバージョン用開発版
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
-#define CHASER_SONAR_ALT_LOWER     250.0f		// この高度を下回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_ALT_UPPER     300.0f		// この高度を上回ったら目標高度を上げにかかる[cm]
-#define CHASER_SONAR_CLIMB_RATE    1.0f			// 目標高度変更幅[cm/100Hz] ※100Hzで更新されるupdate_chaser()で変更するため狙い[m/s]の1/100の値を入れる
+#define CHASER_ALT_DECENT_RATE       100		// ベース下降速度[cm/s]
+#define CHASER_SONAR_ALT_TARGET      250.0f		// ベース高度[cm]（この高度の時にベース下降速度となる）
+#define CHASER_SONAR_ALT_KP          1.0f		// P項（ベース高度との偏差×この値）でかかる
+#define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
+#define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
+#define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定

@@ -124,6 +124,7 @@ config.h
 　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため
 defines.h
 　YAW_CHASERを追加　番号は10
+　THROTTLE_CHASERを追加　番号は6
 　Auto Pilot modes
 　　CHASERを追加　番号は14
 　　NUM_MODESを増やす

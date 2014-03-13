@@ -153,16 +153,16 @@ static void update_chaser() {
 		// defineでON/OFFできる
 		// sonar_alt_healthがたまっている（おそらくsonarが生きているという意味）場合のみ計算される
 		// 目標高度下限を下回るか、上限を上回ったら目標高度を修正していく
-		#ifdef USE_CHASER_SONAR_ALT
-		chaser_dammy_alt -= 0.3f;
-		if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
-			if (chaser_sonar_alt < CHASER_SONAR_ALT_LOWER) {
-				chaser_dammy_alt += CHASER_SONAR_CLIMB_RATE;
-			} else if(chaser_sonar_alt > CHASER_SONAR_ALT_UPPER) {
-				chaser_dammy_alt -= CHASER_SONAR_CLIMB_RATE;
-			}
-		}
-		#endif	//ifdef USE_CHASER_SONAR_ALT
+		//#ifdef USE_CHASER_SONAR_ALT
+		//chaser_dammy_alt -= 0.3f;
+		//if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
+		//	if (chaser_sonar_alt < CHASER_SONAR_ALT_LOWER) {
+		//		chaser_dammy_alt += CHASER_SONAR_CLIMB_RATE;
+		//	} else if(chaser_sonar_alt > CHASER_SONAR_ALT_UPPER) {
+		//		chaser_dammy_alt -= CHASER_SONAR_CLIMB_RATE;
+		//	}
+		//}
+		//#endif	//ifdef USE_CHASER_SONAR_ALT
 		chaser_target.z = chaser_dammy_alt;
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
@@ -253,6 +253,20 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 		chaser_dest_vel_y_relax_sum = 0;
 		yaw_relax_count = 0;
 	}
+}
+
+// CHASER用THROTTLEコントローラ
+static void get_throttle_rate_for_chaser(){
+	// ベース下降速度を設定
+	int16_t climb_rate = -CHASER_ALT_DECENT_RATE;
+	
+	// ソナーによる補正項の計算
+	if (chaser_sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
+		int16_t sonar_climb_rate = constrain_int16(CHASER_SONAR_ALT_KP * (CHASER_SONAR_ALT_TARGET - chaser_sonar_alt),
+												   -CHASER_SONAR_CLIMB_RATE_MAX, CHASER_SONAR_CLIMB_RATE_MAX);
+		climb_rate += sonar_climb_rate;
+	}
+	get_throttle_rate_stabilized(climb_rate);
 }
 
 
