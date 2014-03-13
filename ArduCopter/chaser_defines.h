@@ -9,7 +9,8 @@
 
 #define CHASER_TARGET_RELAX_NUM    4			// ビーコン位置のなまし数
 #define CHASER_ALT                 650.0f		// CHASER時の高さ（とりあえず固定版）
-#define CHASER_TARGET_ACCEL        300.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
+#define CHASER_TARGET_ACCEL        200.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
+#define CHASER_TARGET_DECEL        150.0f		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
 #define CHASER_TARGET_VEL_MAX      600.0f		// ターゲットの移動速度の最大値[m/s]
 #define CHASER_YAW_SLEW_RATE       45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）	
 #define CHASER_OVERRUN_SEC         0.0f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]

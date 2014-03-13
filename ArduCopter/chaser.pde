@@ -135,8 +135,6 @@ static void update_chaser() {
 	// CHASERモードの準備ができていない場合はloiterっぽい状態にする
 	// loiterコントローラを呼ぶのみで終了
 	if (!chaser_started) {
-		// もしビーコン位置配列が埋まっている場合はYAWのみ見る（超暫定）
-		//if (chaser_beacon_loc_ok) {chaser_yaw_target = calc_chaser_yaw_target(beacon_loc_relaxed_last);}
 		chaser_dest_vel.zero();
 		wp_nav.update_loiter_for_chaser(chaser_dest_vel);
 		return;
@@ -181,17 +179,23 @@ static void update_chaser() {
 		chaser_target_vel.z = 0;
 		
 		// chaser_target_velを加減速
-		chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - CHASER_TARGET_ACCEL * dt, chaser_target_vel.x + CHASER_TARGET_ACCEL * dt);
-		chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - CHASER_TARGET_ACCEL * dt, chaser_target_vel.y + CHASER_TARGET_ACCEL * dt);
-		
-		// yawの目標値を計算し更新する
-		chaser_yaw_target = calc_chaser_yaw_target(chaser_target);
+		// 加速度と減速度を分離
+		if (chaser_target_vel.x > 0) {
+			chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - CHASER_TARGET_DECEL * dt, chaser_target_vel.x + CHASER_TARGET_ACCEL * dt);
+		} else {
+			chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - CHASER_TARGET_ACCEL * dt, chaser_target_vel.x + CHASER_TARGET_DECEL * dt);
+		}
+		if (chaser_target_vel.y > 0) {
+			chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - CHASER_TARGET_DECEL * dt, chaser_target_vel.y + CHASER_TARGET_ACCEL * dt);
+		} else {
+			chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - CHASER_TARGET_DECEL * dt, chaser_target_vel.y + CHASER_TARGET_ACCEL * dt);
+		}
 		
 		// loiterターゲット位置更新
 		wp_nav.set_loiter_target(chaser_target);
 	}
 	// loiterコントローラを呼ぶ
-	wp_nav.update_loiter_for_chaser(chaser_dest_vel);
+	wp_nav.update_loiter_for_chaser(chaser_target_vel);
 }
 
 static void update_chaser_origin_destination(const Vector3f beacon_loc, const Vector3f beacon_loc_last, float dt) {
@@ -221,20 +225,6 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
 	chaser_overrun_thres.z = 0;
 	
-	// YAW制御の閾値計算
-	//float chaser_beacon_distance = safe_sqrt((beacon_loc.x-chaser_copter_pos.x)*(beacon_loc.x-chaser_copter_pos.x)
-	//										+(beacon_loc.y-chaser_copter_pos.y)*(beacon_loc.y-chaser_copter_pos.y));
-	//if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST1) {
-	//	chaser_yaw_restrict_cd1 = 18000;
-	//	chaser_yaw_restrict_cd2 = 36000;	// なんでもいいはずだけど18000は0割りになるのでNG
-	//} else if (chaser_beacon_distance < CHASER_YAW_RESTRICT_DIST2) {
-	//	chaser_yaw_restrict_cd1 = 9000;
-	//	chaser_yaw_restrict_cd2 = 12000;
-	//} else {
-	//	chaser_yaw_restrict_cd1 = 500;
-	//	chaser_yaw_restrict_cd2 = 1000;
-	//}
-	
 	// YAW制御
 	float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel.x*chaser_dest_vel.x + chaser_dest_vel.y*chaser_dest_vel.y);
 	if (chaser_dest_vel_abs_xy > 100.0f) {
@@ -244,12 +234,6 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	}
 }
 
-// 現在値からtargetへので目標角度を計算する
-// input: target(homeからの距離[cm])
-// output: 現在地からtargetへの角度(-1800〜+1800) [centi-degrees]
-static int32_t calc_chaser_yaw_target(const Vector3f target){
-	return (int32_t)pv_get_bearing_cd(inertial_nav.get_position(), target);
-}
 
 // CHASERモードでのGPSが必要な状態かの判定
 // 使ってない
@@ -508,12 +492,6 @@ int32_t get_xy_bearing_cd(const Vector3f& xy_vector){
 
 
 void change_mount_stab_pitch(){
-	
-	
-	// CHASER時 MAVLink_dammy_camera_mount_command 
-	
-	
-	
 	uint8_t system_id =20;			// 実績値20 
 	uint8_t component_id = 200;		// 実績値200
 	
@@ -521,75 +499,39 @@ void change_mount_stab_pitch(){
 	uint8_t target_system = mavlink_system.sysid;///< System ID   SYSID_MYGCSと一致しているか読み込む際に確認される。読み込む側の判断文をコメントアウト必要
 	uint8_t target_component = 1; ///< Component ID
 	uint8_t mount_mode = 2; ///< mount operating mode (see MAV_MOUNT_MODE enum) 一定角度2を使う。ターゲットを追いかける場合は4をつかう。
-	//	MAV_MOUNT_MODE_RETRACT=0, /* Load and keep safe position (Roll,Pitch,Yaw) from EEPROM and stop stabilization | */
-	//	MAV_MOUNT_MODE_NEUTRAL=1, /* Load and keep neutral position (Roll,Pitch,Yaw) from EEPROM. | */
-	//	MAV_MOUNT_MODE_MAVLINK_TARGETING=2, /* Load neutral position and start MAVLink Roll,Pitch,Yaw control with stabilization | */
-	//	MAV_MOUNT_MODE_RC_TARGETING=3, /* Load neutral position and start RC Roll,Pitch,Yaw control with stabilization | */
-	//	MAV_MOUNT_MODE_GPS_POINT=4, /* Load neutral position and start to point to Lat,Lon,Alt | */
-	//	MAV_MOUNT_MODE_ENUM_END=5, /*  | */
-
+		//	MAV_MOUNT_MODE_RETRACT=0, /* Load and keep safe position (Roll,Pitch,Yaw) from EEPROM and stop stabilization | */
+		//	MAV_MOUNT_MODE_NEUTRAL=1, /* Load and keep neutral position (Roll,Pitch,Yaw) from EEPROM. | */
+		//	MAV_MOUNT_MODE_MAVLINK_TARGETING=2, /* Load neutral position and start MAVLink Roll,Pitch,Yaw control with stabilization | */
+		//	MAV_MOUNT_MODE_RC_TARGETING=3, /* Load neutral position and start RC Roll,Pitch,Yaw control with stabilization | */
+		//	MAV_MOUNT_MODE_GPS_POINT=4, /* Load neutral position and start to point to Lat,Lon,Alt | */
+		//	MAV_MOUNT_MODE_ENUM_END=5, /*  | */
 	uint8_t stab_roll = 0;///< (1 = yes, 0 = no)
 	uint8_t stab_pitch = 1; ///< (1 = yes, 0 = no)
 	uint8_t stab_yaw = 0;///< (1 = yes, 0 = no)
 	
-	
-	//uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	//uint16_t len;
-	
 	mavlink_msg_mount_configure_pack( system_id, component_id, &msg, target_system, target_component, mount_mode, stab_roll, stab_pitch, stab_yaw);//dammy message write
 	
-	//len = mavlink_msg_to_send_buffer(buf, &msg);//	←シリアル用？
-	//Serial.write(buf, len);//							←シリアル用？	
-
-	//return mavlink_msg_mount_configure_pack(system_id, component_id, msg, mount_configure->target_system, mount_configure->target_component,
-		//    mount_configure->mount_mode, mount_configure->stab_roll, mount_configure->stab_pitch, mount_configure->stab_yaw);
-
 	camera_mount.configure_msg(&msg);
-	
-//dammy message read→　AP_Mount::configure_msg(mavlink_message_t* msg)の中(l423-l426)のif文をコメントアウトする
-//	必要あり。SYSIDがMYGCSと一致しているか確認しているのでそれをキャンセル→sysid_my_gcsの設定でOK**/
-	
 }
 
-void change_mount_control_pitch_angle(int32_t _pitch_angle){
-
-	
-	// CHASER時 MAVLink_dammy_camera_mount_control_angle
-	
-	
+void change_mount_control_pitch_angle(int32_t pitch_angle){
 	uint8_t system_id =20;			// 実績値20 
 	uint8_t component_id = 200;		// 実績値200
 	
 	mavlink_message_t msg;
-	int32_t input_a = _pitch_angle*100 ; ///< pitch(deg*100) or lat, depending on mount mode
+	int32_t input_a = pitch_angle*100 ; ///< pitch(deg*100) or lat, depending on mount mode
 	int32_t input_b = 0 ; ///< roll(deg*100) or lon depending on mount mode
 	int32_t input_c = 0 ; ///< yaw(deg*100) or alt (in cm) depending on mount mode
 	uint8_t target_system = mavlink_system.sysid; ///< System ID
 	uint8_t target_component = 1; ///< Component ID
 	uint8_t save_position = 1; ///< if "1" it will save current trimmed position on EEPROM (just valid for NEUTRAL and LANDING)
 	
-	
-	//uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-	//uint16_t len;
-	
 	mavlink_msg_mount_control_pack(system_id, component_id, &msg, target_system, target_component, input_a, input_b, input_c, save_position);//dammy message write
 	
-	//len = mavlink_msg_to_send_buffer(buf, &msg);//	←シリアル用？
-	//Serial.write(buf, len);//		                    ←シリアル用？
-	
-	
 	camera_mount.control_msg(&msg);
-	//dammy message read　AP_Mount::control_msg(mavlink_message_t* msg)の中(l439-442)のif文をコメントアウトする
-	//必要あり。SYSIDがMYGCSと一致しているか確認しているのでそれをキャンセル→sysid_my_gcsの設定でOK*/
 }
 
 void change_mount_neutral(){
-	
-	
-	// CHASER時 MAVLink_dammy_camera_mount_command 
-	
-	
-	
 	uint8_t system_id =20;			// 実績値20 
 	uint8_t component_id = 200;		// 実績値200
 	
@@ -597,29 +539,16 @@ void change_mount_neutral(){
 	uint8_t target_system = mavlink_system.sysid;///< System ID   SYSID_MYGCSと一致しているか読み込む際に確認される。読み込む側の判断文をコメントアウト必要
 	uint8_t target_component = 1; ///< Component ID
 	uint8_t mount_mode = 1; ///< mount operating mode (see MAV_MOUNT_MODE enum) 一定角度2を使う。ターゲットを追いかける場合は4をつかう。
-	//	MAV_MOUNT_MODE_RETRACT=0, /* Load and keep safe position (Roll,Pitch,Yaw) from EEPROM and stop stabilization | */
-	//	MAV_MOUNT_MODE_NEUTRAL=1, /* Load and keep neutral position (Roll,Pitch,Yaw) from EEPROM. | */
-	//	MAV_MOUNT_MODE_MAVLINK_TARGETING=2, /* Load neutral position and start MAVLink Roll,Pitch,Yaw control with stabilization | */
-	//	MAV_MOUNT_MODE_RC_TARGETING=3, /* Load neutral position and start RC Roll,Pitch,Yaw control with stabilization | */
-	//	MAV_MOUNT_MODE_GPS_POINT=4, /* Load neutral position and start to point to Lat,Lon,Alt | */
-	//	MAV_MOUNT_MODE_ENUM_END=5, /*  | */
-
 	uint8_t stab_roll = 0;///< (1 = yes, 0 = no)
 	uint8_t stab_pitch = 1; ///< (1 = yes, 0 = no)
 	uint8_t stab_yaw = 0;///< (1 = yes, 0 = no)
 	
 	mavlink_msg_mount_configure_pack( system_id, component_id, &msg, target_system, target_component, mount_mode, stab_roll, stab_pitch, stab_yaw);//dammy message write
 	camera_mount.configure_msg(&msg);
-
 }
 
 
 void change_mount_control_neutral_angle(){
-
-	
-	// CHASER時 MAVLink_dammy_camera_mount_control_angle
-	
-	
 	uint8_t system_id =20;			// 実績値20 
 	uint8_t component_id = 200;		// 実績値200
 	
