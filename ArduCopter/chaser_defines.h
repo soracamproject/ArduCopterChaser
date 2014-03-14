@@ -42,10 +42,17 @@
 //#define CHASER_LON_MAX            1370635160		//経度上限
 
 // スノーウェーブパーク、鷲ヶ岳用
-#define CHASER_LAT_MIN            358993800			//経度下限
-#define CHASER_LAT_MAX            360388670			//緯度上限
-#define CHASER_LON_MIN            1367319150		//経度下限
-#define CHASER_LON_MAX            1370295750		//経度上限
+//#define CHASER_LAT_MIN            358993800			//経度下限
+//#define CHASER_LAT_MAX            360388670			//緯度上限
+//#define CHASER_LON_MIN            1367319150		//経度下限
+//#define CHASER_LON_MAX            1370295750		//経度上限
+
+// 池の平温泉スキー場用
+#define CHASER_LAT_MIN            368389520			//経度下限
+#define CHASER_LAT_MAX            368999260			//緯度上限
+#define CHASER_LON_MIN            1381150330		//経度下限
+#define CHASER_LON_MAX            1382204330		//経度上限
+
 
 
 // CHASERデバッグ用通信有効無効フラグ
