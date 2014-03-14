@@ -258,7 +258,7 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 // CHASER用THROTTLEコントローラ
 static void get_throttle_rate_for_chaser(){
 	// ベース下降速度を設定
-	int16_t climb_rate = -CHASER_ALT_DECENT_RATE;
+	int16_t climb_rate = -g.chaser_descent_rate;
 	
 	// ソナーによる補正項の計算
 	if (chaser_sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {

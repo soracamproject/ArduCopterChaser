@@ -139,6 +139,9 @@ public:
         k_param_sysid_my_gcs,
         k_param_serial3_baud,
         k_param_telem_delay,
+		
+		// 120: CHASER用テスト
+		k_param_chaser_descent_rate = 120,
 
         //
         // 140: Sensor parameters
@@ -321,6 +324,8 @@ public:
     AP_Int16        land_speed;
     AP_Int16        pilot_velocity_z_max;        // maximum vertical velocity the pilot may request
 
+	// CHASER用テスト
+	AP_Int16        chaser_descent_rate;
 
     // Throttle
     //
