@@ -138,13 +138,15 @@ void loop(){
 			
 			// ■毎回実行■
 			// ボタン1が押されたら次のステートへ
-			//if(button2.read() == HIGH){
-			//	change_state(BEACON_READY);
+			
+			//if(button2.update()==1 && button2.read() == HIGH){
+			//	change_state(BEACON_LAND);
 			//}
 			if(button1.update()==1 && button1.read() == HIGH){
-				//change_state(BEACON_READY);
-				change_state(BEACON_DEBUG);
+				change_state(BEACON_READY);
+				//change_state(BEACON_DEBUG);
 			}
+			
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -331,7 +333,7 @@ void loop(){
 				//xbee_serial.println(tmp_dt_ms);	// 速度確認デバッグ用
 				prev_et_ms = now_ms;
 			}
-			if(button2.update()==1 && button2.read() == HIGH){
+			if(button1.update()==1 && button1.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
 			// **ToDo**

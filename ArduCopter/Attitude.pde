@@ -1147,7 +1147,8 @@ get_throttle_rate_stabilized(int16_t target_rate)
     }
 
     // do not let target altitude get too far from current altitude
-    controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-750,current_loc.alt+750);
+    //controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-750,current_loc.alt+750);
+	controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-200,current_loc.alt+200);		// 池の平での評価用に一時的に変更
 
 #if AC_FENCE == ENABLED
     // do not let target altitude be too close to the fence

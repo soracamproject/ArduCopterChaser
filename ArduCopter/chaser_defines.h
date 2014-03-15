@@ -24,7 +24,7 @@
 
 // ソナーバージョン用開発版
 #define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
-#define CHASER_ALT_DECENT_RATE       70		// ベース下降速度[cm/s]
+#define CHASER_ALT_DECENT_RATE       50		// ベース下降速度[cm/s]
 #define CHASER_SONAR_ALT_TARGET      250.0f		// ベース高度[cm]（この高度の時にベース下降速度となる）
 #define CHASER_SONAR_ALT_KP          1.0f		// P項（ベース高度との偏差×この値）でかかる
 #define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
@@ -63,7 +63,7 @@
 // 位置情報デバッグ有効無効フラグ
 // 0で通常のCHASE
 // 1で位置情報を送って解析するのみのモード
-#define CHASER_LOCATION_DEBUG     1
+#define CHASER_LOCATION_DEBUG     0
 
 // CHASERモード
 #define CHASER_INIT          0
