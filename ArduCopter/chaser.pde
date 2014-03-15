@@ -148,22 +148,7 @@ static void update_chaser() {
 		target_distance.z = 0;
 		chaser_target.x = chaser_origin.x + target_distance.x;
 		chaser_target.y = chaser_origin.y + target_distance.y;
-		
-		// CHASERソナー高度制御開発版
-		// defineでON/OFFできる
-		// sonar_alt_healthがたまっている（おそらくsonarが生きているという意味）場合のみ計算される
-		// 目標高度下限を下回るか、上限を上回ったら目標高度を修正していく
-		//#ifdef USE_CHASER_SONAR_ALT
-		//chaser_dammy_alt -= 0.3f;
-		//if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
-		//	if (chaser_sonar_alt < CHASER_SONAR_ALT_LOWER) {
-		//		chaser_dammy_alt += CHASER_SONAR_CLIMB_RATE;
-		//	} else if(chaser_sonar_alt > CHASER_SONAR_ALT_UPPER) {
-		//		chaser_dammy_alt -= CHASER_SONAR_CLIMB_RATE;
-		//	}
-		//}
-		//#endif	//ifdef USE_CHASER_SONAR_ALT
-		chaser_target.z = chaser_dammy_alt;
+		chaser_target.z = 0;
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
 		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
@@ -491,9 +476,10 @@ float get_beacon_altitude(float beacon_pressure) {
 // デバッグフラグON時のみコンパイル
 #if CHASER_LOCATION_DEBUG == 1
 static void chaser_beacon_location_debug(const struct Location *cmd){
-	chaser_target.x = cmd->lat;
-	chaser_target.y = cmd->lng;
-	chaser_target.z = cmd->alt;
+	chaser_target = pv_location_to_vector(*cmd);
+	//chaser_target.x = cmd->lat;
+	//chaser_target.y = cmd->lng;
+	//chaser_target.z = cmd->alt;
 }
 #endif
 

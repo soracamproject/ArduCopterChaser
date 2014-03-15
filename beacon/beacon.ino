@@ -107,8 +107,8 @@ void setup()
 	// とりあえず2秒待ち
 	//delay(2000);
 	
+	// 初期ステート設定
 	state = BEACON_INIT;
-	//state = BEACON_DEBUG;		// デバッグモード
 	
 	// 前回時間の初期化
 	prev_us = micros();
@@ -124,8 +124,8 @@ void loop(){
 	now_us = micros();
 	now_ms = millis();
 	
-	button1.update();
-	button2.update();
+	//button1.update();
+	//button2.update();
 	
 	if((now_us - prev_us) > 20000){		// 50Hz狙い
 		switch(state){
@@ -141,8 +141,9 @@ void loop(){
 			//if(button2.read() == HIGH){
 			//	change_state(BEACON_READY);
 			//}
-			if(button1.read() == HIGH){
-				change_state(BEACON_READY);
+			if(button1.update()==1 && button1.read() == HIGH){
+				//change_state(BEACON_READY);
+				change_state(BEACON_DEBUG);
 			}
 			
 			// ■サブステート実行■
@@ -165,7 +166,7 @@ void loop(){
 			// ■毎回実行■
 			// *ToDo*
 			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
-			if(button2.read() == HIGH){
+			if(button2.update()==1 && button2.read() == HIGH){
 				substate = 90;
 			}
 			
@@ -251,7 +252,7 @@ void loop(){
 				prev_et_ms = now_ms;
 			}
 			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
-			if(button2.read() == HIGH){
+			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
 			// **TODO**
@@ -287,10 +288,13 @@ void loop(){
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				//xbee_serial.print(beacon_loc_data.lat);		// ビーコンGPS精度デバッグ用
+				//xbee_serial.print(',');						// ビーコンGPS精度デバッグ用
+				//xbee_serial.println(beacon_loc_data.lon);		// ビーコンGPS精度デバッグ用
 				prev_et_ms = now_ms;
 			}
 			// ボタン1が押されたらCHASE開始
-			if(button1.read() == HIGH){
+			if(button1.update()==1 && button1.read() == HIGH){
 				change_state(BEACON_CHASE);
 			}
 			// **TODO**
@@ -327,7 +331,7 @@ void loop(){
 				//xbee_serial.println(tmp_dt_ms);	// 速度確認デバッグ用
 				prev_et_ms = now_ms;
 			}
-			if(button2.read() == HIGH){
+			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
 			// **ToDo**
@@ -374,7 +378,20 @@ void loop(){
 			}
 			break;
 			
+			// ■■■■■DEBUGステート■■■■■
 			case BEACON_DEBUG:
+			if(first_time){
+				S_INIT;
+				control_led(1,0,1,0);
+			}
+			
+			// ■毎回実行■
+			// beacon位置情報を定期的に送信
+			if((now_ms - prev_et_ms) > 200){
+				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				prev_et_ms = now_ms;
+			}
+			
 			break;
 		}
 		prev_us = now_us;

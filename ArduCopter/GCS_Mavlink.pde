@@ -264,9 +264,7 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 	mavlink_msg_nav_controller_output_send(
 		chan,
 		chaser_copter_pos.x,			//float,nav_roll
-		//barometer.get_pressure(),
 		chaser_copter_pos.y,			//float,nav_pitch
-		//barometer.get_ground_pressure(),
 		nav_yaw,						//int16_t,nav_bearing
 		chaser_yaw_target,				//int16_t,target_bearing
 		0,								//uint16_t,wp_dist
@@ -457,11 +455,11 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 	mavlink_msg_vfr_hud_send(
 		chan,
 		chaser_destination.x,		//float,airspeed
-		chaser_sonar_alt,			//float,groundspeed
-		baro_alt,					//int16_t,heading
+		chaser_destination.y,		//float,groundspeed
+		0,							//int16_t,heading
 		sonar_alt,					//uint16_t,throttle
 		chaser_copter_pos.z,		//float,alt
-		chaser_beacon_alt			//float,climb
+		chaser_sonar_alt			//float,climb
 	);
 #else
 	// 通常通信版
