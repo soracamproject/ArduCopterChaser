@@ -270,7 +270,7 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 		0,								//uint16_t,wp_dist
 		chaser_target.x,				//float,alt_error
 		chaser_target.y,				//float,aspd_error
-		chaser_target.z					//float,xtrack_error
+		controller_desired_alt					//float,xtrack_error
 	);
 #else
 	// 通常通信版
