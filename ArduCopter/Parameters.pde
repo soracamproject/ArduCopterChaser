@@ -415,6 +415,14 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Range 90000 250000
     // @User: Advanced
     GSCALAR(angle_rate_max, "ANGLE_RATE_MAX",  ANGLE_RATE_MAX),
+	
+	// @Param: CHASER_DESCENT
+    // @DisplayName: Chaser Descent Rate
+    // @Description: base descent velocity
+    // @Range 0 300
+    // @User: Advanced
+    GSCALAR(chaser_descent_rate, "CHASER_DESCENT",  CHASER_DESCENT_RATE),
+	
 
 #if FRAME_CONFIG ==     HELI_FRAME
     // @Group: HS1_
