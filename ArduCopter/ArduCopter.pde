@@ -787,20 +787,20 @@ static Vector3f beacon_loc_relaxed_last;					// ビーコン位置なましの�
 static Vector3f beacon_loc_relaxed_latch;					// ビーコン位置なましのラッチ値[cm]不感帯に入っているかの基準とする
 															// （本当はdo_chaser()に入れたいけどエラー出るので）
 
-static Vector3f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
-static Vector3f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
-static Vector3f chaser_target;				// ターゲット：loiterコントローラの目的地（ビーコン位置の更新周期よりも早く更新される）
+static Vector2f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
+static Vector2f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
+static Vector2f chaser_target;				// ターゲット：loiterコントローラの目的地（ビーコン位置の更新周期よりも早く更新される）
 
-static Vector3f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
-static Vector3f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
-static Vector3f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
+static Vector2f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
+static Vector2f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
+static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
 
-static Vector3f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）
-static Vector3f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
+static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）[cm/s]
+static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
-static bool chaser_beacon_loc_reset = false;		// ビーコン位置情報をリセットするフラグ
-static bool chaser_beacon_loc_ok = false;	// ビーコン位置情報が埋まっている状態
-static bool chaser_started = false;			// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
+static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセットするフラグ
+static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
+static bool chaser_started;					// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
 
 static int32_t chaser_yaw_target;			// YAWの目標角度（-18000〜18000）[centi-degrees]
 
@@ -810,12 +810,14 @@ static float chaser_beacon_alt;				// CHASERデバッグ用ビーコン高さ[cm
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
-static float chaser_dammy_alt = CHASER_ALT;	// 目標高度のダミー値[cm]もともとdefineでやっていたけどグローバル変数化
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 static uint8_t chaser_sonar_alt_health;		// CHASER用ソナー高度健常判断値（chaser_sonar_altで同じことをやっている）
+static float chaser_slope_angle_tan;		// ベース下降速度計算用斜度tan値[-]
+static float chaser_descent_rate;			// ベース下降速度[cm/s]
 
-static uint16_t chaser_yaw_restrict_cd1 = CHASER_YAW_RESTRICT_CD1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
-static uint16_t chaser_yaw_restrict_cd2 = CHASER_YAW_RESTRICT_CD2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
+static uint16_t chaser_yaw_restrict_cd1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
+static uint16_t chaser_yaw_restrict_cd2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -987,6 +989,9 @@ void setup() {
 
     // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]));
+	
+	// CHASER用初期化
+	chaser_initialize();
 }
 
 /*

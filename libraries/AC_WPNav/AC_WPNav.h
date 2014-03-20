@@ -161,7 +161,7 @@ public:
 	/// ========================================
 	
 	/// update_loiter_for_chaser CHASER時のloiterコントローラ。速度限界が高い。10Hzで呼ぶこと。
-	void update_loiter_for_chaser(const Vector3f& target_vel_ff);
+	void update_loiter_for_chaser(const Vector2f& target_vel_ff);
 
 
 protected:
@@ -204,7 +204,7 @@ protected:
 	/// ========================================
 	
 	/// get_loiter_position_to_velocity - CHASER用
-	void get_loiter_position_to_velocity_chaser(float dt, const Vector3f& target_vel_ff);
+	void get_loiter_position_to_velocity_chaser(float dt, const Vector2f& target_vel_ff);
 
 
     // references to inertial nav and ahrs libraries

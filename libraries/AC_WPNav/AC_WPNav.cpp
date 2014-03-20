@@ -304,7 +304,7 @@ void AC_WPNav::update_loiter()
 }
 
 /// update_loiter_for_chaser CHASER時のloiterコントローラ。
-void AC_WPNav::update_loiter_for_chaser(const Vector3f& target_vel_ff)
+void AC_WPNav::update_loiter_for_chaser(const Vector2f& target_vel_ff)
 {
     // calculate dt
     uint32_t now = hal.scheduler->millis();
@@ -661,7 +661,7 @@ void AC_WPNav::get_loiter_position_to_velocity(float dt, float max_speed_cms)
 }
 
 // CHASERモード用関数
-void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt, const Vector3f& target_vel_ff)
+void AC_WPNav::get_loiter_position_to_velocity_chaser(float dt, const Vector2f& target_vel_ff)
 {
 	Vector3f curr = _inav->get_position();
 	float dist_error_total;

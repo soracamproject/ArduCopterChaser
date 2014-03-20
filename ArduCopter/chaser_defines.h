@@ -7,31 +7,33 @@
 // CHASER関連
 // ==============================
 
-#define CHASER_TARGET_RELAX_NUM    4			// ビーコン位置のなまし数
-#define CHASER_ALT                 650.0f		// CHASER時の高さ（とりあえず固定版）
-#define CHASER_TARGET_ACCEL        200.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
-#define CHASER_TARGET_DECEL        150.0f		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
-#define CHASER_TARGET_VEL_MAX      600.0f		// ターゲットの移動速度の最大値[m/s]
-#define CHASER_YAW_SLEW_RATE       45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
-#define CHASER_YAW_RESTRICT_CD1    0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
-#define CHASER_YAW_RESTRICT_CD2    500			// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
-#define CHASER_YAW_DEST_RELAX_NUM  5			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
-#define CHASER_OVERRUN_SEC         0.0f			// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
+#define CHASER_TARGET_RELAX_NUM      4			// ビーコン位置のなまし数
+#define CHASER_TAKEOFF_ALT           650.0f		// テイクオフ時の高さ[cm]
+#define CHASER_TARGET_ACCEL          200.0f		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
+#define CHASER_TARGET_DECEL          150.0f		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
+#define CHASER_TARGET_VEL_MAX        600.0f		// ターゲットの移動速度の最大値[m/s]
+#define CHASER_YAW_SLEW_RATE         45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
+#define CHASER_YAW_RESTRICT_CD1      0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
+#define CHASER_YAW_RESTRICT_CD2      500		// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
+#define CHASER_YAW_DEST_RELAX_NUM    5			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
+#define CHASER_OVERRUN_SEC           0.0f		// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
-#define CHASER_BEACON_MOVE_DB      150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
+#define CHASER_BEACON_MOVE_DB        150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
-#define CHASER_MANUAL_THROTTLE_MAX 300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
-
-// ソナーバージョン用開発版
-#define USE_CHASER_SONAR_ALT					// CHASER高度ソナー制御ON/OFFフラグ（defineするとON）
-#define CHASER_DESCENT_RATE          50			// ベース下降速度[cm/s]
+#define CHASER_MANUAL_THROTTLE_MAX   300			// CHASER時オートテイクオフするためにマニュアルでスロットルを操作する必要があるが、その最大値(0-1000)
+#define CHASER_DESCENT_RATE_MIN      50			// ベース下降速度最小値（変更可、初期値）[cm/s]
+#define CHASER_DESCENT_RATE_MAX      150		// ベース下降速度最大値（変更可、初期値）[cm/s]
+#define CHASER_SLOPE_ANGLE           10			// ベース下降速度計算用斜度（変更可、初期値）[deg.]
 #define CHASER_SONAR_ALT_TARGET      250.0f		// ベース高度[cm]（この高度の時にベース下降速度となる）
 #define CHASER_SONAR_ALT_KP          1.0f		// P項（ベース高度との偏差×この値）でかかる
 #define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
+#define CHASER_DESIRED_ALT_LEASH     200		// 高度制御時の目標高度の機体高度との差[cm]※200は池の平でうまくいった実績値
+#define CHASER_CLIMB_RATE_MAX        250		// 上昇下降速度最大[cm/s]、最終的にこの値で制限される、ただし250上乗せされる※250は池の平でうまくいった実績値
+#define CHASER_GIMBAL_ANGLE          -10		// CHASER時のジンバルの角度[deg.]
+
+// APMデフォルト機能に対する変更
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
-
-#define CHASER_GIMBAL_ANGLE          -10		// CHASER時のジンバルの角度[deg.]
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定

@@ -140,8 +140,10 @@ public:
         k_param_serial3_baud,
         k_param_telem_delay,
 		
-		// 120: CHASER用テスト
-		k_param_chaser_descent_rate = 120,
+		// 120: CHASER用
+		k_param_chaser_descent_rate_min = 120,
+		k_param_chaser_descent_rate_max,
+		k_param_chaser_slope_angle,
 
         //
         // 140: Sensor parameters
@@ -325,7 +327,10 @@ public:
     AP_Int16        pilot_velocity_z_max;        // maximum vertical velocity the pilot may request
 
 	// CHASER用テスト
-	AP_Int16        chaser_descent_rate;
+	AP_Int16        chaser_descent_rate_min;	// CHASER時のベース下降速度の最小値[cm/s]
+	AP_Int16        chaser_descent_rate_max;	// CHASER時のベース下降速度の最大値[cm/s]
+	AP_Int8         chaser_slope_angle;			// CHASER時のベース下降速度計算用斜度[deg.]、ベース下降速度の基準となるtan値は起動時に1回だけ計算される。
+												// 値を変更したら再起動が必要。
 
     // Throttle
     //

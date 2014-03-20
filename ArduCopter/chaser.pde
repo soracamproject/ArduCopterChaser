@@ -3,6 +3,19 @@
 // ***************************************
 // 関数群
 // ***************************************
+static void chaser_initialize(){
+	// フラグ類の初期値設定
+	chaser_beacon_loc_reset = false;
+	chaser_beacon_loc_ok = false;
+	chaser_started = false;
+	
+	// YAW制御角の固定
+	chaser_yaw_restrict_cd1 = CHASER_YAW_RESTRICT_CD1;
+	chaser_yaw_restrict_cd2 = CHASER_YAW_RESTRICT_CD2;
+	
+	// ベース下降速度計算用斜度tan値の計算
+	chaser_slope_angle_tan = tan(radians(g.chaser_slope_angle));
+}
 
 static void update_chaser_beacon_location(const struct Location *cmd)
 {
@@ -40,7 +53,6 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	if (dt > 0.0 && dt_latch > 0.0) {
 		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
 		Vector3f pos = pv_location_to_vector(*cmd);
-		//pos.z = get_beacon_altitude(pos.z);		//ここで圧力[Pa]を高度[cm]に変換
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
 		beacon_loc[index] = pos;
@@ -99,8 +111,9 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
 				if (!chaser_started && chaser_state == CHASER_CHASE) {
-					chaser_target = inertial_nav.get_position();
-					chaser_target_vel.zero();
+					chaser_target.x = inertial_nav.get_position().x;
+					chaser_target.y = inertial_nav.get_position().y;
+					chaser_target_vel(0,0);
 					chaser_started = true;
 				}
 				
@@ -125,7 +138,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 // ターゲット位置を動かしloiterコントローラを呼ぶ
 static void update_chaser() {
 	static uint32_t last = 0;		// 前回この関数を呼び出した時刻[ms]
-	Vector3f target_distance_last;		// 前回のorigin基準のターゲット距離[cm]
+	Vector2f target_distance_last;	// 前回のorigin基準のターゲット距離[cm]
 	
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
@@ -135,7 +148,7 @@ static void update_chaser() {
 	// CHASERモードの準備ができていない場合はloiterっぽい状態にする
 	// loiterコントローラを呼ぶのみで終了
 	if (!chaser_started) {
-		chaser_dest_vel.zero();
+		chaser_dest_vel(0,0);
 		wp_nav.update_loiter_for_chaser(chaser_dest_vel);
 		return;
 	}
@@ -143,12 +156,8 @@ static void update_chaser() {
 	if (dt > 0.0f) {		// 0割防止
 		// chaser_targetを計算
 		target_distance_last = target_distance;
-		target_distance.x = target_distance.x + chaser_target_vel.x * dt;
-		target_distance.y = target_distance.y + chaser_target_vel.y * dt;
-		target_distance.z = 0;
-		chaser_target.x = chaser_origin.x + target_distance.x;
-		chaser_target.y = chaser_origin.y + target_distance.y;
-		chaser_target.z = 0;
+		target_distance = target_distance + chaser_target_vel * dt;
+		chaser_target = chaser_origin + target_distance;
 		
 		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
 		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
@@ -159,9 +168,7 @@ static void update_chaser() {
 		}
 		
 		// chaser_target_velを計算
-		chaser_target_vel.x = (target_distance.x - target_distance_last.x) / dt;
-		chaser_target_vel.y = (target_distance.y - target_distance_last.y) / dt;
-		chaser_target_vel.z = 0;
+		chaser_target_vel = (target_distance - target_distance_last) / dt;
 		
 		// chaser_target_velを加減速
 		// 加速度と減速度を分離
@@ -177,7 +184,8 @@ static void update_chaser() {
 		}
 		
 		// loiterターゲット位置更新
-		wp_nav.set_loiter_target(chaser_target);
+		Vector3f chaser_target_3d(chaser_target.x,chaser_target.y,0.0f);
+		wp_nav.set_loiter_target(chaser_target_3d);
 	}
 	// loiterコントローラを呼ぶ
 	wp_nav.update_loiter_for_chaser(chaser_target_vel);
@@ -194,25 +202,25 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 	// beaconの到達予測位置をdestinationとする
 	chaser_destination.x = 2*beacon_loc.x - beacon_loc_last.x;
 	chaser_destination.y = 2*beacon_loc.y - beacon_loc_last.y;
-	chaser_destination.z = 0;
 	
 	// track関連の計算
-	chaser_track_length.x = chaser_destination.x - chaser_origin.x;
-	chaser_track_length.y = chaser_destination.y - chaser_origin.y;
-	chaser_track_length.z = 0;
+	chaser_track_length = chaser_destination - chaser_origin;
 	
 	// target_distanceを0にする
-	target_distance.zero();
+	target_distance(0,0);
 	
 	// 目標速度計算
 	chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
 	chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -CHASER_TARGET_VEL_MAX, CHASER_TARGET_VEL_MAX);
-	chaser_dest_vel.z = 0;
 	
 	// 目標到達判定距離の計算
 	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);
 	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
-	chaser_overrun_thres.z = 0;
+	
+	// ベース下降速度の計算
+	// とりあえず毎回更新
+	float chaser_dest_vel_abs_xy = chaser_dest_vel.length();
+	chaser_descent_rate = constrain_float(chaser_slope_angle_tan*chaser_dest_vel_abs_xy, g.chaser_descent_rate_min, g.chaser_descent_rate_max);
 	
 	// YAW制御
 	// 指定した回数に1回毎に方角を出す
@@ -224,9 +232,9 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 		float chaser_dest_vel_x_relaxed = chaser_dest_vel_x_relax_sum / (float)CHASER_YAW_DEST_RELAX_NUM;
 		float chaser_dest_vel_y_relaxed = chaser_dest_vel_y_relax_sum / (float)CHASER_YAW_DEST_RELAX_NUM;
 		
-		float chaser_dest_vel_abs_xy = safe_sqrt(chaser_dest_vel_x_relaxed*chaser_dest_vel_x_relaxed + 
-												 chaser_dest_vel_y_relaxed*chaser_dest_vel_y_relaxed);
-		if (chaser_dest_vel_abs_xy > 100.0f) {
+		float chaser_dest_vel_abs_xy_relaxed = safe_sqrt(chaser_dest_vel_x_relaxed*chaser_dest_vel_x_relaxed + 
+														 chaser_dest_vel_y_relaxed*chaser_dest_vel_y_relaxed);
+		if (chaser_dest_vel_abs_xy_relaxed > 100.0f) {
 			// 目標速度が1m/sより大の場合、その方向にyawを向ける（＝1m/s以下の場合はラッチ）
 			// 引数は順に(経度方向:lng、緯度方向:lat)
 			// atan2はatan2(y,x)でx軸からの角度(rad.)を出す
@@ -241,9 +249,10 @@ static void update_chaser_origin_destination(const Vector3f beacon_loc, const Ve
 }
 
 // CHASER用THROTTLEコントローラ
+// update_throttle_mode関数のTHROTTLE_HOLDとget_throttle_rate_stabilized関数を参考にしている
 static void get_throttle_rate_for_chaser(){
 	// ベース下降速度を設定
-	int16_t climb_rate = -g.chaser_descent_rate;
+	int16_t climb_rate = -chaser_descent_rate;
 	
 	// ソナーによる補正項の計算
 	if (chaser_sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
@@ -251,8 +260,21 @@ static void get_throttle_rate_for_chaser(){
 												   -CHASER_SONAR_CLIMB_RATE_MAX, CHASER_SONAR_CLIMB_RATE_MAX);
 		climb_rate += sonar_climb_rate;
 	}
-	get_throttle_rate_stabilized(climb_rate);
+	
+	// adjust desired alt if motors have not hit their limits
+	if ((climb_rate<0 && !motors.limit.throttle_lower) || (climb_rate>0 && !motors.limit.throttle_upper)) {
+		controller_desired_alt += climb_rate * 0.02f;
+	}
+	
+	// do not let target altitude get too far from current altitude
+	controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-CHASER_DESIRED_ALT_LEASH,current_loc.alt+CHASER_DESIRED_ALT_LEASH);
+	
+	// update target altitude for reporting purposes
+	set_target_alt_for_reporting(controller_desired_alt);
+	
+	get_throttle_althold(controller_desired_alt, -CHASER_CLIMB_RATE_MAX-250, CHASER_CLIMB_RATE_MAX+250);	// 250 is added to give head room to alt hold controller
 }
+
 
 
 // CHASERモードでのGPSが必要な状態かの判定
@@ -314,7 +336,7 @@ static bool set_chaser_state(uint8_t state) {
 				set_nav_mode(NAV_WP);
 				
 				Vector3f pos = inertial_nav.get_position();
-				pos.z = chaser_dammy_alt;
+				pos.z = CHASER_TAKEOFF_ALT;
 				wp_nav.set_destination(pos);
 				
 				reset_I_all();		//フリップを防ぐためで要検討項目らしい（APMから持ってきている）

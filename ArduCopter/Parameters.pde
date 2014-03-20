@@ -416,12 +416,26 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Advanced
     GSCALAR(angle_rate_max, "ANGLE_RATE_MAX",  ANGLE_RATE_MAX),
 	
-	// @Param: CHASER_DESCENT
-    // @DisplayName: Chaser Descent Rate
-    // @Description: base descent velocity
-    // @Range 0 300
-    // @User: Advanced
-    GSCALAR(chaser_descent_rate, "CHASER_DESCENT",  CHASER_DESCENT_RATE),
+	// @Param: CHR_DESCENT_MIN
+	// @DisplayName: Chaser Descent Rate Min
+	// @Description: minimum base descent velocity for chaser [cm/s]
+	// @Range 0 300
+	// @User: Advanced
+	GSCALAR(chaser_descent_rate_min, "CHR_DESCENT_MIN",  CHASER_DESCENT_RATE_MIN),
+	
+	// @Param: CHR_DESCENT_MAX
+	// @DisplayName: Chaser Descent Rate Max
+	// @Description: maximum base descent velocity for chaser [cm/s]
+	// @Range 0 300
+	// @User: Advanced
+	GSCALAR(chaser_descent_rate_max, "CHR_DESCENT_MAX",  CHASER_DESCENT_RATE_MAX),
+	
+	// @Param: CHR_SLOPE
+	// @DisplayName: Chaser Slope Angle
+	// @Description: slope angle for estimating descent velocity for chaser [deg]
+	// @Range 0 30
+	// @User: Advanced
+	GSCALAR(chaser_slope_angle, "CSR_SLOPE", CHASER_SLOPE_ANGLE),
 	
 
 #if FRAME_CONFIG ==     HELI_FRAME
