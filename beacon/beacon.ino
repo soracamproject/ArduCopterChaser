@@ -127,9 +127,6 @@ void loop(){
 	now_us = micros();
 	now_ms = millis();
 	
-	//button1.update();
-	//button2.update();
-	
 	if((now_us - prev_us) > 20000){		// 50Hz狙い
 		switch(state){
 			// ■■■■■INITステート■■■■■
@@ -141,15 +138,14 @@ void loop(){
 			
 			// ■毎回実行■
 			// ボタン1が押されたら次のステートへ
-			
 			if(button1.update()==1 && button1.read() == HIGH){
 				change_state(BEACON_READY);
-				//change_state(BEACON_DEBUG);
 			}
+			// ボタン2が押されたらデバッグモードへ
 			if(button2.update()==1 && button2.read() == HIGH){
-				change_state(BEACON_LAND);
+				//change_state(BEACON_LAND);
+				change_state(BEACON_DEBUG);
 			}
-			
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -165,7 +161,6 @@ void loop(){
 			case BEACON_READY:
 			if(first_time){
 				S_INIT;
-				//control_led(1,0,0,0);
 			}
 			
 			// ■毎回実行■
@@ -174,7 +169,7 @@ void loop(){
 			if(button2.update()==1 && button2.read() == HIGH){
 				substate = 90;
 			}
-			if(blink_on){blink_led(0,1,0,0,1000);};
+			if(blink_on){blink_led(0,1,0,0,800);};
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -230,6 +225,7 @@ void loop(){
 				// 90番台は緊急終了
 				case 90:
 				// スロットル０
+				blink_on = false;
 				control_led(1,1,1,1);
 				send_change_throttle_cmd_for_chaser(0);
 				SS_INCREMENT;
@@ -251,7 +247,6 @@ void loop(){
 			case BEACON_TAKEOFF:
 			if(first_time){
 				S_INIT;
-				//control_led(0,1,0,0);
 			}
 			
 			// ■毎回実行■
@@ -309,8 +304,10 @@ void loop(){
 			if(button1.update()==1 && button1.read() == HIGH){
 				change_state(BEACON_CHASE);
 			}
-			// **TODO**
-			// フェールセーフ
+			// スイッチ２が押されたらBEACON_LANDに移行
+			if(button2.update()==1 && button2.read() == HIGH){
+				change_state(BEACON_LAND);
+			}
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -336,18 +333,17 @@ void loop(){
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
-				//uint32_t tmp_t_ms  = millis();	// 速度確認デバッグ用
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				//uint16_t tmp_dt_ms = millis();	// 速度確認デバッグ用
-				//xbee_serial.println(tmp_t_ms);	// 速度確認デバッグ用
-				//xbee_serial.println(tmp_dt_ms);	// 速度確認デバッグ用
 				prev_et_ms = now_ms;
 			}
+			// スイッチ１が押されたらSTAYに戻る
 			if(button1.update()==1 && button1.read() == HIGH){
+				change_state(BEACON_STAY);
+			}
+			// スイッチ２が押されたらLANDする
+			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
-			// **ToDo**
-			// スイッチ１が押されたらSTAYに戻る(CHASER_LED消灯)
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -400,18 +396,18 @@ void loop(){
 			
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
-			//if(button1.update()==1 && button1.read() == HIGH){
-			//	control_led(0,1,0,1);
-			//}
-			//if(button2.update()==1 && button2.read() == HIGH){
-			//	control_led(0,1,1,1);;
-			//}
+			if(button1.update()==1 && button1.read() == HIGH){
+				control_led(0,1,0,1);
+			}
+			if(button2.update()==1 && button2.read() == HIGH){
+				control_led(1,0,1,0);;
+			}
 			if((now_ms - prev_et_ms) > 200){
-				//static uint16_t count;
+				static uint16_t count;
 				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				//xbee_serial.println(count);
-				//xbee_serial.println(beacon_loc_data.lat);
-				//xbee_serial.println(beacon_loc_data.lon);
+				xbee_serial.println(count++);
+				xbee_serial.println(beacon_loc_data.lat);
+				xbee_serial.println(beacon_loc_data.lon);
 				prev_et_ms = now_ms;
 			}
 			

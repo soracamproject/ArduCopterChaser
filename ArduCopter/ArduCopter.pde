@@ -802,7 +802,9 @@ static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセット
 static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
 static bool chaser_started;					// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
 
-static int32_t chaser_yaw_target;			// YAWの目標角度（-18000〜18000）[centi-degrees]
+static int32_t chaser_yaw_target;					// YAWの目標角度（-18000〜18000）[centi-degrees]
+static Vector2f chaser_dest_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
+static Vector2f chaser_dest_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
 static Vector3f chaser_copter_pos;			// CHASERデバッグ用の機体位置（inertial_navで取ってくる）
 static float chaser_baro_temp;				// CHASERデバッグ用の気圧センサ温度[deg.C]
@@ -818,6 +820,7 @@ static float chaser_descent_rate;			// ベース下降速度[cm/s]
 static uint16_t chaser_yaw_restrict_cd1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
 static uint16_t chaser_yaw_restrict_cd2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
 
+static bool chaser_mount_activate;			// CHASERカメラジンバルON
 static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角度[deg.](下向きがプラス側)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1150,7 +1153,8 @@ static void update_mount()
 {
 #if MOUNT == ENABLED
     // update camera mount's position
-    camera_mount.update_mount_position();
+	// CHASER用にちょこっと改造
+	if(chaser_mount_activate){camera_mount.update_mount_position();};
 #endif
 
 #if MOUNT2 == ENABLED
@@ -1600,7 +1604,7 @@ void update_yaw_mode(void)
         break;
 		
 	case YAW_CHASER:		// CHASERモード用
-		nav_yaw = get_chaser_yaw_slew(nav_yaw, chaser_yaw_target, CHASER_YAW_SLEW_RATE);	// 引数は順に現在、目標、最大制限速度;
+		nav_yaw = get_chaser_yaw_slew(nav_yaw, chaser_yaw_target);	// 引数は順に現在、目標;
 		get_stabilize_yaw(nav_yaw);
 		break;
 	}

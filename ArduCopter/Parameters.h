@@ -144,6 +144,11 @@ public:
 		k_param_chaser_descent_rate_min = 120,
 		k_param_chaser_descent_rate_max,
 		k_param_chaser_slope_angle,
+		k_param_chaser_target_accel,
+		k_param_chaser_target_decel,
+		k_param_chaser_target_vel_max,
+		k_param_chaser_yaw_slew_rate,
+		k_param_chaser_gimbal_alt,	// 127
 
         //
         // 140: Sensor parameters
@@ -326,11 +331,16 @@ public:
     AP_Int16        land_speed;
     AP_Int16        pilot_velocity_z_max;        // maximum vertical velocity the pilot may request
 
-	// CHASER用テスト
+	// CHASER用変更可能変数群
 	AP_Int16        chaser_descent_rate_min;	// CHASER時のベース下降速度の最小値[cm/s]
 	AP_Int16        chaser_descent_rate_max;	// CHASER時のベース下降速度の最大値[cm/s]
 	AP_Int8         chaser_slope_angle;			// CHASER時のベース下降速度計算用斜度[deg.]、ベース下降速度の基準となるtan値は起動時に1回だけ計算される。
 												// 値を変更したら再起動が必要。
+	AP_Float        chaser_target_accel;		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
+	AP_Float        chaser_target_decel;		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
+	AP_Float        chaser_target_vel_max;		// ターゲットの移動速度の最大値[m/s]
+	AP_Int8         chaser_yaw_slew_rate;		// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
+	AP_Int16        chaser_gimbal_alt;			// ジンバル角度計算用高度[cm]
 
     // Throttle
     //

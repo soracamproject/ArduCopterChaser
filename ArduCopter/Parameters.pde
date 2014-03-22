@@ -435,9 +435,44 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @Description: slope angle for estimating descent velocity for chaser [deg]
 	// @Range 0 30
 	// @User: Advanced
-	GSCALAR(chaser_slope_angle, "CSR_SLOPE", CHASER_SLOPE_ANGLE),
+	GSCALAR(chaser_slope_angle, "CHR_SLOPE", CHASER_SLOPE_ANGLE),
 	
-
+	// @Param: CHR_ACCEL
+	// @DisplayName: Chaser Target Accel
+	// @Description: target acceleration [cm/s/s]
+	// @Range 100 980
+	// @User: Advanced
+	GSCALAR(chaser_target_accel, "CHR_ACCEL", CHASER_TARGET_ACCEL),
+	
+	// @Param: CHR_DECEL
+	// @DisplayName: Chaser Target Decel
+	// @Description: target deceleration [cm/s/s]
+	// @Range 100 980
+	// @User: Advanced
+	GSCALAR(chaser_target_decel, "CHR_DECEL", CHASER_TARGET_DECEL),
+	
+	// @Param: CHR_VEL_MAX
+	// @DisplayName: Chaser Target Vel Max
+	// @Description: target velocity maximum [cm/s]
+	// @Range 100 1200
+	// @User: Advanced
+	GSCALAR(chaser_target_vel_max, "CHR_VEL_MAX", CHASER_TARGET_VEL_MAX),
+	
+	// @Param: CHR_YAW_SLEW
+	// @DisplayName: Chaser Yaw Slew Rate
+	// @Description: yaw slew rate for chaser [deg/s]
+	// @Range 0 90
+	// @User: Advanced
+	GSCALAR(chaser_yaw_slew_rate, "CHR_YAW_SLEW", CHASER_YAW_SLEW_RATE),
+	
+	// @Param: CHR_GMBL_ALT
+	// @DisplayName: Chaser Gimbal Alt
+	// @Description: altitude for calculating gimbal pitch angle [cm]
+	// @Range 0 250
+	// @User: Advanced
+	GSCALAR(chaser_gimbal_alt, "CHR_GMBL_ALT", CHASER_GIMBAL_ALT),
+	
+	
 #if FRAME_CONFIG ==     HELI_FRAME
     // @Group: HS1_
     // @Path: ../libraries/RC_Channel/RC_Channel.cpp
