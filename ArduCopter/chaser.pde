@@ -118,6 +118,11 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				}
 				
 				if (chaser_state == CHASER_CHASE) {
+					// ジンバルの角度を更新する
+					uint8_t chaser_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(CHASER_SONAR_ALT_TARGET , pv_get_horizontal_distance_cm(inertial_nav.get_position(),beacon_loc_relaxed))),
+														CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
+					change_mount_control_pitch_angle(chaser_pitch_angle);
+					
 					// chaser_origin,chaser_destinationを更新する
 					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt_latch);
 					
@@ -307,7 +312,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 			// ジンバルをSTABで指定した角度にする
 			change_mount_stab_pitch();
-			change_mount_control_pitch_angle(CHASER_GIMBAL_ANGLE); //degree  -45<pitch_angle<45
+			change_mount_control_pitch_angle(CHASER_GIMBAL_ANGLE_MIN); //degree  -45<pitch_angle<45
 			
 			success = true;
 			break;
@@ -547,12 +552,12 @@ void change_mount_stab_pitch(){
 	camera_mount.configure_msg(&msg);
 }
 
-void change_mount_control_pitch_angle(int32_t pitch_angle){
+void change_mount_control_pitch_angle(uint8_t pitch_angle){
 	uint8_t system_id =20;			// 実績値20 
 	uint8_t component_id = 200;		// 実績値200
 	
 	mavlink_message_t msg;
-	int32_t input_a = pitch_angle*100 ; ///< pitch(deg*100) or lat, depending on mount mode
+	int32_t input_a = -pitch_angle*100 ; ///< pitch(deg*100) or lat, depending on mount mode
 	int32_t input_b = 0 ; ///< roll(deg*100) or lon depending on mount mode
 	int32_t input_c = 0 ; ///< yaw(deg*100) or alt (in cm) depending on mount mode
 	uint8_t target_system = mavlink_system.sysid; ///< System ID
@@ -596,5 +601,4 @@ void change_mount_control_neutral_angle(){
 	mavlink_msg_mount_control_pack(system_id, component_id, &msg, target_system, target_component, input_a, input_b, input_c, save_position);//dammy message write
 	camera_mount.control_msg(&msg);
 }
-
 

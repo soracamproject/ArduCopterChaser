@@ -15,7 +15,7 @@
 #define CHASER_YAW_SLEW_RATE         45			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 #define CHASER_YAW_RESTRICT_CD1      0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
 #define CHASER_YAW_RESTRICT_CD2      500		// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
-#define CHASER_YAW_DEST_RELAX_NUM    5			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
+#define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
 #define CHASER_OVERRUN_SEC           0.0f		// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
 #define CHASER_BEACON_MOVE_DB        150.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（という機能を実装したい）
@@ -29,7 +29,9 @@
 #define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
 #define CHASER_DESIRED_ALT_LEASH     200		// 高度制御時の目標高度の機体高度との差[cm]※200は池の平でうまくいった実績値
 #define CHASER_CLIMB_RATE_MAX        250		// 上昇下降速度最大[cm/s]、最終的にこの値で制限される、ただし250上乗せされる※250は池の平でうまくいった実績値
-#define CHASER_GIMBAL_ANGLE          -10		// CHASER時のジンバルの角度[deg.]
+#define CHASER_GIMBAL_ANGLE_MIN      15			// CHASER時のジンバルの角度最小値[deg.]
+#define CHASER_GIMBAL_ANGLE_MAX      40			// CHASER時のジンバルの角度最大値[deg.]
+
 
 // APMデフォルト機能に対する変更
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
