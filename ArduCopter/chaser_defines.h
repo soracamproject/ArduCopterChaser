@@ -36,6 +36,10 @@
 // APMデフォルト機能に対する変更
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
+#define AC_FENCE                     DISABLED
+#define CAMERA                       DISABLED
+#define LOGGING_ENABLED              DISABLED
+#define AUTOTUNE                     DISABLED
 
 
 // 受け取ったビーコン位置の緯度経度の上下限界を設定

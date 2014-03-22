@@ -24,11 +24,12 @@ static uint32_t prev_ms = 0;	// 前回時刻格納変数[ms]
 static uint32_t prev_et_ms = 0;	// 前回時刻格納変数（毎回実行部 every time）[ms]
 static uint32_t prev_ss_ms = 0;	// 前回時刻格納変数（サブステートコントロール部 sub state）[ms]
 static bool first_time = true;	// ステートに入るのが最初かどうか
+static bool blink_on = false;	// LED点滅フラグ
 static uint8_t state;			// ビーコンステート
 static uint8_t substate;		// サブステート
 
 // ステートに入った際に必ず実行される部分のマクロ
-#define S_INIT       substate=0;prev_ms=now_ms;first_time=false
+#define S_INIT       substate=0;prev_ms=now_ms;first_time=false;blink_on=true
 // サブステートをひとつ進めるマクロ
 #define SS_INCREMENT substate++;prev_ss_ms=now_ms
 
@@ -135,18 +136,18 @@ void loop(){
 			case BEACON_INIT:
 			if(first_time){
 				S_INIT;
-				control_led(0,0,0,0);
+				control_led(1,0,0,0);
 			}
 			
 			// ■毎回実行■
 			// ボタン1が押されたら次のステートへ
 			
-			//if(button2.update()==1 && button2.read() == HIGH){
-			//	change_state(BEACON_LAND);
-			//}
 			if(button1.update()==1 && button1.read() == HIGH){
-				//change_state(BEACON_READY);
-				change_state(BEACON_DEBUG);
+				change_state(BEACON_READY);
+				//change_state(BEACON_DEBUG);
+			}
+			if(button2.update()==1 && button2.read() == HIGH){
+				change_state(BEACON_LAND);
 			}
 			
 			
@@ -164,7 +165,7 @@ void loop(){
 			case BEACON_READY:
 			if(first_time){
 				S_INIT;
-				control_led(1,0,0,0);
+				//control_led(1,0,0,0);
 			}
 			
 			// ■毎回実行■
@@ -173,6 +174,7 @@ void loop(){
 			if(button2.update()==1 && button2.read() == HIGH){
 				substate = 90;
 			}
+			if(blink_on){blink_led(0,1,0,0,1000);};
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -207,16 +209,20 @@ void loop(){
 				break;
 				
 				case 4:
-				// 3秒待ってスロットルを上げる
+				// 3秒待ってREADYに入れる
 				if((now_ms - prev_ss_ms) > 3000){
 					send_change_chaser_state_cmd(CHASER_READY);
+					
+					// LED(黄)点灯
+					blink_on = false;
+					control_led(0,1,0,0);
 					SS_INCREMENT;
 				}
 				break;
 				
 				case 5:
 				// 3秒待って次のステートへ
-				if((now_ms - prev_ss_ms) > 3000){
+				if(button1.update()==1 && button1.read() == HIGH){
 					change_state(BEACON_TAKEOFF);
 				}
 				break;
@@ -245,20 +251,22 @@ void loop(){
 			case BEACON_TAKEOFF:
 			if(first_time){
 				S_INIT;
-				control_led(0,1,0,0);
+				//control_led(0,1,0,0);
 			}
 			
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
-				//xbee_serial.println(beacon_loc_data.lat);
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				prev_et_ms = now_ms;
 			}
-			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
+			// スイッチ２が押されたらBEACON_LANDに移行
 			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
+			if(blink_on){blink_led(0,0,1,0,1000);};
+			
+			
 			// **TODO**
 			// フェールセーフ
 			
@@ -387,16 +395,23 @@ void loop(){
 			if(first_time){
 				S_INIT;
 				control_led(1,0,1,0);
+				send_change_chaser_state_cmd(CHASER_INIT);
 			}
 			
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
+			//if(button1.update()==1 && button1.read() == HIGH){
+			//	control_led(0,1,0,1);
+			//}
+			//if(button2.update()==1 && button2.read() == HIGH){
+			//	control_led(0,1,1,1);;
+			//}
 			if((now_ms - prev_et_ms) > 200){
-				static uint16_t count;
+				//static uint16_t count;
 				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				xbee_serial.println(count);
-				xbee_serial.println(beacon_loc_data.lat);
-				xbee_serial.println(beacon_loc_data.lon);
+				//xbee_serial.println(count);
+				//xbee_serial.println(beacon_loc_data.lat);
+				//xbee_serial.println(beacon_loc_data.lon);
 				prev_et_ms = now_ms;
 			}
 			
@@ -448,4 +463,20 @@ static void change_state(uint8_t next_state){
 	first_time = true;
 }
 
+static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four, uint16_t intvl_ms){
+	static uint32_t prev_ms = 0;	// 前回時刻格納変数[us]
+	static bool state = false;
+	
+	uint32_t now_ms = millis();
+	
+	if ((now_ms - prev_ms) > intvl_ms) {
+		if(state){
+			control_led(0,0,0,0);
+		} else {
+			control_led(one,two,three,four);
+		}
+		state = !state;
+		prev_ms = now_ms;
+	}
+}
 
