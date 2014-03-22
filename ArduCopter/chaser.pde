@@ -119,9 +119,9 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				
 				if (chaser_state == CHASER_CHASE) {
 					// ジンバルの角度を更新する
-					uint8_t chaser_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(CHASER_SONAR_ALT_TARGET , pv_get_horizontal_distance_cm(inertial_nav.get_position(),beacon_loc_relaxed))),
-														CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
-					change_mount_control_pitch_angle(chaser_pitch_angle);
+					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(CHASER_SONAR_ALT_TARGET , pv_get_horizontal_distance_cm(inertial_nav.get_position(),beacon_loc_relaxed))),
+												CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
+					change_mount_control_pitch_angle(chaser_gimbal_pitch_angle);
 					
 					// chaser_origin,chaser_destinationを更新する
 					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt_latch);

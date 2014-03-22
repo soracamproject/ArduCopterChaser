@@ -7,10 +7,12 @@
 // ***********************************************************************************
 // シリアルポート
 // ***********************************************************************************
+// ビーコンプロト3.0用
 FastSerialPort1(gps_serial);	// GPS用
 FastSerialPort2(xbee_serial);	// XBee用
-//#define gps_serial  Serial
-//#define xbee_serial Serial2
+// ビーコンプロト3.1用
+//FastSerialPort2(gps_serial);	// GPS用
+//FastSerialPort3(xbee_serial);	// XBee用
 
 // ***********************************************************************************
 // メイン変数
@@ -143,8 +145,8 @@ void loop(){
 			//	change_state(BEACON_LAND);
 			//}
 			if(button1.update()==1 && button1.read() == HIGH){
-				change_state(BEACON_READY);
-				//change_state(BEACON_DEBUG);
+				//change_state(BEACON_READY);
+				change_state(BEACON_DEBUG);
 			}
 			
 			
@@ -390,7 +392,11 @@ void loop(){
 			// ■毎回実行■
 			// beacon位置情報を定期的に送信
 			if((now_ms - prev_et_ms) > 200){
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				static uint16_t count;
+				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				xbee_serial.println(count);
+				xbee_serial.println(beacon_loc_data.lat);
+				xbee_serial.println(beacon_loc_data.lon);
 				prev_et_ms = now_ms;
 			}
 			

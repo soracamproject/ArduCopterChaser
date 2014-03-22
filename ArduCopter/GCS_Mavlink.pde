@@ -267,10 +267,10 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 		chaser_copter_pos.y,			//float,nav_pitch
 		nav_yaw,						//int16_t,nav_bearing
 		chaser_yaw_target,				//int16_t,target_bearing
-		0,								//uint16_t,wp_dist
+		chaser_gimbal_pitch_angle,		//uint16_t,wp_dist
 		chaser_target.x,				//float,alt_error
 		chaser_target.y,				//float,aspd_error
-		controller_desired_alt					//float,xtrack_error
+		controller_desired_alt			//float,xtrack_error
 	);
 #else
 	// 通常通信版
@@ -455,7 +455,7 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 	mavlink_msg_vfr_hud_send(
 		chan,
 		chaser_destination.x,		//float,airspeed
-		chaser_destination.y,		//float,groundspeed
+		chaser_descent_rate,		//float,groundspeed
 		0,							//int16_t,heading
 		sonar_alt,					//uint16_t,throttle
 		chaser_copter_pos.z,		//float,alt

@@ -818,7 +818,7 @@ static float chaser_descent_rate;			// ベース下降速度[cm/s]
 static uint16_t chaser_yaw_restrict_cd1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
 static uint16_t chaser_yaw_restrict_cd2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
 
-
+static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角度[deg.](下向きがプラス側)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
