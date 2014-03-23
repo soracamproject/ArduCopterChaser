@@ -65,6 +65,7 @@ int16_t i2c_errors_count = 0;
 #define LED2   5
 #define LED3   7
 #define LED4   9
+#define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
 
 // ***********************************************************************************
 // ボタン関連変数および宣言
@@ -169,7 +170,7 @@ void loop(){
 			if(button2.update()==1 && button2.read() == HIGH){
 				substate = 90;
 			}
-			if(blink_on){blink_led(0,1,0,0,800);};
+			if(blink_on){blink_led(0,1,0,0);};
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -259,7 +260,7 @@ void loop(){
 			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
-			if(blink_on){blink_led(0,0,1,0,1000);};
+			if(blink_on){blink_led(0,0,1,0);};
 			
 			
 			// **TODO**
@@ -459,13 +460,13 @@ static void change_state(uint8_t next_state){
 	first_time = true;
 }
 
-static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four, uint16_t intvl_ms){
+static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 	static uint32_t prev_ms = 0;	// 前回時刻格納変数[us]
 	static bool state = false;
 	
 	uint32_t now_ms = millis();
 	
-	if ((now_ms - prev_ms) > intvl_ms) {
+	if ((now_ms - prev_ms) > BLINK_INTVL_MS) {
 		if(state){
 			control_led(0,0,0,0);
 		} else {
