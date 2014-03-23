@@ -79,7 +79,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				beacon_loc_z_sum += beacon_loc[i].z;
 			}
 			Vector3f beacon_loc_relaxed;
-			beacon_loc_relaxed.x = beacon_loc_x_sum / CHASER_TARGET_RELAX_NUM;
+			beacon_loc_relaxed.x = beacon_loc_x_sum / CHASER_TARGET_RELAX_NUM -250.0f;
 			beacon_loc_relaxed.y = beacon_loc_y_sum / CHASER_TARGET_RELAX_NUM;
 			beacon_loc_relaxed.z = beacon_loc_z_sum / CHASER_TARGET_RELAX_NUM;
 			chaser_beacon_alt = beacon_loc_relaxed.z;
