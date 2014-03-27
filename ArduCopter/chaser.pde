@@ -277,7 +277,7 @@ static void get_throttle_rate_for_chaser(){
 	}
 	
 	// do not let target altitude get too far from current altitude
-	controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-CHASER_DESIRED_ALT_LEASH,current_loc.alt+CHASER_DESIRED_ALT_LEASH);
+	controller_desired_alt = constrain_float(controller_desired_alt,current_loc.alt-g.chaser_desired_alt_leash,current_loc.alt+g.chaser_desired_alt_leash);
 	
 	// update target altitude for reporting purposes
 	set_target_alt_for_reporting(controller_desired_alt);

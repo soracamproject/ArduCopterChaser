@@ -472,6 +472,28 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_gimbal_alt, "CHR_GMBL_ALT", CHASER_GIMBAL_ALT),
 	
+	// @Param: CHR_ALT_LEASH
+	// @DisplayName: Chaser Desired Alt Leash
+	// @Description: leash length between desired alt and current alt for chaser [cm]
+	// @Range 100 750
+	// @User: Advanced
+	GSCALAR(chaser_desired_alt_leash, "CHR_ALT_LEASH", CHASER_DESIRED_ALT_LEASH),
+	
+	// @Param: CHR_OFST_LAT
+	// @DisplayName: Chaser Beacon Offset Lat
+	// @Description: offset distance of beacon location on latitude direction [cm]
+	// @Range -1000 1000
+	// @User: Advanced
+	GSCALAR(chaser_beacon_offset_lat, "CHR_OFST_LAT", CHASER_BEACON_OFFSET_LAT),
+	
+	// @Param: CHR_OFST_LON
+	// @DisplayName: Chaser Beacon Offset Lon
+	// @Description: offset distance of beacon location on longitude direction [cm]
+	// @Range -1000 1000
+	// @User: Advanced
+	GSCALAR(chaser_beacon_offset_lon, "CHR_OFST_LON", CHASER_BEACON_OFFSET_LON),
+	
+	
 	
 #if FRAME_CONFIG ==     HELI_FRAME
     // @Group: HS1_

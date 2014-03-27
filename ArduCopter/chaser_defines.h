@@ -8,6 +8,8 @@
 // ==============================
 
 #define CHASER_TARGET_RELAX_NUM      4			// ビーコン位置のなまし数
+#define CHASER_BEACON_OFFSET_LAT     -250.0f	// ビーコン位置のオフセット値（lat,緯度方向,x方向）（変更可、初期値）[cm]※-250はミササガパークでの実績値
+#define CHASER_BEACON_OFFSET_LON     0.0f		// ビーコン位置のオフセット値（lon,経度方向,x方向）（変更可、初期値）[cm]
 #define CHASER_TAKEOFF_ALT           650.0f		// テイクオフ時の高さ[cm]
 #define CHASER_TARGET_ACCEL          200.0f		// ターゲットの移動速度変化時の加速度限界（変更可、初期値）[cm/s/s]
 #define CHASER_TARGET_DECEL          150.0f		// ターゲットの移動速度変化時の減速度限界（変更可、初期値）[cm/s/s]
@@ -27,7 +29,7 @@
 #define CHASER_SONAR_ALT_TARGET      250.0f		// ベース高度[cm]（この高度の時にベース下降速度となる）
 #define CHASER_SONAR_ALT_KP          1.0f		// P項（ベース高度との偏差×この値）でかかる
 #define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
-#define CHASER_DESIRED_ALT_LEASH     200		// 高度制御時の目標高度の機体高度との差[cm]※200は池の平でうまくいった実績値
+#define CHASER_DESIRED_ALT_LEASH     200.0f		// 高度制御時の目標高度の機体高度との差（変更可、初期値）[cm]※200は池の平でうまくいった実績値
 #define CHASER_CLIMB_RATE_MAX        250		// 上昇下降速度最大[cm/s]、最終的にこの値で制限される、ただし250上乗せされる※250は池の平でうまくいった実績値
 #define CHASER_GIMBAL_ALT            150		// ジンバル角度計算用高度（変更可、初期値）[cm]
 #define CHASER_GIMBAL_ANGLE_MIN      15			// CHASER時のジンバルの角度最小値[deg.]
