@@ -24,9 +24,6 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
 	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
 	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
-	float beacon_loc_x_sum = 0;								// ビーコン位置配列の各位置のx座標の合計[cm]
-	float beacon_loc_y_sum = 0;								// ビーコン位置配列の各位置のy座標の合計[cm]
-	float beacon_loc_z_sum = 0;								// ビーコン位置配列の各位置のz座標の合計[cm]
 	static uint32_t last = 0;								// 前回格納時刻[ms]
 	static uint32_t last_latch = 0;							// 前回ラッチ時刻[ms]
 	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
@@ -34,9 +31,9 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	
 	// リセットフラグが立っている場合はビーコン位置配列をクリアする（現在は使っていない）
 	if (chaser_beacon_loc_reset) {
-		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_loc[i].zero();}
-		beacon_loc_relaxed_last.zero();
-		beacon_loc_relaxed_latch.zero();
+		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_loc[i](0,0);}
+		beacon_loc_relaxed_last(0,0);
+		beacon_loc_relaxed_latch(0,0);
 		
 		index = 0;
 		relax_stored_num = 0;
@@ -57,7 +54,9 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		Vector3f pos = pv_location_to_vector(*cmd);
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
-		beacon_loc[index] = pos;
+		// この段階でオフセット値をのっける
+		beacon_loc[index].x = pos.x + g.chaser_beacon_offset_lat;
+		beacon_loc[index].y = pos.y + g.chaser_beacon_offset_lon;
 		index++;
 		if (index == CHASER_TARGET_RELAX_NUM) {
 			index = 0;
@@ -72,17 +71,10 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		
 		// 配列が全て埋まっている場合のみchaser_origin,chaser_destinationを更新する
 		if (relax_stored_num == CHASER_TARGET_RELAX_NUM) {
-			// xyz全て平均位置
-			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {
-				beacon_loc_x_sum += beacon_loc[i].x;
-				beacon_loc_y_sum += beacon_loc[i].y;
-				beacon_loc_z_sum += beacon_loc[i].z;
-			}
-			Vector3f beacon_loc_relaxed;
-			beacon_loc_relaxed.x = beacon_loc_x_sum / CHASER_TARGET_RELAX_NUM -250.0f;
-			beacon_loc_relaxed.y = beacon_loc_y_sum / CHASER_TARGET_RELAX_NUM;
-			beacon_loc_relaxed.z = beacon_loc_z_sum / CHASER_TARGET_RELAX_NUM;
-			chaser_beacon_alt = beacon_loc_relaxed.z;
+			// x,y方向のなまし値を計算する
+			Vector2f beacon_loc_sum;
+			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {beacon_loc_sum += beacon_loc[i];};
+			Vector2f beacon_loc_relaxed = beacon_loc_sum / CHASER_TARGET_RELAX_NUM;
 			
 			if (!chaser_beacon_loc_ok) {
 				// 予測不可時（呼び出し1回目）の処置
@@ -95,9 +87,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				// 予測可能時の処置
 				
 				// 不感帯内かの判断
-				float beacon_movement = safe_sqrt(
-				  (beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)*(beacon_loc_relaxed.x-beacon_loc_relaxed_latch.x)
-				 +(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y)*(beacon_loc_relaxed.y-beacon_loc_relaxed_latch.y));
+				float beacon_movement = get_distance_vector2f(beacon_loc_relaxed,beacon_loc_relaxed_latch);
 				
 				if (beacon_movement < CHASER_BEACON_MOVE_DB) {
 					latch_count++;
@@ -111,17 +101,20 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 					latch_count = 0;
 				}
 				
+				Vector2f chaser_current_pos;
+				chaser_current_pos.x = inertial_nav.get_position().x;
+				chaser_current_pos.y = inertial_nav.get_position().y;
+				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
 				if (!chaser_started && chaser_state == CHASER_CHASE) {
-					chaser_target.x = inertial_nav.get_position().x;
-					chaser_target.y = inertial_nav.get_position().y;
+					chaser_target = chaser_current_pos;
 					chaser_target_vel(0,0);
 					chaser_started = true;
 				}
 				
 				if (chaser_state == CHASER_CHASE) {
 					// ジンバルの角度を更新する
-					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , pv_get_horizontal_distance_cm(inertial_nav.get_position(),beacon_loc_relaxed))),
+					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(chaser_current_pos,beacon_loc_relaxed))),
 												CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
 					change_mount_control_pitch_angle(chaser_gimbal_pitch_angle);
 					
@@ -198,15 +191,14 @@ static void update_chaser() {
 	wp_nav.update_loiter_for_chaser(chaser_target_vel);
 }
 
-static void update_chaser_origin_destination(const Vector3f beacon_loc, const Vector3f beacon_loc_last, float dt) {
+static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt) {
 	static uint8_t yaw_relax_count = 0;
 	
 	// 起点を現在のターゲット位置にする
 	chaser_origin = chaser_target;
 	
 	// beaconの到達予測位置をdestinationとする
-	chaser_destination.x = 2*beacon_loc.x - beacon_loc_last.x;
-	chaser_destination.y = 2*beacon_loc.y - beacon_loc_last.y;
+	chaser_destination = beacon_loc * 2.0f - beacon_loc_last;
 	
 	// track関連の計算
 	chaser_track_length = chaser_destination - chaser_origin;
@@ -609,4 +601,11 @@ void change_mount_control_neutral_angle(){
 	mavlink_msg_mount_control_pack(system_id, component_id, &msg, target_system, target_component, input_a, input_b, input_c, save_position);//dammy message write
 	camera_mount.control_msg(&msg);
 }
+
+// pv_get_horizontal_distance_cm - return distance between two positions in cm
+float get_distance_vector2f(const Vector2f &origin, const Vector2f &destination)
+{
+    return pythagorous2(destination.x-origin.x,destination.y-origin.y);
+}
+
 

@@ -1,5 +1,11 @@
 ■■■■■　変更履歴　■■■■■
 =================================================================================
+2013.3.27
+あまりに大きく変えすぎて覚えていない。その内一度ちゃんとまとめます。変更点は更新しました。
+=================================================================================
+
+
+=================================================================================
 2013.2.27
 <機体>
 ・CHASER時の目標高度の斜度による自動生成機能を削除
@@ -115,6 +121,8 @@ ArduCopter.pde
 　update_altitude関数内に
 　　1. 気圧計の温度取得を追加（デバッグ用）
       2. chaser_sonar_altを計算する項目を追加（LPF）
+　set_throttle_mode関数内にTHROTTLE_CHASERのcaseを追加
+　update_throttle_mode関数内にTHROTTLE_CHASERのcaseを追加
 chaser_defines.h
 　すべて　新規ファイル
 chaser.pde
@@ -136,11 +144,15 @@ GCS_Mavlink.pde
 　GCS_MAVLINK::handleMessageの末尾にcase MAVLINK_MSG_ID_CHASER_CMDの項目を追加。
    send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
 motors.pde
-　init_arm_motors関数内にデバッグ用項目追加（chaser_arm_counter_abgのインクリメント、一時的）
 　init_disarm_motors関数内にCHASER用モード変更を追加
 navigation.pde
 　set_nav_modeのスイッチにNAV_CHASERを追加
 　update_nav_modeのスイッチにNAV_CHASERを追加
+Parameters.h
+　enumの120番台にchaser関連の番号を追加
+　変数にchaser関連の変数を追加
+Parameters.pde
+　angle_rate_maxの次にchaser関連の項目を追加
 system.pde
 　set_mode関数内にCHASERモードを追加
 
@@ -157,7 +169,7 @@ AC_WPNav.cpp
 
 ==以下Beacon関連==
 libraries/FastSerial
-　DLしてきたものそのまま
+　write関数をAPMを参考に追加
 libraries/BC_Compat
 　新規作成
 
