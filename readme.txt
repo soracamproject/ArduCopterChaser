@@ -141,12 +141,15 @@ defines.h
 GCS_Mavlink.pde
    bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
    void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
-　GCS_MAVLINK::handleMessageの末尾にcase MAVLINK_MSG_ID_CHASER_CMDの項目を追加。
+　GCS_MAVLINK::handleMessageの末尾に以下追加
+　　case MAVLINK_MSG_ID_CHASER_CMD
+　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
    send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
 motors.pde
 　init_disarm_motors関数内にCHASER用モード変更を追加
 navigation.pde
 　set_nav_modeのスイッチにNAV_CHASERを追加
+　update_nav_modeのNAV_WPスイッチ内に通信不良フェールセーフ関数を追加
 　update_nav_modeのスイッチにNAV_CHASERを追加
 Parameters.h
 　enumの120番台にchaser関連の番号を追加

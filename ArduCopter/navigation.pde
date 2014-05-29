@@ -152,11 +152,15 @@ static void update_nav_mode()
             break;
 
         case NAV_WP:
+			// フェールセーフ（通信不良）
+			if(control_mode == CHASER && chaser_state == CHASER_TAKEOFF){ chaser_fs_com(); };	// テイクオフ時はNAV_WPなので仕方無くここに書く
             // call waypoint controller
             wp_nav.update_wpnav();
             break;
 
 		case NAV_CHASER:
+			// フェールセーフ（通信不良）
+			chaser_fs_com();
 			// CHASERコントローラを呼ぶ
 			update_chaser();
 			break;

@@ -34,6 +34,7 @@
 #define CHASER_GIMBAL_ALT            150		// ジンバル角度計算用高度（変更可、初期値）[cm]
 #define CHASER_GIMBAL_ANGLE_MIN      15			// CHASER時のジンバルの角度最小値[deg.]
 #define CHASER_GIMBAL_ANGLE_MAX      40			// CHASER時のジンバルの角度最大値[deg.]
+#define CHASER_FS_THRES_COM          1000		// フェールセーフ（通信不良）判定閾値[ms]
 
 // 廃止したdefine郡
 //#define CHASER_YAW_RESTRICT_CD1      0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
@@ -47,38 +48,54 @@
 #define LOGGING_ENABLED              DISABLED
 #define AUTOTUNE                     DISABLED
 
-
+// ゲレンデ毎にジオフェンスを設定する
+// CHASER_PISTEの番号とゲレンデが対応
 // 受け取ったビーコン位置の緯度経度の上下限界を設定
-// 刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
+#define CHASER_PISTE               0
+
+// 0:刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
+#if CHASER_PISTE==0
 #define CHASER_LAT_MIN            349682650			//経度下限
 #define CHASER_LAT_MAX            350551540			//緯度上限
 #define CHASER_LON_MIN            1369701330		//経度下限
 #define CHASER_LON_MAX            1370635160		//経度上限
 
-// スノーウェーブパーク、鷲ヶ岳用
-//#define CHASER_LAT_MIN            358993800			//経度下限
-//#define CHASER_LAT_MAX            360388670			//緯度上限
-//#define CHASER_LON_MIN            1367319150		//経度下限
-//#define CHASER_LON_MAX            1370295750		//経度上限
+// 1:スノーウェーブパーク、鷲ヶ岳用
+#elif CHASER_PISTE==1
+#define CHASER_LAT_MIN            358993800			//経度下限
+#define CHASER_LAT_MAX            360388670			//緯度上限
+#define CHASER_LON_MIN            1367319150		//経度下限
+#define CHASER_LON_MAX            1370295750		//経度上限
 
-// 池の平温泉スキー場用
-//#define CHASER_LAT_MIN            368389520			//経度下限
-//#define CHASER_LAT_MAX            368999260			//緯度上限
-//#define CHASER_LON_MIN            1381150330		//経度下限
-//#define CHASER_LON_MAX            1382204330		//経度上限
+// 2:池の平温泉スキー場用
+#elif CHASER_PISTE==2
+#define CHASER_LAT_MIN            368389520			//経度下限
+#define CHASER_LAT_MAX            368999260			//緯度上限
+#define CHASER_LON_MIN            1381150330		//経度下限
+#define CHASER_LON_MAX            1382204330		//経度上限
 
-// チャオ御岳スノーリゾート用
-//#define CHASER_LAT_MIN            359025020			//経度下限
-//#define CHASER_LAT_MAX            359721350			//緯度上限
-//#define CHASER_LON_MIN            1374345560		//経度下限
-//#define CHASER_LON_MAX            1375297850		//経度上限
+// 3:チャオ御岳スノーリゾート用
+#elif CHASER_PISTE==3
+#define CHASER_LAT_MIN            359025020			//経度下限
+#define CHASER_LAT_MAX            359721350			//緯度上限
+#define CHASER_LON_MIN            1374345560		//経度下限
+#define CHASER_LON_MAX            1375297850		//経度上限
 
-// HAKUBA47用
-//#define CHASER_LAT_MIN            366472510			//経度下限
-//#define CHASER_LAT_MAX            367020820			//緯度上限
-//#define CHASER_LON_MIN            1377869510		//経度下限
-//#define CHASER_LON_MAX            1378635330		//経度上限
+// 4:HAKUBA47用
+#elif CHASER_PISTE==4
+#define CHASER_LAT_MIN            366472510			//経度下限
+#define CHASER_LAT_MAX            367020820			//緯度上限
+#define CHASER_LON_MIN            1377869510		//経度下限
+#define CHASER_LON_MAX            1378635330		//経度上限
 
+#else
+// デフォルト:刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
+#define CHASER_LAT_MIN            349682650			//経度下限
+#define CHASER_LAT_MAX            350551540			//緯度上限
+#define CHASER_LON_MIN            1369701330		//経度下限
+#define CHASER_LON_MAX            1370635160		//経度上限
+
+#endif
 
 // CHASERデバッグ用通信有効無効フラグ
 // 0は通常通信モード（たぶんこれじゃないとMISSION PLANNERで初期設定できない）

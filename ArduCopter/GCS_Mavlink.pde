@@ -2138,6 +2138,8 @@ mission_failed:
 	
 	case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION:
 	{
+		chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻更新
+		
 #if CHASER_LOCATION_DEBUG == 0
 		// 通常モード
 		mavlink_chaser_beacon_location_t packet;

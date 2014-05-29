@@ -823,6 +823,9 @@ static uint16_t chaser_yaw_restrict_cd2;	// YAW制御制限下限角度上限[ce
 static bool chaser_mount_activate;			// CHASERカメラジンバルON
 static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角度[deg.](下向きがプラス側)
 
+static uint32_t chaser_prev_ms_msg_receive;	// ビーコンからのメッセージを受け取った時間（前回値）[ms]
+static uint8_t chaser_count_beacon_gps_err;	// ビーコン位置情報がフェンスを連続して外れた回数[-]
+
 ////////////////////////////////////////////////////////////////////////////////
 // Performance monitoring
 ////////////////////////////////////////////////////////////////////////////////
