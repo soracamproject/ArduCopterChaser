@@ -64,7 +64,7 @@ void GPS_Glitch::check_position()
         return;
     }
 
-    // if not initialised or disabled update last good position and exit
+    // if not initialised or disabled update last good position and exit	// GPS_Glitchがdisableだったらここで素通りして終了
     if (!_flags.initialised || !_enabled) {
         _last_good_update = now;
         _last_good_lat = _gps->latitude;

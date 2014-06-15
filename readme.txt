@@ -158,6 +158,7 @@ Parameters.pde
 　angle_rate_maxの次にchaser関連の項目を追加
 system.pde
 　set_mode関数内にCHASERモードを追加
+　mode_requires_GPS関数内にCHASERモードを追加
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml

@@ -303,6 +303,7 @@ static bool mode_requires_GPS(uint8_t mode) {
         case CIRCLE:
         case POSITION:
         case DRIFT:
+		case CHASER:	// CHASER用に追加
             return true;
         default:
             return false;
