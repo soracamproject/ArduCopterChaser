@@ -165,7 +165,11 @@ void loop(){
 			}
 			
 			// ■毎回実行■
-			// *ToDo*
+			// CHASER_READYの時のみ、beacon位置情報を定期的に送信
+			if(substate == 5 && (now_ms - prev_et_ms) > 200){	// substateで定義しているため番号変化に注意
+				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				prev_et_ms = now_ms;
+			}
 			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
 			if(button2.update()==1 && button2.read() == HIGH){
 				substate = 90;
@@ -217,8 +221,8 @@ void loop(){
 				break;
 				
 				case 5:
-				// 3秒待って次のステートへ
-				if(button1.update()==1 && button1.read() == HIGH){
+				// 3秒待ってTAKEOFFステートへ
+				if((now_ms - prev_ss_ms) > 3000){
 					change_state(BEACON_TAKEOFF);
 				}
 				break;

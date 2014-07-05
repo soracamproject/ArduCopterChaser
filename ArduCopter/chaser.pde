@@ -327,6 +327,9 @@ static bool set_chaser_state(uint8_t state) {
 				// カメラジンバルON
 				chaser_mount_activate = true;
 				
+				// 通信途絶判定開始
+				chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻初期化
+				
 				success = true;
 			}
 			break;
@@ -345,9 +348,6 @@ static bool set_chaser_state(uint8_t state) {
 				wp_nav.set_destination(pos);
 				
 				reset_I_all();		//フリップを防ぐためで要検討項目らしい（APMから持ってきている）
-				
-				// 通信途絶判定開始
-				chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻初期化
 				
 				success = true;
 			}
@@ -489,11 +489,14 @@ static bool chaser_state_change_check(uint8_t state) {
 
 // フェールセーフ（通信不良）
 // ビーコン通信途絶時にLANDモードに入れる
-void chaser_fs_com() {
+bool chaser_fs_com() {
 	uint32_t dt = hal.scheduler->millis() - chaser_prev_ms_msg_receive;
 	if(dt > CHASER_FS_THRES_COM){
 		set_chaser_state(CHASER_LAND);
+		return true;
 	}
+	
+	return false;
 }
 
 // ビーコンの圧力を機体のground_pressureとground_temperatureを使って高度[cm]に変換する

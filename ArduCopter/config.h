@@ -1068,7 +1068,7 @@
 
 // use this to completely disable the CLI
 #ifndef CLI_ENABLED
-  //#  define CLI_ENABLED           ENABLED
+  //#define CLI_ENABLED           ENABLED
   #define CLI_ENABLED           DISABLED
 #endif
 
