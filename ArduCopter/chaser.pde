@@ -311,6 +311,10 @@ static bool set_chaser_state(uint8_t state) {
 			change_mount_stab_pitch();
 			change_mount_control_pitch_angle(CHASER_GIMBAL_ANGLE_MIN); //degree  -45<pitch_angle<45
 			
+			// フェールセーフ初回リセット
+			chaser_fs_com_firsttime = true;		// 通信途絶FS
+			chaser_count_beacon_pos_err = 0;	// ビーコン位置異常FS
+			
 			success = true;
 			break;
 		
@@ -326,9 +330,6 @@ static bool set_chaser_state(uint8_t state) {
 				
 				// カメラジンバルON
 				chaser_mount_activate = true;
-				
-				// 通信途絶判定開始
-				chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻初期化
 				
 				success = true;
 			}
@@ -487,17 +488,74 @@ static bool chaser_state_change_check(uint8_t state) {
 	return false;
 }
 
+// chaser用フェールセーフを実施する
+// 通信途絶FS、ビーコン位置情報異常値FSをそれぞれ実施。ひとつでも判定されれば即LAND。
+bool chaser_fs_all(){
+	if(chaser_fs_requires_check()){
+		// 通信途絶フェールセーフ
+		if(chaser_fs_com()){return true;};
+		
+		// ビーコン位置情報異常値フェールセーフ
+		if(chaser_fs_beacon_pos()){return true;};
+		
+		// フェール無し
+		return false;
+	} else {
+		// フェール判定不要
+		return false;
+	}
+}
+
+// フェールセーフを実施するかどうかの判定をする
+// フェールセーフを実施する場合true, 実施しない場合falseを返す
+bool chaser_fs_requires_check(){
+	if(control_mode == CHASER){
+		switch(chaser_state) {
+			case CHASER_INIT:
+			case CHASER_LAND:
+				return false;
+			
+			case CHASER_READY:
+			case CHASER_TAKEOFF:
+			case CHASER_STAY:
+			case CHASER_CHASE:
+				return true;
+			
+			default:
+				return true;
+		}
+	}
+	return false;
+}
+
 // フェールセーフ（通信不良）
 // ビーコン通信途絶時にLANDモードに入れる
 bool chaser_fs_com() {
-	uint32_t dt = hal.scheduler->millis() - chaser_prev_ms_msg_receive;
-	if(dt > CHASER_FS_THRES_COM){
+	if(chaser_fs_com_firsttime){
+		chaser_prev_ms_msg_receive = hal.scheduler->millis();
+		chaser_fs_com_firsttime = false;
+		return false;
+	} else {
+		uint32_t dt = hal.scheduler->millis() - chaser_prev_ms_msg_receive;
+		if(dt > CHASER_FS_THRES_COM){
+			set_chaser_state(CHASER_LAND);
+			return true;
+		}
+		return false;
+	}
+}
+
+// フェールセーフ（ビーコン位置異常）
+// ビーコン位置がフェンス外に一定回数連続で外れたらLANDモードに入れる
+bool chaser_fs_beacon_pos() {
+	if(chaser_count_beacon_pos_err >= CHASER_FS_THRES_BEACON_POS_ERR){
 		set_chaser_state(CHASER_LAND);
 		return true;
+	} else {
+		return false;
 	}
-	
-	return false;
 }
+
 
 // ビーコンの圧力を機体のground_pressureとground_temperatureを使って高度[cm]に変換する
 // 引数：beacon_pressure [Pa, x100mbar] ※int32_tで飛んできたやつをそのままfloatに叩き込んでるはず

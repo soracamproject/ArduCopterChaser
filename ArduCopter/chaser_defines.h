@@ -35,6 +35,7 @@
 #define CHASER_GIMBAL_ANGLE_MIN      15			// CHASER時のジンバルの角度最小値[deg.]
 #define CHASER_GIMBAL_ANGLE_MAX      40			// CHASER時のジンバルの角度最大値[deg.]
 #define CHASER_FS_THRES_COM          1000		// フェールセーフ（通信不良）判定閾値[ms]
+#define CHASER_FS_THRES_BEACON_POS_ERR  5		// フェールセーフ（ビーコン位置異常）判定閾値[回]
 
 // 廃止したdefine郡
 //#define CHASER_YAW_RESTRICT_CD1      0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）

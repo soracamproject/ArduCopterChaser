@@ -2153,8 +2153,10 @@ mission_failed:
 		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
 		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
 			update_chaser_beacon_location(&tell_command);
+			chaser_count_beacon_pos_err = 0;
+		}else{
+			chaser_count_beacon_pos_err++;
 		}
-		
 		break;
 #else
 		// ビーコン位置情報デバッグモード

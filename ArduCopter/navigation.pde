@@ -129,7 +129,13 @@ static void update_nav_mode()
     if (!ap.auto_armed || !inertial_nav.position_ok()) {
         return;
     }
-
+	
+	// chaser用フェールセーフ実行。
+	// 判定したら関数内でLANDさせ、update_nav_modeはretuenで抜ける
+	if(chaser_fs_all()){
+		return;
+	}
+	
     switch( nav_mode ) {
 
         case NAV_NONE:
@@ -152,19 +158,11 @@ static void update_nav_mode()
             break;
 
         case NAV_WP:
-			// フェールセーフ（通信不良）
-			if(control_mode == CHASER && (chaser_state == CHASER_TAKEOFF || chaser_state == CHASER_READY)){
-				if(chaser_fs_com()){
-					break;
-				}
-			}	// テイクオフ時はNAV_WPなので仕方無くここに書く
             // call waypoint controller
             wp_nav.update_wpnav();
             break;
 
 		case NAV_CHASER:
-			// フェールセーフ（通信不良）
-			if(chaser_fs_com()){break;};
 			// CHASERコントローラを呼ぶ
 			update_chaser();
 			break;
