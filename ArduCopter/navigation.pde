@@ -131,7 +131,7 @@ static void update_nav_mode()
     }
 	
 	// chaser用フェールセーフ実行。
-	// 判定したら関数内でLANDさせ、update_nav_modeはretuenで抜ける
+	// 判定したら関数内でLANDさせ、update_nav_modeはreturnで抜ける
 	if(chaser_fs_all()){
 		return;
 	}

@@ -343,7 +343,8 @@ void loop(){
 			}
 			// スイッチ１が押されたらSTAYに戻る
 			if(button1.update()==1 && button1.read() == HIGH){
-				change_state(BEACON_STAY);
+				//change_state(BEACON_STAY);
+				change_state(BEACON_DEBUG);
 			}
 			// スイッチ２が押されたらLANDする
 			if(button2.update()==1 && button2.read() == HIGH){
@@ -396,23 +397,21 @@ void loop(){
 			if(first_time){
 				S_INIT;
 				control_led(1,0,1,0);
-				send_change_chaser_state_cmd(CHASER_INIT);
+				//send_change_chaser_state_cmd(CHASER_INIT);
 			}
 			
 			// ■毎回実行■
-			// beacon位置情報を定期的に送信
-			if(button1.update()==1 && button1.read() == HIGH){
-				control_led(0,1,0,1);
-			}
+			// ボタン2が押されたらLANDさせる
 			if(button2.update()==1 && button2.read() == HIGH){
-				control_led(1,0,1,0);;
+				change_state(BEACON_LAND);
 			}
 			if((now_ms - prev_et_ms) > 200){
 				static uint16_t count;
+				send_beacon_loc(beacon_loc_data.lat,10000000,beacon_loc_data.pressure);
 				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				xbee_serial.println(count++);
-				xbee_serial.println(beacon_loc_data.lat);
-				xbee_serial.println(beacon_loc_data.lon);
+				//xbee_serial.println(count++);
+				//xbee_serial.println(beacon_loc_data.lat);
+				//xbee_serial.println(beacon_loc_data.lon);
 				prev_et_ms = now_ms;
 			}
 			

@@ -492,18 +492,14 @@ static bool chaser_state_change_check(uint8_t state) {
 // 通信途絶FS、ビーコン位置情報異常値FSをそれぞれ実施。ひとつでも判定されれば即LAND。
 bool chaser_fs_all(){
 	if(chaser_fs_requires_check()){
-		// 通信途絶フェールセーフ
-		if(chaser_fs_com()){return true;};
-		
-		// ビーコン位置情報異常値フェールセーフ
-		if(chaser_fs_beacon_pos()){return true;};
-		
-		// フェール無し
-		return false;
-	} else {
-		// フェール判定不要
-		return false;
+		// フェールセーフ判定
+		if(chaser_fs_com() || chaser_fs_beacon_pos()){
+			set_chaser_state(CHASER_LAND);
+			return true;
+		}
 	}
+	
+	return false;
 }
 
 // フェールセーフを実施するかどうかの判定をする
@@ -535,25 +531,25 @@ bool chaser_fs_com() {
 		chaser_prev_ms_msg_receive = hal.scheduler->millis();
 		chaser_fs_com_firsttime = false;
 		return false;
-	} else {
-		uint32_t dt = hal.scheduler->millis() - chaser_prev_ms_msg_receive;
-		if(dt > CHASER_FS_THRES_COM){
-			set_chaser_state(CHASER_LAND);
-			return true;
-		}
-		return false;
 	}
+	
+	// 前回通信時間との間隔が閾値を超えていたらtrueを返す
+	uint32_t dt = hal.scheduler->millis() - chaser_prev_ms_msg_receive;
+	if(dt > CHASER_FS_THRES_COM){
+		return true;
+	}
+	
+	return false;
 }
 
 // フェールセーフ（ビーコン位置異常）
 // ビーコン位置がフェンス外に一定回数連続で外れたらLANDモードに入れる
 bool chaser_fs_beacon_pos() {
 	if(chaser_count_beacon_pos_err >= CHASER_FS_THRES_BEACON_POS_ERR){
-		set_chaser_state(CHASER_LAND);
 		return true;
-	} else {
-		return false;
 	}
+	
+	return false;
 }
 
 
