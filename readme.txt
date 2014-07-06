@@ -138,6 +138,8 @@ defines.h
 　　NUM_MODESを増やす
 　Navigation modes held in nav_mode variableにNAV_CHASERを追加　番号は4
 　ファイル末尾にchaser_defines.hのインクルードを追加
+events.pde
+　failsafe_battery_event関数内にCHASERの項目追加。必ずLAND。
 GCS_Mavlink.pde
    bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
    void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加

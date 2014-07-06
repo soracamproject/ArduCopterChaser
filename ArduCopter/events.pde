@@ -144,6 +144,9 @@ static void failsafe_battery_event(void)
                     init_disarm_motors();
                     break;
                 }
+			case CHASER:	// 必ずLANDさせる
+				set_mode(LAND);
+				break;
             default:
                 // set mode to RTL or LAND
                 if (g.failsafe_battery_enabled == FS_BATT_RTL && home_distance > wp_nav.get_waypoint_radius()) {
