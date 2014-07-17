@@ -84,130 +84,8 @@
   /**************************************************************************************/
 
     /***************************    Combined IMU Boards    ********************************/
-      /* if you use a specific sensor board:
-         please submit any correction to this list.
-           Note from Alex: I only own some boards, for other boards, I'm not sure, the info was gathered via rc forums, be cautious */
-      //#define FFIMUv1         // first 9DOF+baro board from Jussi, with HMC5843                   <- confirmed by Alex
-      //#define FFIMUv2         // second version of 9DOF+baro board from Jussi, with HMC5883       <- confirmed by Alex
-      //#define FREEIMUv1       // v0.1 & v0.2 & v0.3 version of 9DOF board from Fabio
-      //#define FREEIMUv03      // FreeIMU v0.3 and v0.3.1
-      //#define FREEIMUv035     // FreeIMU v0.3.5 no baro
-      //#define FREEIMUv035_MS  // FreeIMU v0.3.5_MS                                                <- confirmed by Alex
-      //#define FREEIMUv035_BMP // FreeIMU v0.3.5_BMP
-      //#define FREEIMUv04      // FreeIMU v0.4 with MPU6050, HMC5883L, MS561101BA                  <- confirmed by Alex
-      //#define FREEIMUv043     // same as FREEIMUv04 with final MPU6050 (with the right ACC scale)
-      //#define NANOWII         // the smallest multiwii FC based on MPU6050 + pro micro based proc <- confirmed by Alex
-      //#define PIPO            // 9DOF board from erazz
-      //#define QUADRINO        // full FC board 9DOF+baro board from witespy  with BMP085 baro     <- confirmed by Alex
-      //#define QUADRINO_ZOOM   // full FC board 9DOF+baro board from witespy  second edition
-      //#define QUADRINO_ZOOM_MS// full FC board 9DOF+baro board from witespy  second edition       <- confirmed by Alex
-      //#define ALLINONE        // full FC board or standalone 9DOF+baro board from CSG_EU
-      //#define AEROQUADSHIELDv2
-      //#define ATAVRSBIN1      // Atmel 9DOF (Contribution by EOSBandi). requires 3.3V power.
-      //#define SIRIUS          // Sirius Navigator IMU                                             <- confirmed by Alex
-      //#define SIRIUSGPS       // Sirius Navigator IMU  using external MAG on GPS board            <- confirmed by Alex
-      //#define SIRIUS600       // Sirius Navigator IMU  using the WMP for the gyro
-      //#define SIRIUS_AIR      // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com           <- confirmed by Alex
-      //#define SIRIUS_AIR_GPS  // Sirius Navigator IMU 6050 32U4 from MultiWiiCopter.com with GPS/MAG remote located
-      //#define SIRIUS_MEGAv5_OSD //  Paris_Sirius™ ITG3050,BMA280,MS5611,HMC5883,uBlox  http://www.Multiwiicopter.com <- confirmed by Alex
-      //#define MINIWII         // Jussi's MiniWii Flight Controller                                <- confirmed by Alex
-      //#define MICROWII        // MicroWii 10DOF with ATmega32u4, MPU6050, HMC5883L, MS561101BA from http://flyduino.net/
-      //#define CITRUSv2_1      // CITRUS from qcrc.ca
-      //#define CHERRY6DOFv1_0
-      //#define DROTEK_10DOF    // Drotek 10DOF with ITG3200, BMA180, HMC5883, BMP085, w or w/o LLC
-      //#define DROTEK_10DOF_MS // Drotek 10DOF with ITG3200, BMA180, HMC5883, MS5611, LLC
-      //#define DROTEK_6DOFv2   // Drotek 6DOF v2
-      //#define DROTEK_6DOF_MPU // Drotek 6DOF with MPU6050
-      //#define DROTEK_10DOF_MPU//
-      //#define MONGOOSE1_0     // mongoose 1.0    http://store.ckdevices.com/
-      //#define CRIUS_LITE      // Crius MultiWii Lite
-      //#define CRIUS_SE        // Crius MultiWii SE
-      //#define CRIUS_SE_v2_0   // Crius MultiWii SE 2.0 with MPU6050, HMC5883 and BMP085
-      //#define OPENLRSv2MULTI  // OpenLRS v2 Multi Rc Receiver board including ITG3205 and ADXL345
-      //#define BOARD_PROTO_1   // with MPU6050 + HMC5883L + MS baro
-      //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
-      //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
-      //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
-      //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
-      //#define GY_521          // Chinese 6  DOF with  MPU6050, LLC
-      //#define INNOVWORKS_10DOF // with ITG3200, BMA180, HMC5883, BMP085 available here http://www.diymulticopter.com
-      //#define INNOVWORKS_6DOF // with ITG3200, BMA180 available here http://www.diymulticopter.com
-      //#define MultiWiiMega    // MEGA + MPU6050+HMC5883L+MS5611 available here http://www.diymulticopter.com
-      //#define PROTO_DIY       // 10DOF mega board
-      //#define IOI_MINI_MULTIWII// www.bambucopter.com
-      //#define Bobs_6DOF_V1     // BobsQuads 6DOF V1 with ITG3200 & BMA180
-      //#define Bobs_9DOF_V1     // BobsQuads 9DOF V1 with ITG3200, BMA180 & HMC5883L
-      //#define Bobs_10DOF_BMP_V1 // BobsQuads 10DOF V1 with ITG3200, BMA180, HMC5883L & BMP180 - BMP180 is software compatible with BMP085
-      //#define FLYDUINO_MPU       // MPU6050 Break Out onboard 3.3V reg
       #define CRIUS_AIO_PRO_V1
-      //#define DESQUARED6DOFV2GO  // DEsquared V2 with ITG3200 only
-      //#define DESQUARED6DOFV4    // DEsquared V4 with MPU6050
-      //#define LADYBIRD
-      //#define MEGAWAP_V2_STD     // available here: http://www.multircshop.com                    <- confirmed by Alex
-      //#define MEGAWAP_V2_ADV
-      //#define HK_MultiWii_SE_V2  // Hobbyking board with MPU6050 + HMC5883L + BMP085
-      //#define HK_MultiWii_328P   // Also labeled "Hobbybro" on the back.  ITG3205 + BMA180 + BMP085 + NMC5583L + DSM2 Connector (Spektrum Satellite)  
-      //#define RCNet_FC           // RCNet FC with MPU6050 and MS561101BA  http://www.rcnet.com
-      //#define RCNet_FC_GPS       // RCNet FC with MPU6050 + MS561101BA + HMC5883L + UBLOX GPS http://www.rcnet.com
-      //#define FLYDU_ULTRA        // MEGA+10DOF+MT3339 FC
-      //#define DIYFLYING_MAGE_V1  // diyflying 10DOF mega board with MPU6050 + HMC5883L + BMP085 http://www.indoor-flying.hk
-      //#define MultiWii_32U4_SE         // Hextronik MultiWii_32U4_SE
-      //#define MultiWii_32U4_SE_no_baro // Hextronik MultiWii_32U4_SE without the MS561101BA for more free flash-memory
-      //#define Flyduino9DOF       // Flyduino 9DOF IMU MPU6050+HMC5883l
-      //#define Nano_Plane         // Multiwii Plane version with tail-front LSM330 sensor http://www.radiosait.ru/en/page_5324.html
       
-    /***************************    independent sensors    ********************************/
-      /* leave it commented if you already checked a specific board above */
-      /* I2C gyroscope */
-      //#define WMP
-      //#define ITG3200
-      //#define MPU3050
-      //#define L3G4200D
-      //#define MPU6050       //combo + ACC
-      //#define LSM330        //combo + ACC
-      
-      /* I2C accelerometer */
-      //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
-      //#define MMA7455
-      //#define ADXL345
-      //#define BMA020
-      //#define BMA180
-      //#define BMA280
-      //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
-      //#define LIS3LV02
-      //#define LSM303DLx_ACC
-      //#define MMA8451Q
-
-      /* I2C barometer */
-      //#define BMP085
-      //#define MS561101BA
-
-      /* I2C magnetometer */
-      //#define HMC5843
-      //#define HMC5883
-      //#define AK8975
-      //#define MAG3110
-
-      /* Sonar */ // for visualization purpose currently - no control code behind
-      //#define SRF02 // use the Devantech SRF i2c sensors
-      //#define SRF08
-      //#define SRF10
-      //#define SRF23
-
-      /* ADC accelerometer */ // for 5DOF from sparkfun, uses analog PIN A1/A2/A3
-      //#define ADCACC
-
-      /* enforce your individual sensor orientation - even overrides board specific defaults */
-      //#define FORCE_ACC_ORIENTATION(X, Y, Z)  {imu.accADC[ROLL]  =  Y; imu.accADC[PITCH]  = -X; imu.accADC[YAW]  = Z;}
-      //#define FORCE_GYRO_ORIENTATION(X, Y, Z) {imu.gyroADC[ROLL] = -Y; imu.gyroADC[PITCH] =  X; imu.gyroADC[YAW] = Z;}
-      //#define FORCE_MAG_ORIENTATION(X, Y, Z)  {imu.magADC[ROLL]  =  X; imu.magADC[PITCH]  =  Y; imu.magADC[YAW]  = Z;}
-
-      /* Board orientation shift */
-      /* If you have frame designed only for + mode and you cannot rotate FC phisycally for flying in X mode (or vice versa)
-       * you can use one of of this options for virtual sensors rotation by 45 deegres, then set type of multicopter according to flight mode.
-       * Check motors order and directions of motors rotation for matching with new front point!  Uncomment only one option! */
-      //#define SENSORS_TILT_45DEG_RIGHT        // rotate the FRONT 45 degres clockwise
-      //#define SENSORS_TILT_45DEG_LEFT         // rotate the FRONT 45 degres counterclockwise
 
 
 /*************************************************************************************************/
@@ -481,18 +359,6 @@
   /**************************************************************************************/
 
     /*********************    Lowpass filter for some gyros    ****************************/
-      /* ITG3200 & ITG3205 Low pass filter setting. In case you cannot eliminate all vibrations to the Gyro, you can try
-         to decrease the LPF frequency, only one step per try. As soon as twitching gone, stick with that setting.
-         It will not help on feedback wobbles, so change only when copter is randomly twiching and all dampening and
-         balancing options ran out. Uncomment only one option!
-         IMPORTANT! Change low pass filter setting changes PID behaviour, so retune your PID's after changing LPF.*/
-      //#define ITG3200_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
-      //#define ITG3200_LPF_188HZ
-      //#define ITG3200_LPF_98HZ
-      //#define ITG3200_LPF_42HZ
-      //#define ITG3200_LPF_20HZ
-      //#define ITG3200_LPF_10HZ      // Use this only in extreme cases, rather change motors and/or props
-
       /* MPU6050 Low pass filter setting. In case you cannot eliminate all vibrations to the Gyro, you can try
          to decrease the LPF frequency, only one step per try. As soon as twitching gone, stick with that setting.
          It will not help on feedback wobbles, so change only when copter is randomly twiching and all dampening and
@@ -634,7 +500,7 @@
        in NMEA mode the GPS must be configured to output GGA and RMC NMEA sentences (which is generally the default conf for most GPS devices)
        at least 5Hz update rate. uncomment the first line to select the GPS serial port of the arduino */
        
-    //#define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+    #define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
     //#define GPS_PROMINI_SERIAL   // Will Autosense if GPS is connected when ardu boots.
 
     // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
@@ -648,20 +514,12 @@
 
     
     //#define NMEA
-    //#define UBLOX
+    #define UBLOX
     //#define MTK_BINARY16
     //#define MTK_BINARY19
     //#define INIT_MTK_GPS        // initialize MTK GPS for using selected speed, 5Hz update rate and GGA & RMC sentence or binary settings
 
     
-    /* I2C GPS device made with an independant arduino + GPS device
-       including some navigation functions
-       contribution from EOSBandi   http://code.google.com/p/i2c-gps-nav/ 
-       You have to use at least I2CGpsNav code r33 */
-    //#define I2C_GPS
-    // If your I2C GPS board has Sonar support enabled
-    //#define I2C_GPS_SONAR
-
     /* GPS data readed from Misio-OSD - GPS module connected to OSD, and MultiWii read GPS data from OSD - tested and working OK ! */
     //#define GPS_FROM_OSD
 
