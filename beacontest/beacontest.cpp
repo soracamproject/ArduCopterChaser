@@ -553,25 +553,17 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
 }
 
 void setup() {
-  #if !defined(GPS_PROMINI)
-    SerialOpen(0,SERIAL0_COM_SPEED);
-    #if defined(PROMICRO)
-      SerialOpen(1,SERIAL1_COM_SPEED);
-    #endif
-    #if defined(MEGA)
-      SerialOpen(1,SERIAL1_COM_SPEED);
-      SerialOpen(2,SERIAL2_COM_SPEED);
-      SerialOpen(3,SERIAL3_COM_SPEED);
-    #endif
-  #endif
-  LEDPIN_PINMODE;
-  POWERPIN_PINMODE;
-  BUZZERPIN_PINMODE;
-  STABLEPIN_PINMODE;
-  POWERPIN_OFF;
-  initOutput();
-  readGlobalSet();
-  #ifndef NO_FLASH_CHECK
+  SerialOpen(1,SERIAL1_COM_SPEED);	//
+  SerialOpen(2,SERIAL2_COM_SPEED);	//
+  SerialOpen(3,SERIAL3_COM_SPEED);	//
+  LEDPIN_PINMODE;	//
+  //POWERPIN_PINMODE;	// disableなのでなにもしない、はず
+  BUZZERPIN_PINMODE;	//
+  STABLEPIN_PINMODE;	//
+  //POWERPIN_OFF;	// disableなのでなにもしない、はず
+  initOutput();	// 出力系の設定。出力しないので不要。
+  readGlobalSet();	// eepromから設定読み出し。とりあえず不要。
+  #ifndef NO_FLASH_CHECK	/// defineされているので無視
     #if defined(MEGA)
       uint16_t i = 65000;                             // only first ~64K for mega board due to pgm_read_byte limitation
     #else
@@ -585,12 +577,12 @@ void setup() {
       flashsum ^= (pbyt<<8);
     }
   #endif
-  #ifdef MULTIPLE_CONFIGURATION_PROFILES
+  #ifdef MULTIPLE_CONFIGURATION_PROFILES	// 複数設定の有効無効。無効になってる。とりあえず不要。
     global_conf.currentSet=2;
   #else
     global_conf.currentSet=0;
   #endif
-  while(1) {                                                    // check settings integrity
+  while(1) {                                                    // check settings integrity	// たぶん設定の読み出し。不要
   #ifndef NO_FLASH_CHECK
     if(readEEPROM()) {                                          // check current setting integrity
       if(flashsum != global_conf.flashsum) update_constants();  // update constants if firmware is changed and integrity is OK
@@ -610,16 +602,16 @@ void setup() {
   #endif
   readEEPROM();                                 // load setting data from last used profile
   blinkLED(2,40,global_conf.currentSet+1);          
-  configureReceiver();
-  #if defined (PILOTLAMP) 
+  configureReceiver();	// レシーバの設定。たぶん不要。
+  #if defined (PILOTLAMP) 	// XAircraft Pilot Lampというハードウェアを使う場合の設定。不要。
     PL_INIT;
   #endif
-  #if defined(OPENLRSv2MULTI)
+  #if defined(OPENLRSv2MULTI)	// どこにも定義されていない。無視
     initOpenLRS();
   #endif
-  initSensors();
+  initSensors();	// 必要。移植する。
   #if defined(I2C_GPS) || defined(GPS_SERIAL) || defined(GPS_FROM_OSD)
-    GPS_set_pids();
+    GPS_set_pids();	// GPSっていうかposHold系のPID。不要。
   #endif
   previousTime = micros();
   #if defined(GIMBAL)
@@ -1093,7 +1085,7 @@ void loop () {
       case 0:
         taskOrder++;
         #if MAG
-          if (Mag_getADC()) break; // max 350 µs (HMC5883) // only break when we actually did something
+          if (Mag_getADC()) break; // max 350 ﾂｵs (HMC5883) // only break when we actually did something
         #endif
       case 1:
         taskOrder++;

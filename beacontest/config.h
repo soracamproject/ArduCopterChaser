@@ -940,7 +940,7 @@
   /**************************    WMP power pin     *******************************/
   //#define D12_POWER      // Use D12 on PROMINI to power sensors. Will disable servo[4] on D12
   /* disable use of the POWER PIN (allready done if the option RCAUXPIN12 is selected) */
-  #define DISABLE_POWER_PIN
+  //#define DISABLE_POWER_PIN
 
 
 /*************************************************************************************************/

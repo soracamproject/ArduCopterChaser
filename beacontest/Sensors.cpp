@@ -752,7 +752,7 @@ void ACC_getADC () {
 
 void initSensors() {
   delay(200);
-  POWERPIN_ON;
+  //POWERPIN_ON;
   delay(100);
   i2c_init();
   delay(100);

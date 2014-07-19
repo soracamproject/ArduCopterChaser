@@ -258,15 +258,15 @@
     #define BUZZERPIN_OFF              PORTC &= ~(1<<5);
   #endif 
     
-  #if !defined(DISABLE_POWER_PIN)
-    #define POWERPIN_PINMODE           pinMode (37, OUTPUT);
-    #define POWERPIN_ON                PORTC |= 1<<0;
-    #define POWERPIN_OFF               PORTC &= ~(1<<0);
-  #else
+  //#if !defined(DISABLE_POWER_PIN)
+  //  #define POWERPIN_PINMODE           pinMode (37, OUTPUT);
+  //  #define POWERPIN_ON                PORTC |= 1<<0;
+  //  #define POWERPIN_OFF               PORTC &= ~(1<<0);
+  //#else
     #define POWERPIN_PINMODE           ;
     #define POWERPIN_ON                ;
     #define POWERPIN_OFF               ;
-  #endif
+  //#endif
   #define I2C_PULLUPS_ENABLE         PORTD |= 1<<0; PORTD |= 1<<1;       // PIN 20&21 (SDA&SCL)
   #define I2C_PULLUPS_DISABLE        PORTD &= ~(1<<0); PORTD &= ~(1<<1);
   #define PINMODE_LCD                pinMode(0, OUTPUT);
