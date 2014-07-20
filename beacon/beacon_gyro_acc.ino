@@ -48,12 +48,12 @@
 // ***********************************************************************************
 // gyro+acc関連変数
 // ***********************************************************************************
-int16_t gyroZero[3] = {0,0,0};
-int16_t accZero[3];
-int16_t gyroADC[3];
-int16_t accADC[3];
-int16_t accSmooth[3];
-int16_t gyroData[3];
+static int16_t gyroZero[3] = {0,0,0};
+static int16_t accZero[3];
+static int16_t gyroADC[3];
+static int16_t accADC[3];
+static int16_t accSmooth[3];
+static int16_t gyroData[3];
 
 
 // ***********************************************************************************

@@ -5,7 +5,7 @@
 #include "GPS.h"
 #include "Serial.h"
 #include "Sensors.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 
 #if GPS
 

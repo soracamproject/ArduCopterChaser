@@ -4,7 +4,7 @@
 #include "def.h"
 #include "types.h"
 #include "EEPROM.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "Alarms.h"
 #include "GPS.h"
 

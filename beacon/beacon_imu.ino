@@ -133,14 +133,14 @@ void getEstimatedAttitude(){
 	// Attitude of the estimated vector
 	int32_t sqGX_sqGZ = sq(EstG32.V.X) + sq(EstG32.V.Z);
 	invG = InvSqrt(sqGX_sqGZ + sq(EstG32.V.Y));
-	angle[ROLL]  = _atan2(EstG32.V.X , EstG32.V.Z);
-	angle[PITCH] = _atan2(EstG32.V.Y , InvSqrt(sqGX_sqGZ)*sqGX_sqGZ);
+	beacon_roll  = _atan2(EstG32.V.X , EstG32.V.Z);
+	beacon_pitch = _atan2(EstG32.V.Y , InvSqrt(sqGX_sqGZ)*sqGX_sqGZ);
 	
-	heading = _atan2(
+	beacon_heading = _atan2(
 		EstM32.V.Z * EstG32.V.X - EstM32.V.X * EstG32.V.Z,
 		(EstM.V.Y * sqGX_sqGZ  - (EstM32.V.X * EstG32.V.X + EstM32.V.Z * EstG32.V.Z) * EstG.V.Y)*invG ); 
-	heading += mag_declination; // Set from GUI
-	heading /= 10;
+	beacon_heading += mag_declination; // Set from GUI
+	beacon_heading /= 10;
 }
 
 // Rotate Estimated vector(s) with small angle approximation, according to the gyro data

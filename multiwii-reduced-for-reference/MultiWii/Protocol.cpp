@@ -6,7 +6,7 @@
 #include "LCD.h"
 #include "Output.h"
 #include "GPS.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "Serial.h"
 #include "Protocol.h"
 #include "RX.h"

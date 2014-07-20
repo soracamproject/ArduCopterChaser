@@ -8,9 +8,9 @@
 // シリアルポート
 // ***********************************************************************************
 // ビーコンプロト3.0用
+FastSerialPort0(console);		// console(デバッグ用)、USB通信用
 FastSerialPort1(gps_serial);	// GPS用
 FastSerialPort2(xbee_serial);	// XBee用
-FastSerialPort0(console);
 
 // ビーコンプロト3.1用
 //FastSerialPort2(gps_serial);	// GPS用
@@ -39,10 +39,6 @@ static uint8_t calibOK_A = 0;
 static uint8_t calibOK_M = 0;
 static uint8_t calibrate_mag = 0;	// MAGキャリブレーション実行フラグ、オリジナル
 
-static int16_t angle[2];	// absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
-static int16_t heading;
-
-
 // ステートに入った際に必ず実行される部分のマクロ
 #define S_INIT       substate=0;prev_ms=now_ms;first_time=false;blink_on=true
 // サブステートをひとつ進めるマクロ
@@ -61,8 +57,14 @@ static int16_t heading;
 
 
 // ***********************************************************************************
-// GPS関連変数
+// 位置関連変数
 // ***********************************************************************************
+// ビーコン姿勢
+static int16_t beacon_roll;		// ロール角、角度x10、0.1deg=1
+static int16_t beacon_pitch;	// ピッチ角、角度x10、0.1deg=1
+static int16_t beacon_heading;	// 方角、角度、北が0
+
+// GPS位置
 static struct {
 	int32_t lat;
 	int32_t lon;
@@ -123,20 +125,16 @@ void setup()
 	// XBee初期化
 	xbee_serial.begin(57600);
 	
+	// console(デバッグ用)初期化
 	console.begin(115200);
 	
 	// 各種センサ類初期化
-	i2c_init();
+	i2c_init();		// I2C通信
 	delay(100);
-	gyro_init();
-	baro_init();
-	mag_init();
-	acc_init();
-	
-	// キャリブレーションフラグ？
-	calibratingG = 512;
-	calibratingA = 512;
-	//calibratingB = 200;  // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
+	gyro_init();	// MPU6050,GYRO
+	baro_init();	// BARO
+	mag_init();		// HMC5883C,MAG
+	acc_init();		// MPU6050,ACC
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -147,10 +145,7 @@ void setup()
 	button2.interval(50);			//たぶんチャタ防止間隔5ms
 	
 	// LED全消灯
-	control_led(0,0,0,0);
-	
-	// とりあえず2秒待ち
-	//delay(2000);
+	control_led(-1,-1,-1,-1);
 	
 	// 初期ステート設定
 	state = BEACON_INIT;
@@ -175,37 +170,53 @@ void loop(){
 			case BEACON_INIT:
 			if(first_time){
 				S_INIT;
-				//control_led(1,0,0,0);
+				control_led(1,0,0,0);
+				
+				// GYRO,ACCのキャリブレーションを開始
+				calibratingG = 512;
+				calibOK_G = 0;
+				calibratingA = 512;
+				calibOK_A = 0;
+				calibOK_M = 0;
 			}
 			
 			// ■毎回実行■
-			// ボタン1が押されたら次のステートへ
-			if(button1.update()==1 && button1.read() == HIGH){
+			// キャリブレーションが終了し、ボタン1が押されたら次のステートへ
+			if((calibOK_G==1 && calibOK_A==1 && calibOK_M==1) && button1.update()==1 && button1.read() == HIGH){
 				change_state(BEACON_READY);
 			}
-			// ボタン2が押されたらデバッグモードへ
+			// ボタン2が押されたらMAGキャリブレーションモードへ
 			if(button2.update()==1 && button2.read() == HIGH){
 				//change_state(BEACON_LAND);
 				//change_state(BEACON_DEBUG);
+				
+				// フラグを立てるとmag取得モジュール内でキャリブレーション開始
+				// 30秒間LED4点滅。その間にビーコンを色々な方向に回す。
+				// 終了したらLED4点灯。
+				// 成功/失敗の判定無し
 				calibrate_mag = 1;
 			}
-			// キャリブレーションが終わったらLED点灯
+			// GYROキャリブレーションが終わったらLED2点灯
+			// 成功/失敗の判定無し
 			if(calibOK_G == 0 && calibratingG == 0){
 				calibOK_G = 1;
-				control_led(calibOK_G,calibOK_A,calibOK_M,0);
+				control_led(0,1,0,0);
 			}
+			// ACCキャリブレーションが終わったらLED3点灯
+			// 成功/失敗の判定無し
 			if(calibOK_A == 0 && calibratingA == 0){
 				calibOK_A = 1;
-				control_led(calibOK_G,calibOK_A,calibOK_M,0);
+				control_led(0,0,1,0);
 			}
-			
+			// デバッグ用console出力
+			// 500ms毎にroll,pitch,headingを出力
 			if((now_ms - prev_et_ms) > 500){	// substateで定義しているため番号変化に注意
-				console.print("angle_roll=");
-				console.print(angle[ROLL]);
-				console.print(", angle_pitch=");
-				console.print(angle[PITCH]);
+				console.print("roll=");
+				console.print((float)beacon_roll/10.f);
+				console.print(", pitch=");
+				console.print((float)beacon_pitch/10.f);
 				console.print(", heading=");
-				console.println(heading);
+				console.println(beacon_heading);
 				prev_et_ms = now_ms;
 			}
 			
@@ -492,34 +503,6 @@ void loop(){
 	}
 }
 
-// LEDの点灯用関数
-// （本当はマクロとか組めばいいのだけど書きやすいようにリッチにやってます）
-static void control_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
-	if (one==0){
-		digitalWrite(LED1, LOW);
-	} else {
-		digitalWrite(LED1, HIGH);
-	}
-	
-	if (two==0){
-		digitalWrite(LED2, LOW);
-	} else {
-		digitalWrite(LED2, HIGH);
-	}
-	
-	if (three==0){
-		digitalWrite(LED3, LOW);
-	} else {
-		digitalWrite(LED3, HIGH);
-	}
-	
-	if (four==0){
-		digitalWrite(LED4, LOW);
-	} else {
-		digitalWrite(LED4, HIGH);
-	}
-}
-
 // ビーコンステート変更関数
 // ※first_timeの更新を忘れないように
 static void change_state(uint8_t next_state){
@@ -527,6 +510,37 @@ static void change_state(uint8_t next_state){
 	first_time = true;
 }
 
+// LEDの点灯用関数
+// -1:消灯、0:そのまま、1:点灯
+// （本当はマクロとか組めばいいのだけど書きやすいようにリッチにやってます）
+static void control_led(int8_t one, int8_t two, int8_t three, int8_t four){
+	if (one==-1){
+		digitalWrite(LED1, LOW);
+	} else if(one==1){
+		digitalWrite(LED1, HIGH);
+	}
+	
+	if (two==-1){
+		digitalWrite(LED2, LOW);
+	} else if(two==1) {
+		digitalWrite(LED2, HIGH);
+	}
+	
+	if (three==-1){
+		digitalWrite(LED3, LOW);
+	} else if(three==1){
+		digitalWrite(LED3, HIGH);
+	}
+	
+	if (four==-1){
+		digitalWrite(LED4, LOW);
+	} else if(four==1){
+		digitalWrite(LED4, HIGH);
+	}
+}
+
+// LEDの点滅用関数
+// 1にしたLEDのみ点滅する
 static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 	static uint32_t prev_ms = 0;	// 前回時刻格納変数[us]
 	static bool state = false;
@@ -535,7 +549,7 @@ static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 	
 	if ((now_ms - prev_ms) > BLINK_INTVL_MS) {
 		if(state){
-			control_led(0,0,0,0);
+			control_led(-one,-two,-three,-four);
 		} else {
 			control_led(one,two,three,four);
 		}

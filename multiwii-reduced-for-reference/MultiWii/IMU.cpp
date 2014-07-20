@@ -2,7 +2,7 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "IMU.h"
 #include "Sensors.h"
 

@@ -74,14 +74,14 @@ uint8_t mag_getADC() { // return 1 when news values are available, 0 otherwise
 				if (magADC[axis] < magZeroTempMin[axis]) magZeroTempMin[axis] = magADC[axis];
 				if (magADC[axis] > magZeroTempMax[axis]) magZeroTempMax[axis] = magADC[axis];
 			}
-			blink_led(0,0,1,0);
+			blink_led(0,0,0,1);
 		} else {
 			tCal = 0;
 			for(axis=0;axis<3;axis++) 
 				magZero[axis] = (magZeroTempMin[axis] + magZeroTempMax[axis])>>1;
 			//writeGlobalSet(1);
 			calibOK_M = 1;
-			control_led(calibOK_G,calibOK_A,calibOK_M,0);
+			control_led(0,0,0,1);
 		}
 	}
 	return 1;

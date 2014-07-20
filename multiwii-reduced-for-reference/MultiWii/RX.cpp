@@ -4,7 +4,7 @@
 #include "types.h"
 #include "Serial.h"
 #include "Protocol.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "Alarms.h"
 
 /**************************************************************************************/

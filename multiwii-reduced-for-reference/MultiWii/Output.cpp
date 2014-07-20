@@ -2,7 +2,7 @@
 #include "config.h"
 #include "def.h"
 #include "types.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "Alarms.h"
 
 void initializeSoftPWM(void);

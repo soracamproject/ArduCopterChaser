@@ -14,7 +14,7 @@ November  2013     V2.3
 #include "config.h"
 #include "def.h"
 #include "types.h"
-#include "beacontest.h"
+#include "MultiWii.h"
 #include "Alarms.h"
 #include "EEPROM.h"
 #include "IMU.h"
