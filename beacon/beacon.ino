@@ -10,6 +10,8 @@
 // ビーコンプロト3.0用
 FastSerialPort1(gps_serial);	// GPS用
 FastSerialPort2(xbee_serial);	// XBee用
+FastSerialPort0(console);
+
 // ビーコンプロト3.1用
 //FastSerialPort2(gps_serial);	// GPS用
 //FastSerialPort3(xbee_serial);	// XBee用
@@ -28,10 +30,34 @@ static bool blink_on = false;	// LED点滅フラグ
 static uint8_t state;			// ビーコンステート
 static uint8_t substate;		// サブステート
 
+// MultiWii移植部、暫定
+uint16_t calibratingG = 0;	// gyro
+uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
+uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
+static uint8_t calibOK_G = 0;
+static uint8_t calibOK_A = 0;
+static uint8_t calibOK_M = 0;
+static uint8_t calibrate_mag = 0;	// MAGキャリブレーション実行フラグ、オリジナル
+
+static int16_t angle[2];	// absolute angle inclination in multiple of 0.1 degree    180 deg = 1800
+static int16_t heading;
+
+
 // ステートに入った際に必ず実行される部分のマクロ
 #define S_INIT       substate=0;prev_ms=now_ms;first_time=false;blink_on=true
 // サブステートをひとつ進めるマクロ
 #define SS_INCREMENT substate++;prev_ss_ms=now_ms
+
+
+// ***********************************************************************************
+// ボード上センサ方向定義
+// ***********************************************************************************
+#define ROLL   0
+#define PITCH  1
+#define YAW    2
+#define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;} 
+#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;} 
+#define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;} 
 
 
 // ***********************************************************************************
@@ -57,6 +83,9 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 // I2C関連変数
 // ***********************************************************************************
 int16_t i2c_errors_count = 0;
+uint8_t rawADC[6];
+static uint32_t neutralizeTime = 0;
+
 
 // ***********************************************************************************
 // LED関連変数および宣言
@@ -94,8 +123,20 @@ void setup()
 	// XBee初期化
 	xbee_serial.begin(57600);
 	
-	// Baro初期化
+	console.begin(115200);
+	
+	// 各種センサ類初期化
+	i2c_init();
+	delay(100);
+	gyro_init();
 	baro_init();
+	mag_init();
+	acc_init();
+	
+	// キャリブレーションフラグ？
+	calibratingG = 512;
+	calibratingA = 512;
+	//calibratingB = 200;  // 10 seconds init_delay + 200 * 25 ms = 15 seconds before ground pressure settles
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -134,7 +175,7 @@ void loop(){
 			case BEACON_INIT:
 			if(first_time){
 				S_INIT;
-				control_led(1,0,0,0);
+				//control_led(1,0,0,0);
 			}
 			
 			// ■毎回実行■
@@ -145,8 +186,29 @@ void loop(){
 			// ボタン2が押されたらデバッグモードへ
 			if(button2.update()==1 && button2.read() == HIGH){
 				//change_state(BEACON_LAND);
-				change_state(BEACON_DEBUG);
+				//change_state(BEACON_DEBUG);
+				calibrate_mag = 1;
 			}
+			// キャリブレーションが終わったらLED点灯
+			if(calibOK_G == 0 && calibratingG == 0){
+				calibOK_G = 1;
+				control_led(calibOK_G,calibOK_A,calibOK_M,0);
+			}
+			if(calibOK_A == 0 && calibratingA == 0){
+				calibOK_A = 1;
+				control_led(calibOK_G,calibOK_A,calibOK_M,0);
+			}
+			
+			if((now_ms - prev_et_ms) > 500){	// substateで定義しているため番号変化に注意
+				console.print("angle_roll=");
+				console.print(angle[ROLL]);
+				console.print(", angle_pitch=");
+				console.print(angle[PITCH]);
+				console.print(", heading=");
+				console.println(heading);
+				prev_et_ms = now_ms;
+			}
+			
 			
 			// ■サブステート実行■
 			switch(substate){
@@ -424,7 +486,9 @@ void loop(){
 		// センサ値取得部
 		baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
 		beacon_loc_data.pressure = baro_pressure;
-		get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data 
+		get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+		mag_getADC();
+		computeIMU();
 	}
 }
 
@@ -479,4 +543,5 @@ static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 		prev_ms = now_ms;
 	}
 }
+
 

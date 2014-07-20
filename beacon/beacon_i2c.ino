@@ -19,8 +19,6 @@
 // ***********************************************************************************
 // I2C関連変数
 // ***********************************************************************************
-//uint8_t rawADC[6];	// 気圧センサでは使わないためコメントアウト（もしものためにとっておく）
-static uint32_t neutralizeTime = 0;
 
 
 // ***********************************************************************************
@@ -113,10 +111,10 @@ void swap_endianness(void *buf, size_t size) {
   }
 }
 
-// baroでは使わないためコメントアウト
-//void i2c_getSixRawADC(uint8_t add, uint8_t reg) {
-//  i2c_read_reg_to_buf(add, reg, rawADC, 6);
-//}
+// MPU6050用？
+void i2c_getSixRawADC(uint8_t add, uint8_t reg) {
+  i2c_read_reg_to_buf(add, reg, rawADC, 6);
+}
 
 void i2c_writeReg(uint8_t add, uint8_t reg, uint8_t val) {
   i2c_rep_start(add<<1); // I2C write direction
