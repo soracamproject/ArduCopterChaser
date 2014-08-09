@@ -206,17 +206,6 @@ int16_t  annex650_overrun_count = 0;
 
 
 // **********************
-//Automatic ACC Offset Calibration
-// **********************
-#if defined(INFLIGHT_ACC_CALIBRATION)
-  uint16_t InflightcalibratingA = 0;
-  int16_t AccInflightCalibrationArmed;
-  uint16_t AccInflightCalibrationMeasurementDone = 0;
-  uint16_t AccInflightCalibrationSavetoEEProm = 0;
-  uint16_t AccInflightCalibrationActive = 0;
-#endif
-
-// **********************
 // power meter
 // **********************
 #if defined(POWERMETER) || ( defined(LOG_VALUES) && (LOG_VALUES >= 3) )
@@ -409,7 +398,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
       static uint16_t vvec[VBAT_SMOOTH], vsum;
       uint16_t v = analogRead(V_BATPIN);
       //debug[1] = v;
-      #if VBAT_SMOOTH == 1
+      #if VBAT_SMOOTH == 1		// たぶん
         analog.vbat = (v<<4) / conf.vbatscale; // result is Vbatt in 0.1V steps
       #else
         vsum += v;
