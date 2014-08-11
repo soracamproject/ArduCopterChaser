@@ -1,192 +1,31 @@
-■■■■■　変更履歴　■■■■■
-=================================================================================
-2013.3.27
-あまりに大きく変えすぎて覚えていない。その内一度ちゃんとまとめます。変更点は更新しました。
-=================================================================================
+■■■■■　概要　■■■■■
+ArduCopterを改造しChaserモードという自動追尾モードを追加したソフトウェアです。
+改造箇所は「変更箇所一覧.txt」を参照のこと
 
-
-=================================================================================
-2013.2.27
-<機体>
-・CHASER時の目標高度の斜度による自動生成機能を削除
-・ビーコン圧力値からビーコン高度を計算する機能を追加し、ログ送信に追加（代わりに気圧センサ温度を削除）
-・CHASER用ソナー高度計算機能追加（単なるLPFをかけるだけ、現在は1HzのLPF、update_altitudeで計算(10Hz)）
-・CHASER高度ソナー制御開発版追加
-　・USE_CHASER_SONAR_ALTでON/OFF
-　・目標高度下限を下回るか、上限を上回ったら目標高度を修正していく。現在の修正速度は最大で1m/s。
-
-<ビーコン>
-・大枠作成完了
-　・GPS,XBee,Baro,LED,Button動作確認版
-　・指定した時間にシーケンス動作をしつつ、バックグラウンドでGPSとBaro取得する機能を追加
-
-<デバッグ用>
-特記無し
-=================================================================================
-
-
-=================================================================================
-2013.2.20
-<機体>
-・CHASERのLAT,LON方向にフィードフォワード制御を追加　→　制御性が上がりました
-
-<ビーコン>
-・MW版開発中
-　・GPS信号取得機能追加
-　・XBee送信機能追加
-
-<デバッグ用>
-・init_arm_motors()関数内のuint8_t chaser_arm_counter_dbgを削除
-=================================================================================
-
-
-=================================================================================
-2013.1.17
-<機体>
-・ビーコンからの指令でARM、テイクオフ、ランディングができるようになりました
-　・ランディング時にスロットル値が0の場合、自動的にDISARMします
-　・CHASER用ARM処理を追加し、F/S機能を強化しました（CHASER_INITステートかつDISARM時のみ）
-
-<ビーコン>
-・特に無し
-
-<デバッグ用（その内消える）>
-・init_arm_motors()関数内にuint8_t chaser_arm_counter_dbgを追加
-　テイクオフ中等にARM指令を送ってこいつがインクリメントしたらおかしい
-=================================================================================
+ベースソフトウェア
+・ArduCopter 3.2 rc4 相当
+・PX4Firmware　←変更箇所無し
+・PX4NuttX　←変更箇所無し
 
 
 
-2013.1.11
-・プログラム全体の変更は無し
+■■■■■　コンパイルの仕方　■■■■■
+１．PX4コンパイル環境を構築する
+・build環境　https://pixhawk.org/dev/minimal_build_env
+・toolchain　https://pixhawk.org/dev/toolchain_installation
 
-2013.1.4
-・CHASER仕様
-　・MavlinkでCHASER_CMDが送られてくるとモード遷移する。ただし、予めdefineした範囲外の緯度経度が飛んできたら除外する。
-　・CHASERモードはTHROTTLE AUTO, ROLLPITCH AUTO, YAW_CHASER, NAV_CHASERである
-　・NAV_CHASERの仕様は以下。
-　　・予測制御
-　　　・ビーコン位置を指定回平均してなました位置をbeacon_loc_relaxedとする（デフォルト値は5）
-　　　・beacon_loc_relaxedが更新された際、前回速度と更新周期を元に次更新時位置destinationを予測する。
-　　　　また、その時のtarget位置をoriginとし、destinationと更新周期からtargetの目標速度dest_velを計算する。
-　　　　また、dest_velにリミットを設ける（絶対値でかけて比例倍する、つまり方角は変わらない）
-　　・現状速度の変化量は加速度で決める。
-　　・target位置がorigin-destination間を「目標速度×所定時間（100msくらい？）」超えたら目標速度を0とする
-　　・不感帯制御
-　　　・ビーコン位置変化量が半径1.5m以内が5回続いたらビーコン位置をラッチする
-　　・専用WP_Nav
-　　　・基本機能は同じ
-　・YAW_CHASERの仕様は以下。
-　　・機首の向きはtarget位置に向ける。その変化速度にCHASER_YAW_SLEW_RATEで制限をかける。
-　　・targetの更新はupdate_chaserで行われ（10Hz）、機首の目標値更新はupdate_yaw_modeで行われる（100Hz）
-　・その他変更点
-　　・GPSが使えない場合はStabilizeに移行する（failsafe）
+２．ArduCopterChaserのフォルダと同じ階層にPX4FirmwareとPX4NuttXを置く
+（やり方の一例）
+・https://github.com/soracamproject/PX4Firmwareに行き、releasesタブから該当リリースをzip等でダウンロードし、解凍してファイル名を修正し配置
+・https://github.com/soracamproject/PX4NuttX　も同様
 
-・BEACON仕様
-　・起動したら所定時間後にARM→テイクオフ→CHASERへと移行する
-　・CHASER移行後は約0.7sec毎にGPSをアップデートし、CHASER_CMDを送信する
+３．makeする
+（やり方ざっくり）
+・terminalでArduCopterChaser/ArduCopterフォルダに入る
+・「make configure」と打ちEnter
+・「make px4-v2」と打ちEnter
+（参考URL）
+http://dev.ardupilot.com/wiki/building-px4-with-make/
 
-・デバッグ用変数割付表
-　CHASER_DEBUGをdefineすると下記設定が有効になる
-　　rate設定はSTREAM_POSITIONで50Hz設定、それ以外は無効
-　　MSGとしては、「MSG_NAV_CONTROLLER_OUTPUT」と「MSG_VFR_HUD」
-　　mavlink関数としては、「mavlink_msg_nav_controller_output_send」と「mavlink_msg_vfr_hud_send」
-　　変更箇所は、GCS_Mavlink.pdeの例えば、static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)内を編集する
-　　変数の型については、例えばmavlink_msg_nav_controller_output_send.hに記載。GCS_Mavlink.pdeに転記済。
-
-　　　　型				元変数　　   　　　割付変数　　備考
-　nav_controller
-　　　　float           nav_roll              chaser_copter_pos.x
-　　　　float           nav_pitch           chaser_copter_pos.y
-　　　　float           alt_error             chaser_target.x
-　　　　float           aspd_error         chaser_target.y
-　　　　float           xtrack_error
-　　　　int16_t        nav_bearing
-　　　　int16_t        target_bearing
-　　　　uint16_t      wp_dist
-　vfr_hud
-　　　　float            airspeed           chaser_destination.x
-　　　　float            groundspeed    chaser_destination.y
-　　　　float            alt
-　　　　float            climb
-　　　　int16_t        heading
-　　　　uint16_t      throttle
-
-
-■■■■■　改造ファイルと場所（最新の状態）　■■■■■
-ArduCopter.pde
-　"CHASERモード用グローバル変数"の項目を追加
-　set_yaw_mode関数内にYAW_CHASERのcaseを追加
-　update_yaw_mode関数内にYAW_CHASERのcaseを追加
-　update_altitude関数内に
-　　1. 気圧計の温度取得を追加（デバッグ用）
-      2. chaser_sonar_altを計算する項目を追加（LPF）
-　set_throttle_mode関数内にTHROTTLE_CHASERのcaseを追加
-　update_throttle_mode関数内にTHROTTLE_CHASERのcaseを追加
-chaser_defines.h
-　すべて　新規ファイル
-chaser.pde
-　すべて　新規作成ファイル
-config.h
-　#define OPTFLOW          ENABLED　→　DISABLED　容量削減のため
-　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため
-defines.h
-　YAW_CHASERを追加　番号は10
-　THROTTLE_CHASERを追加　番号は6
-　Auto Pilot modes
-　　CHASERを追加　番号は14
-　　NUM_MODESを増やす
-　Navigation modes held in nav_mode variableにNAV_CHASERを追加　番号は4
-　ファイル末尾にchaser_defines.hのインクルードを追加
-events.pde
-　failsafe_battery_event関数内にCHASERの項目追加。必ずLAND。
-GCS_Mavlink.pde
-   bool GCS_MAVLINK::stream_trigger(enum streams stream_num)内にCHASERデバッグ用項目追加
-   void GCS_MAVLINK::data_stream_send(void)内にCHASERデバッグ用項目追加
-　GCS_MAVLINK::handleMessageの末尾に以下追加
-　　case MAVLINK_MSG_ID_CHASER_CMD
-　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
-   send_nav_controller_outputおよびsend_vfr_hudにCHASERデバッグ用項目追加
-motors.pde
-　init_disarm_motors関数内にCHASER用モード変更を追加
-navigation.pde
-　set_nav_modeのスイッチにNAV_CHASERを追加
-　update_nav_modeのNAV_WPスイッチ内に通信不良フェールセーフ関数を追加
-　update_nav_modeのスイッチにNAV_CHASERを追加
-Parameters.h
-　enumの120番台にchaser関連の番号を追加
-　変数にchaser関連の変数を追加
-Parameters.pde
-　angle_rate_maxの次にchaser関連の項目を追加
-system.pde
-　set_mode関数内にCHASERモードを追加
-　mode_requires_GPS関数内にCHASERモードを追加
-
-==以下Librariesフォルダ内==
-ardupilotmega.xml
-　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加
-AC_WPNav.h
-　CHASER関連define追加
-　update_loiter_for_chaserを追加
-　get_loiter_position_to_velocity_chaserを追加
-AC_WPNav.cpp
-　update_loiter_for_chaserを作成　　←以前と大きく変わっている部分
-　get_loiter_position_to_velocity_chaserを作成　　←以前と大きく変わっている部分
-
-==以下Beacon関連==
-libraries/FastSerial
-　write関数をAPMを参考に追加
-libraries/BC_Compat
-　新規作成
-
-■■■■■　mavlinkにメッセージを追加する方法　■■■■■
-・GCS_MAVLink/message_definitions/ardupilotmega.xmlをいじって、generate.shをシェルスクリプトとして実行する
-・generate.shは改行コードがCR+LFになっていてmacのコマンドプロンプトだとエラーをはくので注意
-・generate.sh実行時はlibrariesフォルダから「./GCS_Mavlink/generate.sh」を叩く
-・mavlinkプログラム（githubより入手）の奥のほうにあるmavgen.pyのフォルダにPATH（PYTHONPATHではなくPATH）が通っていないとエラーを吐くので注意
-　例：export PATH=(上位フォルダ)/mavlink/pymavlink/generator:$PATH
-　福田の場合はPythonフォルダにあります
-・そのままgenerateするとmavlink_conversions.hが生成されてmavlink_helper.hからincludeされ、それがエラーをはくけど、
-　ひとまずincludeをやめるとコンパイルは通る。他にも色々違う部分ありそう（3.0.1についてくるやつと比べて行数が違う）だけどそのままやってみる
-
-
+４．uploadする
+省略
