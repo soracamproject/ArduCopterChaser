@@ -1,0 +1,46 @@
+■■■■■　改造ファイルと場所（最新の状態）　■■■■■
+ArduCopter.pde
+　#include "chaser_defines.h"を追加
+　"CHASERモード用グローバル変数"の項目を追加
+　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
+flight_mode.pde
+　set_mode関数内にCHASERを追加
+　update_mode関数内にCHASERを追加
+　mode_requires_GPS関数内にCHASERを追加
+　print_flight_mode関数内にCHASERを追加
+chaser_defines.h
+　すべて　新規ファイル
+control_chaser.pde
+　すべて　新規作成ファイル
+defines.h
+　AUTO_YAW_CHASERを追加　番号は6
+　CHASERを追加しNUM_MODESを増やす　番号は17と18
+GCS_Mavlink.pde
+　GCS_MAVLINK::handleMessageの末尾に以下追加
+　　case MAVLINK_MSG_ID_CHASER_CMD
+　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
+motors.pde
+　init_disarm_motors関数内にCHASER用モードリセット機能を追加
+Parameters.h
+　enumの120番台にchaser関連の番号を追加
+　変数にchaser関連の変数を追加
+Parameters.pde
+　rc_feel_rpの次にchaser関連の項目を追加
+(config.h
+　#define OPTFLOW          ENABLED　→　DISABLED　容量削減のため
+　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため)
+
+==以下Librariesフォルダ内==
+ardupilotmega.xml
+　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加
+AC_PosControl.h
+　update_xy_controller_for_chaserを追加
+AC_PosControl.cpp
+　update_xy_controller_for_chaserを作成
+
+==以下Beacon関連==
+libraries/FastSerial
+　write関数をAPMを参考に追加
+libraries/BC_Compat
+　新規作成
+
