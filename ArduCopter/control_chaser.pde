@@ -14,6 +14,12 @@ static bool chaser_init(bool ignore_checks)
 }
 
 static void chaser_run() {
+	// chaser用フェールセーフ実行
+	// 判定したらCHASER_LANDに移行
+	if(chaser_fs_all()){
+		set_chaser_state(CHASER_LAND);
+	}
+	
 	switch(chaser_state) {
 		case CHASER_INIT:
 		case CHASER_READY:
@@ -129,6 +135,9 @@ static void chaser_chase_run()
 	// ポジションコントローラを呼ぶ
 	pos_control.update_xy_controller(true);
 	pos_control.update_z_controller();
+	
+	// YAWコントローラを呼ぶ
+	attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 }
 
 
@@ -309,8 +318,8 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	if (chaser_dest_vel_abs_xy > 100.0f) {
 		// 目標速度が1m/sより大の場合、その方向にyawを向ける（＝1m/s以下の場合はラッチ）
 		// 引数は順に(経度方向:lng、緯度方向:lat)
-		// atan2はatan2(y,x)でx軸からの角度(rad.)を出す
-		chaser_yaw_target = (int32_t)atan2f(chaser_dest_vel.y, chaser_dest_vel.x)*5729.57795f;;
+		// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
+		chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
 	}
   #else
 	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
@@ -322,8 +331,8 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		if (chaser_dest_vel_abs_relaxed_for_yaw > CHASER_YAW_DEST_THRES) {
 			// 目標速度が閾値(1m/s)より大の場合、その方向にyawを向ける（＝閾値以下の場合はラッチ）
 			// 引数は順に(経度方向:lng、緯度方向:lat)
-			// atan2はatan2(y,x)でx軸からの角度(rad.)を出す
-			chaser_yaw_target = (int32_t)atan2f(chaser_dest_vel_relaxed_for_yaw.y, chaser_dest_vel_relaxed_for_yaw.x)*5729.57795f;;
+			// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
+			chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel_relaxed_for_yaw.y, chaser_dest_vel_relaxed_for_yaw.x));
 		}
 		
 		// 積算とカウントをリセット
@@ -541,7 +550,6 @@ bool chaser_fs_all(){
 	if(chaser_fs_requires_check()){
 		// フェールセーフ判定
 		if(chaser_fs_com() || chaser_fs_beacon_pos()){
-			set_chaser_state(CHASER_LAND);
 			return true;
 		}
 	}
@@ -628,7 +636,7 @@ static void chaser_beacon_location_debug(const struct Location *cmd){
 
 //ターゲット角度が小さい・距離が近い(未実装)の場合にyawの制限速度を変える
 // **速度制限機能廃止中**
-static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw){
+static float get_chaser_yaw_slew(float dt){
 	// **速度制限機能廃止中**
 	//uint16_t delta_yaw_abs = labs(delta_yaw);
 	//if(delta_yaw_abs < chaser_yaw_restrict_cd1){ //別途定義する角度以下であれば、制限速度ゼロ = 動かない
@@ -640,7 +648,7 @@ static int32_t get_chaser_yaw_slew(int32_t current_yaw, int32_t desired_yaw){
 	//	chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -slew_rate, slew_rate));
 	//}
 	
-	return(wrap_360_cd(current_yaw + constrain_int16(wrap_180_cd(desired_yaw - current_yaw), -g.chaser_yaw_slew_rate, g.chaser_yaw_slew_rate)));
+	return(wrap_360_cd_float(ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*dt, g.chaser_yaw_slew_rate*dt)));
 
 }
 

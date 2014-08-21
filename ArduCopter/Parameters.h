@@ -378,7 +378,7 @@ public:
 	AP_Float        chaser_target_accel;		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
 	AP_Float        chaser_target_decel;		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
 	AP_Float        chaser_target_vel_max;		// ターゲットの移動速度の最大値[m/s]
-	AP_Int8         chaser_yaw_slew_rate;		// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
+	AP_Float        chaser_yaw_slew_rate;		// YAW回転速度リミット[centi-deg/sec](-18000〜18000)
 	AP_Int16        chaser_gimbal_alt;			// ジンバル角度計算用高度[cm]
 	AP_Float        chaser_desired_alt_leash;	// 高度制御時の目標高度の機体高度との差[cm]
 	AP_Float        chaser_beacon_offset_lat;	// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]

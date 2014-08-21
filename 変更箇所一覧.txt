@@ -13,7 +13,6 @@ chaser_defines.h
 control_chaser.pde
 　すべて　新規作成ファイル
 defines.h
-　AUTO_YAW_CHASERを追加　番号は6
 　CHASERを追加しNUM_MODESを増やす　番号は17と18
 GCS_Mavlink.pde
 　GCS_MAVLINK::handleMessageの末尾に以下追加

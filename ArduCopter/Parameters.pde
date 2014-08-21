@@ -466,8 +466,8 @@ const AP_Param::Info var_info[] PROGMEM = {
 	
 	// @Param: CHR_YAW_SLEW
 	// @DisplayName: Chaser Yaw Slew Rate
-	// @Description: yaw slew rate for chaser [deg/s]
-	// @Range 0 90
+	// @Description: yaw slew rate for chaser [centi-deg/s]
+	// @Range -18000 18000
 	// @User: Advanced
 	GSCALAR(chaser_yaw_slew_rate, "CHR_YAW_SLEW", CHASER_YAW_SLEW_RATE),
 	

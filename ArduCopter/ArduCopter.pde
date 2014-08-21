@@ -781,7 +781,7 @@ static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセット
 static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
 static bool chaser_started;					// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
 
-static int32_t chaser_yaw_target;					// YAWの目標角度（-18000〜18000）[centi-degrees]
+static float chaser_yaw_target;					// YAWの目標角度（-18000〜18000）[centi-degrees]
 static Vector2f chaser_dest_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
 static Vector2f chaser_dest_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
