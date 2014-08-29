@@ -4,8 +4,8 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 
 ベースソフトウェア
 ・ArduCopter 3.2 rc4 相当
-・PX4Firmware　←変更箇所無し
-・PX4NuttX　←変更箇所無し
+・PX4Firmware　3.2 rc4 相当
+・PX4NuttX　3.2 rc4 相当
 
 
 
@@ -15,9 +15,9 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 ・toolchain　https://pixhawk.org/dev/toolchain_installation
 
 ２．ArduCopterChaserのフォルダと同じ階層にPX4FirmwareとPX4NuttXを置く
-（やり方の一例）
-・https://github.com/soracamproject/PX4Firmwareに行き、releasesタブから該当リリースをzip等でダウンロードし、解凍してファイル名を修正し配置
-・https://github.com/soracamproject/PX4NuttX　も同様
+・https://github.com/soracamproject/PX4Firmware　から最新リリースをzip等でダウンロードし解凍してファイル名を修正し配置
+・https://github.com/soracamproject/PX4NuttX　　も同様
+※本家(github.com/diydrones)からDLするとバージョンが合わない場合があるため注意
 
 ３．makeする
 （やり方ざっくり）
