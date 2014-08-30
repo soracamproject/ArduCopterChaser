@@ -5,7 +5,7 @@ ArduCopter.pde
 　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
 flight_mode.pde
 　set_mode関数内にCHASERを追加
-　update_mode関数内にCHASERを追加
+　update_flight_mode関数内にCHASERを追加
 　mode_requires_GPS関数内にCHASERを追加
 　print_flight_mode関数内にCHASERを追加
 chaser_defines.h
@@ -13,7 +13,7 @@ chaser_defines.h
 control_chaser.pde
 　すべて　新規作成ファイル
 defines.h
-　CHASERを追加しNUM_MODESを増やす　番号は17と18
+　CHASERを追加しNUM_MODESを増やす。番号はCHASERが17とNUM_MODESが18
 GCS_Mavlink.pde
 　GCS_MAVLINK::handleMessageの末尾に以下追加
 　　case MAVLINK_MSG_ID_CHASER_CMD
@@ -31,7 +31,7 @@ Parameters.pde
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml
-　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加
+　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加。idは200と201
 AC_PosControl.h
 　update_xy_controller_for_chaserを追加
 AC_PosControl.cpp

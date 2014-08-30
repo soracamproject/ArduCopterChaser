@@ -410,6 +410,8 @@ static bool set_chaser_state(uint8_t state) {
 			// tell motors to do a slow start
 			motors.slow_start(true);
 			
+			set_auto_armed(true);
+			
 			// 一旦ビーコン位置初期化フラグを立てる
 			chaser_beacon_loc_reset = true;
 			
@@ -627,9 +629,9 @@ float get_beacon_altitude(float beacon_pressure) {
 // デバッグフラグON時のみコンパイル
 #if CHASER_LOCATION_DEBUG == 1
 static void chaser_beacon_location_debug(const struct Location *cmd){
-	chaser_target = pv_location_to_vector(*cmd);
-	//chaser_target.x = cmd->lat;
-	//chaser_target.y = cmd->lng;
+	//chaser_target = pv_location_to_vector(*cmd);
+	chaser_target.x = cmd->lat;
+	chaser_target.y = cmd->lng;
 	//chaser_target.z = cmd->alt;
 }
 #endif
