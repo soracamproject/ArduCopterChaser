@@ -3,10 +3,19 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 改造箇所は「変更箇所一覧.txt」を参照のこと
 
 ベースソフトウェア
-・ArduCopter 3.2 rc4 相当
-・PX4Firmware　3.2 rc4 相当
-・PX4NuttX　3.2 rc4 相当
+・ArduCopter 3.2 rc5
+・PX4Firmware　3.2 rc4相当　←本家では無くsoracamprojectのgithubから最新リリースをDL願います
+・PX4NuttX　3.2 rc4相当 　←本家では無くsoracamprojectのgithubから最新リリースをDL願います
 
+■■■■■　利用したい方へのメッセージ　■■■■■
+①　現在、CHASERモードがちゃんと動きません。
+　　鋭意開発中ですが本業の合間で開発しておりますので気長にお待ちいただくか、
+　　プログラムを読み解いて改造願います。
+　　（3.0.1＋APM2.6の頃はちゃんと動いていたのですが・・・）
+②　本家のほうで、Android＋DroidPlannerを使ったFollowMe機能の開発がガンガン進んでおります。
+　　Chaserは一応本家FollowMeとはなんら関係無く開発しておりますが、
+　　本家のほうが高機能になる可能性はかなり高いです。
+　　本家でなんとかできると判断したらこちらの開発は終了するかもしれません。
 
 
 ■■■■■　コンパイルの仕方　■■■■■
@@ -29,3 +38,7 @@ http://dev.ardupilot.com/wiki/building-px4-with-make/
 
 ４．uploadする
 省略
+
+
+■■■■■　その他　■■■■■
+プロジェクトHP：http://soracamproject.com

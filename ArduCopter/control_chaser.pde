@@ -5,7 +5,8 @@
 // ***************************************
 static bool chaser_init(bool ignore_checks)
 {
-	if (GPS_ok() || ignore_checks) {
+	//if (GPS_ok() || ignore_checks) {
+	if (ignore_checks) {
 		set_chaser_state(CHASER_INIT);
 		return true;
 	}else{
@@ -16,9 +17,9 @@ static bool chaser_init(bool ignore_checks)
 static void chaser_run() {
 	// chaser用フェールセーフ実行
 	// 判定したらCHASER_LANDに移行
-	if(chaser_fs_all()){
-		set_chaser_state(CHASER_LAND);
-	}
+	//if(chaser_fs_all()){
+	//	set_chaser_state(CHASER_LAND);
+	//}
 	
 	switch(chaser_state) {
 		case CHASER_INIT:
@@ -142,10 +143,10 @@ static void chaser_chase_run()
 
 
 // CHASER_LAND時に実行するもの
-// LANDモードの関数をそのまま実行する
+// AUTOモードのLAND関数をそのまま実行する
 static void chaser_land_run()
 {
-	land_run();
+	auto_land_run();
 }
 
 
@@ -438,12 +439,14 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_LAND:
 		{
-			// LANDモードの関数をそのまま流用する
-			land_init(true);
+			// AUTOモードのLAND関数をそのまま流用する
+			auto_land_start();
 			
 			// ジンバルをNEUTRALにして角度を水平に
 			change_mount_neutral();
 			change_mount_control_neutral_angle();
+			
+			success = true;
 			break;
 		}
 		
@@ -498,8 +501,8 @@ void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
 			break;
 		
 		case 3:
-			// CHASERモードかつCHASER_INITステートかつディスアーム時のみアームする
-			if ((control_mode==CHASER && chaser_state==CHASER_INIT) && !motors.armed()) {
+			// CHASERモードかつCHASER_READYステートかつディスアーム時のみアームする
+			if ((control_mode==CHASER && chaser_state==CHASER_READY) && !motors.armed()) {
 				// run pre_arm_checks and arm_checks and display failures
 				pre_arm_checks(true);
 				if(ap.pre_arm_check && arm_checks(true)) {

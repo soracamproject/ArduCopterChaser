@@ -168,58 +168,24 @@ void loop(){
 		switch(state){
 			// ■■■■■INITステート■■■■■
 			case BEACON_INIT:
-			if(first_time){
+			if(first_time)
+			{
 				S_INIT;
 				control_led(1,-1,-1,-1);
-				
-				// GYRO,ACCのキャリブレーションを開始
-				//calibratingG = 512;
-				//calibOK_G = 0;
-				//calibratingA = 512;
-				//calibOK_A = 0;
-				//calibOK_M = 0;
 			}
 			
 			// ■毎回実行■
-			// キャリブレーションが終了し、ボタン1が押されたら次のステートへ
-			//if((calibOK_G==1 && calibOK_A==1 && calibOK_M==1) && button1.update()==1 && button1.read() == HIGH){
-			if(button1.update()==1 && button1.read() == HIGH){
+			// ボタン1が押されたら次のステートへ
+			if(button1.update()==1 && button1.read() == HIGH)
+			{
 				change_state(BEACON_READY);
 			}
 			// ボタン2が押されたらLANDモードへ
-			if(button2.update()==1 && button2.read() == HIGH){
+			if(button2.update()==1 && button2.read() == HIGH)
+			{
 				//change_state(BEACON_LAND);
 				change_state(BEACON_DEBUG);
-				
-				// フラグを立てるとmag取得モジュール内でキャリブレーション開始
-				// 30秒間LED4点滅。その間にビーコンを色々な方向に回す。
-				// 終了したらLED4点灯。
-				// 成功/失敗の判定無し
-				//calibrate_mag = 1;
 			}
-			// GYROキャリブレーションが終わったらLED2点灯
-			// 成功/失敗の判定無し
-			//if(calibOK_G == 0 && calibratingG == 0){
-			//	calibOK_G = 1;
-			//	control_led(0,1,0,0);
-			//}
-			// ACCキャリブレーションが終わったらLED3点灯
-			// 成功/失敗の判定無し
-			//if(calibOK_A == 0 && calibratingA == 0){
-			//	calibOK_A = 1;
-			//	control_led(0,0,1,0);
-			//}
-			// デバッグ用console出力
-			// 500ms毎にroll,pitch,headingを出力
-			//if((now_ms - prev_et_ms) > 500){	// substateで定義しているため番号変化に注意
-			//	console.print("roll=");
-			//	console.print((float)beacon_roll/10.f);
-			//	console.print(", pitch=");
-			//	console.print((float)beacon_pitch/10.f);
-			//	console.print(", heading=");
-			//	console.println(beacon_heading);
-			//	prev_et_ms = now_ms;
-			//}
 			
 			
 			// ■サブステート実行■
@@ -234,25 +200,34 @@ void loop(){
 			
 			// ■■■■■READYステート■■■■■
 			case BEACON_READY:
-			if(first_time){
+			if(first_time)
+			{
 				S_INIT;
 				control_led(-1,-1,-1,-1);
 			}
 			
 			// ■毎回実行■
 			// CHASER_READYの時のみ、beacon位置情報を定期的に送信
-			if(substate == 5 && (now_ms - prev_et_ms) > 200){	// substateで定義しているため番号変化に注意
+			if(substate == 3 && (now_ms - prev_et_ms) > 200)	// substateで定義しているため番号変化に注意
+			{
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				prev_et_ms = now_ms;
 			}
-			// スイッチ２が押されたらスロットル0でBEACON_LANDに移行
-			if(button2.update()==1 && button2.read() == HIGH){
-				substate = 90;
+			// スイッチ１が押されたらBEACON_TAKEOFFに移行
+			if(button1.update()==1 && button1.read() == HIGH)
+			{
+				change_state(BEACON_TAKEOFF);
+			}
+			// スイッチ２が押されたらBEACON_LANDに移行
+			if(button2.update()==1 && button2.read() == HIGH)
+			{
+				change_state(BEACON_LAND);
 			}
 			if(blink_on){blink_led(0,1,0,0);};
 			
 			// ■サブステート実行■
-			switch(substate){
+			switch(substate)
+			{
 				case 0:
 				// 機体stateをCHASER_INITにする
 				send_change_chaser_state_cmd(CHASER_INIT);
@@ -260,33 +235,19 @@ void loop(){
 				break;
 				
 				case 1:
-				// 5秒待って機体をアームする
-				if((now_ms - prev_ss_ms) > 5000){
-					send_arm_cmd_for_chaser();
+				// 10秒待って機体stateをCHASER_READYにする
+				if((now_ms - prev_ss_ms) > 10000)
+				{
+					send_change_chaser_state_cmd(CHASER_READY);
 					SS_INCREMENT;
 				}
 				break;
 				
-				//case 2:
-				// 10秒待ってスロットルを上げる
-				//if((now_ms - prev_ss_ms) > 15000){
-				//	send_change_throttle_cmd_for_chaser(250);
-				//	SS_INCREMENT;
-				//}
-				//break;
-				
-				//case 3:
-				// 3秒待ってスロットルを上げる
-				//if((now_ms - prev_ss_ms) > 3000){
-				//	send_change_throttle_cmd_for_chaser(0);
-				//	SS_INCREMENT;
-				//}
-				//break;
-				
 				case 2:
-				// 10秒待ってREADYに入れる
-				if((now_ms - prev_ss_ms) > 10000){
-					send_change_chaser_state_cmd(CHASER_READY);
+				// 10秒待って機体をアームする
+				if((now_ms - prev_ss_ms) > 10000)
+				{
+					send_arm_cmd_for_chaser();
 					
 					// LED(黄)点灯
 					blink_on = false;
@@ -295,27 +256,8 @@ void loop(){
 				}
 				break;
 				
-				case 3:
-				// 3秒待ってTAKEOFFステートへ
-				if((now_ms - prev_ss_ms) > 3000){
-					change_state(BEACON_TAKEOFF);
-				}
-				break;
+				default:
 				
-				// 90番台は緊急終了
-				case 90:
-				// スロットル０
-				blink_on = false;
-				control_led(1,1,1,1);
-				send_change_throttle_cmd_for_chaser(0);
-				SS_INCREMENT;
-				break;
-				
-				case 91:
-				// 2秒待ってランドステートへ
-				if((now_ms - prev_ss_ms) > 2000){
-					change_state(BEACON_LAND);
-				}
 				break;
 				
 			}
@@ -327,7 +269,7 @@ void loop(){
 			case BEACON_TAKEOFF:
 			if(first_time){
 				S_INIT;
-				control_led(-1,-1,-1,-1);
+				control_led(-1,-1,1,-1);
 			}
 			
 			// ■毎回実行■
@@ -335,6 +277,11 @@ void loop(){
 			if((now_ms - prev_et_ms) > 200){
 				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				prev_et_ms = now_ms;
+			}
+			// スイッチ１が押されたらBEACOM_STAYに移行
+			if(substate ==1 && button1.update()==1 && button1.read() == HIGH)
+			{
+				change_state(BEACON_STAY);
 			}
 			// スイッチ２が押されたらBEACON_LANDに移行
 			if(button2.update()==1 && button2.read() == HIGH){
