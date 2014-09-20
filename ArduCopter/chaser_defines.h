@@ -36,6 +36,7 @@
 #define CHASER_GIMBAL_ANGLE_MAX      40			// CHASER時のジンバルの角度最大値[deg.]
 #define CHASER_FS_THRES_COM          1000		// フェールセーフ（通信不良）判定閾値[ms]
 #define CHASER_FS_THRES_BEACON_POS_ERR  5		// フェールセーフ（ビーコン位置異常）判定閾値[回]
+#define CHASER_SONAR_ALT_FC          1.0f		// sonar_altのLPFのカットオフ周波数[hz]
 
 // 廃止したdefine郡
 //#define CHASER_YAW_RESTRICT_CD1      0			// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
@@ -101,7 +102,7 @@
 // CHASERデバッグ用通信有効無効フラグ
 // 0は通常通信モード（たぶんこれじゃないとMISSION PLANNERで初期設定できない）
 // 1にすると通信変数を割付し直し必要な分だけ50Hz目標で通信する
-#define CHASER_DEBUG              0
+#define CHASER_DEBUG              1
 
 // 位置情報デバッグ有効無効フラグ
 // 0で通常のCHASE

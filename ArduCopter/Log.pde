@@ -340,7 +340,8 @@ static void Log_Write_Control_Tuning()
         inav_alt            : current_loc.alt,
         baro_alt            : baro_alt,
         desired_sonar_alt   : (int16_t)target_sonar_alt,
-        sonar_alt           : sonar_alt,
+        //sonar_alt           : sonar_alt,
+        sonar_alt           : sonar_alt*100,
         desired_climb_rate  : desired_climb_rate,
         climb_rate          : climb_rate
     };

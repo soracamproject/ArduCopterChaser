@@ -287,7 +287,7 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 		chaser_gimbal_pitch_angle,		//uint16_t,wp_dist
 		chaser_target.x,				//float,alt_error
 		chaser_target.y,				//float,aspd_error
-		0.0f							//float,xtrack_error
+		chaser_sonar_alt				//float,xtrack_error
 	);
 #else
 	// 通常通信版

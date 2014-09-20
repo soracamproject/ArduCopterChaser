@@ -1449,27 +1449,40 @@ static void read_AHRS(void)
 // read baro and sonar altitude at 10hz
 static void update_altitude()
 {
+	static uint32_t last = 0;		// 前回この関数を呼び出した時刻[ms]
+	
+	// 前回からの経過時間を計算する
+	uint32_t now = hal.scheduler->millis();
+	float dt = (now - last)/1000.0f;
+	
     // read in baro altitude
     baro_alt            = read_barometer();
 
     // read in sonar altitude
     sonar_alt           = read_sonar();
 	
-	// CHASER用にsonar_altにLPFをかける
-	// 計算式：
-	//   alpha = (2*pi*fc*T)/(2*pi*fc*T+1)
-	//   fc:カットオフ周波数[Hz], T：データ取得周期[s]
-	// 参考値：
-	//   fc=1Hz, T=0.05s -> alpha = 0.23906f
-	//   fc=1Hz, T=0.1s  -> alpha = 0.38587f  <-現在はこれ、update_altitude関数は10Hzで実行される
-	//   fc=2Hz, T=0.02s -> alpha = 0.20085f
-	chaser_sonar_alt = chaser_sonar_alt + 0.38587f * ((float)sonar_alt - chaser_sonar_alt);
-	if (chaser_sonar_alt >= sonar.min_distance_cm(0) && chaser_sonar_alt <= sonar.max_distance_cm(0) * SONAR_RELIABLE_DISTANCE_PCT) {
-		if ( chaser_sonar_alt_health < SONAR_ALT_HEALTH_MAX ) {
-			chaser_sonar_alt_health++;
+	if (dt > 0.0f)
+	{
+		// CHASER用にsonar_altにLPFをかける
+		// 計算式：
+		//   alpha = (2*pi*fc*T)/(2*pi*fc*T+1)
+		//   fc:カットオフ周波数[Hz], T：データ取得周期[s]
+		// 参考値：
+		//   fc=1Hz, T=0.05s -> alpha = 0.23906f
+		//   fc=1Hz, T=0.1s  -> alpha = 0.38587f  <-現在はこれ、update_altitude関数は10Hzで実行される
+		//   fc=2Hz, T=0.02s -> alpha = 0.20085f
+		float freq_cutoff = 1.0f;	// 暫定
+		float alpha = (2.0f*M_PI_F*CHASER_SONAR_ALT_FC*dt)/(2.0f*M_PI_F*CHASER_SONAR_ALT_FC*dt+1);
+		chaser_sonar_alt = chaser_sonar_alt + alpha * ((float)sonar_alt - chaser_sonar_alt);
+		//chaser_sonar_alt = (float)sonar_alt;
+		if (chaser_sonar_alt >= sonar.min_distance_cm(0) && chaser_sonar_alt <= sonar.max_distance_cm(0) * SONAR_RELIABLE_DISTANCE_PCT) {
+			if ( chaser_sonar_alt_health < SONAR_ALT_HEALTH_MAX ) {
+				chaser_sonar_alt_health++;
+			}
+		}else{
+			chaser_sonar_alt_health = 0;
 		}
-	}else{
-		chaser_sonar_alt_health = 0;
+		last = now;
 	}
 	
     // write altitude info to dataflash logs

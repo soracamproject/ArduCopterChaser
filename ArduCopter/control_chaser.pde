@@ -81,64 +81,72 @@ static void chaser_chase_run()
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
 	float dt = (now - last)/1000.0f;
-	last = now;
+	//last = now;
 	
-	// CHASERモードの準備ができていない場合はloiterっぽい状態にする
-	// loiterコントローラを呼ぶのみで終了
-	if (!chaser_started) {
-		//chaser_dest_velは初期化しておく（不要かも？）
-		chaser_dest_vel(0,0);
-		
-		//loiterっぽい状態を作る
-		pos_control.set_desired_velocity_xy(0.0f,0.0f);
-		pos_control.update_xy_controller(true);
-		pos_control.update_z_controller();
-		return;
-	}
-	
-	if (dt > 0.0f) {		// 0割防止
-		// chaser_targetを計算
-		target_distance_last = target_distance;
-		target_distance = target_distance + chaser_target_vel * dt;
-		chaser_target = chaser_origin + target_distance;
-		
-		// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
-		if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
-			chaser_dest_vel.x = 0;
-		}
-		if (fabsf(target_distance.y) >= chaser_overrun_thres.y) {
-			chaser_dest_vel.y = 0;
-		}
-		
-		// chaser_target_velを計算
-		chaser_target_vel = (target_distance - target_distance_last) / dt;
-		
-		// chaser_target_velを加減速
-		// 加速度と減速度を分離
-		if (chaser_target_vel.x > 0) {
-			chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_decel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
+	if (dt > 0.0f) {
+		if (!chaser_started) {
+			// CHASERモードの準備ができていない場合はloiterっぽい状態にする
+			// loiterコントローラを呼ぶのみで終了
+			
+			//chaser_dest_velは初期化しておく（不要かも？）
+			//chaser_dest_vel(0,0);
+			
+			//loiterっぽい状態を作る
+			//pos_control.set_desired_velocity_xy(0.0f,0.0f);
+			pos_control.update_xy_controller(false);
+			pos_control.update_z_controller();
+			
 		} else {
-			chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_decel * dt);
-		}
-		if (chaser_target_vel.y > 0) {
-			chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_decel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
-		} else {
-			chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_decel * dt);
-		}
+			if (dt >= 0.5f){	// dtの上限を決める
+				dt = 0.5f;
+			}
+			// chaser_targetを計算
+			target_distance_last = target_distance;
+			target_distance = target_distance + chaser_target_vel * dt;
+			chaser_target = chaser_origin + target_distance;
+			
+			// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
+			if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
+				chaser_dest_vel.x = 0;
+			}
+			if (fabsf(target_distance.y) >= chaser_overrun_thres.y) {
+				chaser_dest_vel.y = 0;
+			}
+			
+			// chaser_target_velを計算
+			chaser_target_vel = (target_distance - target_distance_last) / dt;
+			
+			// chaser_target_velを加減速
+			// 加速度と減速度を分離
+			if (chaser_target_vel.x > 0) {
+				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_decel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
+			} else {
+				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_decel * dt);
+			}
+			if (chaser_target_vel.y > 0) {
+				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_decel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
+			} else {
+				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_decel * dt);
+			}
+			
+			// z方向計算
+			calc_chaser_pos_z(dt);
+			
+			// ターゲット位置更新
+			pos_control.set_xy_target(chaser_target.x,chaser_target.y);
+			pos_control.set_desired_velocity_xy(chaser_target_vel.x,chaser_target_vel.y);
+			
+			// ポジションコントローラを呼ぶ
+			pos_control.update_xy_controller(true);
+			pos_control.update_z_controller();
+			
+			}
+		// YAWコントローラを呼ぶ
+		attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 		
-		// z方向計算
-		calc_chaser_pos_z(dt);
-		
-		// ターゲット位置更新
-		pos_control.set_xy_target(chaser_target.x,chaser_target.y);
-		pos_control.set_desired_velocity_xy(chaser_target_vel.x,chaser_target_vel.y);
+		// 時間の更新
+		last = now;
 	}
-	// ポジションコントローラを呼ぶ
-	pos_control.update_xy_controller(true);
-	pos_control.update_z_controller();
-	
-	// YAWコントローラを呼ぶ
-	attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 }
 
 
