@@ -18,6 +18,8 @@ GCS_Mavlink.pde
 　GCS_MAVLINK::handleMessageの末尾に以下追加
 　　case MAVLINK_MSG_ID_CHASER_CMD
 　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
+Log.pde
+　static void Log_Write_Control_Tuning()をCHASER用に変更
 motors.pde
 　init_disarm_motors関数内にCHASER用モードリセット機能を追加
 Parameters.h

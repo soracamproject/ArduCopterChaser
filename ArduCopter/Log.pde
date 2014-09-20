@@ -325,14 +325,19 @@ struct PACKED log_Control_Tuning {
 // Write a control tuning packet
 static void Log_Write_Control_Tuning()
 {
+	// コメントアウトしている部分はCHASER用に変更している部分
     struct log_Control_Tuning pkt = {
         LOG_PACKET_HEADER_INIT(LOG_CONTROL_TUNING_MSG),
         time_ms             : hal.scheduler->millis(),
-        throttle_in         : g.rc_3.control_in,
-        angle_boost         : attitude_control.angle_boost(),
+        //throttle_in         : g.rc_3.control_in,
+        throttle_in         : (int16_t)chaser_sonar_alt,
+        //angle_boost         : attitude_control.angle_boost(),
+        angle_boost         : (int16_t)chaser_sonar_alt_health,
         throttle_out        : g.rc_3.servo_out,
-        desired_alt         : pos_control.get_alt_target() / 100.0f,
-        inav_alt            : current_loc.alt / 100.0f,
+        //desired_alt         : pos_control.get_alt_target() / 100.0f,
+        desired_alt         : pos_control.get_alt_target(),
+        //inav_alt            : current_loc.alt / 100.0f,
+        inav_alt            : current_loc.alt,
         baro_alt            : baro_alt,
         desired_sonar_alt   : (int16_t)target_sonar_alt,
         sonar_alt           : sonar_alt,
