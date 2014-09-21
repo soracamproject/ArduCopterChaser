@@ -428,13 +428,14 @@ void loop(){
 			if(button2.update()==1 && button2.read() == HIGH){
 				change_state(BEACON_LAND);
 			}
-			if((now_ms - prev_et_ms) > 200){
+			if((now_ms - prev_et_ms) > 100){
 				static uint16_t count;
 				//send_beacon_loc(beacon_loc_data.lat,10000000,beacon_loc_data.pressure);
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
 				//xbee_serial.println(count++);
 				//xbee_serial.println(beacon_loc_data.lat);
 				//xbee_serial.println(beacon_loc_data.lon);
+				check_input_msg();
 				prev_et_ms = now_ms;
 			}
 			
