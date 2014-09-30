@@ -155,311 +155,344 @@ void setup()
 	prev_ms = millis();
 }
 
-// *****開発の考え方（暫定）*****
-// 50Hzで駆動されるメイン制御部とそれ以外の時間に実行されるセンサ取得部
-// メイン制御部はステートコントロールをしている
-// 各ステート内は
-
+// loop関数の考え方（暫定版）
+// 50Hzで駆動されるメイン制御部とそれ以外の時間に実行されるセンサ取得部で構成される
 void loop(){
+	// 時刻取得
 	now_us = micros();
 	now_ms = millis();
 	
 	if((now_us - prev_us) > 20000){		// 50Hz狙い
-		switch(state){
-			// ■■■■■INITステート■■■■■
-			case BEACON_INIT:
-			if(first_time)
-			{
-				S_INIT;
-				control_led(1,-1,-1,-1);
-			}
-			
-			// ■毎回実行■
-			// ボタン1が押されたら次のステートへ
-			if(button1.update()==1 && button1.read() == HIGH)
-			{
-				change_state(BEACON_READY);
-			}
-			// ボタン2が押されたらLANDモードへ
-			if(button2.update()==1 && button2.read() == HIGH)
-			{
-				//change_state(BEACON_LAND);
-				change_state(BEACON_DEBUG);
-			}
-			
-			
-			// ■サブステート実行■
-			switch(substate){
-				case 0:
-				// 何もしない
-				break;
-			}
-			break;
-			
-			
-			
-			// ■■■■■READYステート■■■■■
-			case BEACON_READY:
-			if(first_time)
-			{
-				S_INIT;
-				control_led(-1,-1,-1,-1);
-			}
-			
-			// ■毎回実行■
-			// CHASER_READYの時のみ、beacon位置情報を定期的に送信
-			if(substate == 3 && (now_ms - prev_et_ms) > 200)	// substateで定義しているため番号変化に注意
-			{
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				prev_et_ms = now_ms;
-			}
-			// スイッチ１が押されたらBEACON_TAKEOFFに移行
-			if(button1.update()==1 && button1.read() == HIGH)
-			{
-				change_state(BEACON_TAKEOFF);
-			}
-			// スイッチ２が押されたらBEACON_LANDに移行
-			if(button2.update()==1 && button2.read() == HIGH)
-			{
-				change_state(BEACON_LAND);
-			}
-			if(blink_on){blink_led(0,1,0,0);};
-			
-			// ■サブステート実行■
-			switch(substate)
-			{
-				case 0:
-				// 機体stateをCHASER_INITにする
-				send_change_chaser_state_cmd(CHASER_INIT);
-				SS_INCREMENT;
-				break;
-				
-				case 1:
-				// 10秒待って機体stateをCHASER_READYにする
-				if((now_ms - prev_ss_ms) > 10000)
-				{
-					send_change_chaser_state_cmd(CHASER_READY);
-					SS_INCREMENT;
-				}
-				break;
-				
-				case 2:
-				// 10秒待って機体をアームする
-				if((now_ms - prev_ss_ms) > 10000)
-				{
-					send_arm_cmd_for_chaser();
-					
-					// LED(黄)点灯
-					blink_on = false;
-					control_led(-1,1,-1,-1);
-					SS_INCREMENT;
-				}
-				break;
-				
-				default:
-				
-				break;
-				
-			}
-			break;
-			
-			
-			
-			// ■■■■■TAKEOFFステート■■■■■
-			case BEACON_TAKEOFF:
-			if(first_time){
-				S_INIT;
-				control_led(-1,-1,1,-1);
-			}
-			
-			// ■毎回実行■
-			// beacon位置情報を定期的に送信
-			if((now_ms - prev_et_ms) > 200){
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				prev_et_ms = now_ms;
-			}
-			// スイッチ１が押されたらBEACOM_STAYに移行
-			if(substate ==1 && button1.update()==1 && button1.read() == HIGH)
-			{
-				change_state(BEACON_STAY);
-			}
-			// スイッチ２が押されたらBEACON_LANDに移行
-			if(button2.update()==1 && button2.read() == HIGH){
-				change_state(BEACON_LAND);
-			}
-			if(blink_on){blink_led(0,0,1,0);};
-			
-			
-			// **TODO**
-			// フェールセーフ
-			
-			// ■サブステート実行■
-			switch(substate){
-				case 0:
-				// テイクオフする
-				send_change_chaser_state_cmd(CHASER_TAKEOFF);
-				SS_INCREMENT;
-				break;
-				
-				case 1:
-				// 20秒待って次のステートへ
-				//if((now_ms - prev_ss_ms) > 20000){
-				//	change_state(BEACON_STAY);		// CHASERモードがうまく働かないためここで中断
-				//}
-				break;
-			}
-			break;
-			
-			
-			
-			// ■■■■■STAYステート■■■■■
-			case BEACON_STAY:
-			if(first_time){
-				S_INIT;
-				control_led(-1,-1,1,-1);
-			}
-			
-			// ■毎回実行■
-			// beacon位置情報を定期的に送信
-			if((now_ms - prev_et_ms) > 200){
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				//xbee_serial.print(beacon_loc_data.lat);		// ビーコンGPS精度デバッグ用
-				//xbee_serial.print(',');						// ビーコンGPS精度デバッグ用
-				//xbee_serial.println(beacon_loc_data.lon);		// ビーコンGPS精度デバッグ用
-				prev_et_ms = now_ms;
-			}
-			// ボタン1が押されたらCHASE開始
-			if(button1.update()==1 && button1.read() == HIGH){
-				change_state(BEACON_CHASE);
-			}
-			// スイッチ２が押されたらBEACON_LANDに移行
-			if(button2.update()==1 && button2.read() == HIGH){
-				change_state(BEACON_LAND);
-			}
-			
-			// ■サブステート実行■
-			switch(substate){
-				case 0:
-				// ステイする
-				send_change_chaser_state_cmd(CHASER_STAY);
-				SS_INCREMENT;
-				break;
-			}
-			break;
-			
-			
-			
-			
-			
-			// ■■■■■CHASEステート■■■■■
-			case BEACON_CHASE:
-			if(first_time){
-				S_INIT;
-				control_led(-1,-1,-1,1);
-			}
-			
-			// ■毎回実行■
-			// beacon位置情報を定期的に送信
-			if((now_ms - prev_et_ms) > 200){
-				send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				prev_et_ms = now_ms;
-			}
-			// スイッチ１が押されたらSTAYに戻る
-			if(button1.update()==1 && button1.read() == HIGH){
-				change_state(BEACON_STAY);
-				//change_state(BEACON_DEBUG);
-			}
-			// スイッチ２が押されたらLANDする
-			if(button2.update()==1 && button2.read() == HIGH){
-				change_state(BEACON_LAND);
-			}
-			
-			// ■サブステート実行■
-			switch(substate){
-				case 0:
-				// CHASEする
-				send_change_chaser_state_cmd(CHASER_CHASE);
-				SS_INCREMENT;
-				break;
-			}
-			break;
-			
-			
-			
-			
-			// ■■■■■LANDステート■■■■■
-			case BEACON_LAND:
-			if(first_time){
-				S_INIT;
-				control_led(1,1,1,1);
-			}
-			
-			// ■毎回実行■
-			// **ToDo**
-			// スイッチ２が押されたらLANDもう一度とかできるかなぁ
-			
-			// ■サブステート実行■
-			switch(substate){
-				case 0:
-				// LANDする
-				send_change_chaser_state_cmd(CHASER_LAND);
-				SS_INCREMENT;
-				break;
-				
-				case 1:
-				// 10秒待ってINITステートへ
-				if((now_ms - prev_ss_ms) > 10000){
-					change_state(BEACON_INIT);
-				}
-				break;
-			}
-			break;
-			
-			// ■■■■■DEBUGステート■■■■■
-			case BEACON_DEBUG:
-			if(first_time){
-				S_INIT;
-				control_led(1,-1,1,-1);
-				//send_change_chaser_state_cmd(CHASER_INIT);
-			}
-			
-			// ■毎回実行■
-			// ボタン2が押されたらLANDさせる
-			if(button2.update()==1 && button2.read() == HIGH){
-				change_state(BEACON_LAND);
-			}
-			if((now_ms - prev_et_ms) > 100){
-				static uint16_t count;
-				//send_beacon_loc(beacon_loc_data.lat,10000000,beacon_loc_data.pressure);
-				//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-				//xbee_serial.println(count++);
-				//xbee_serial.println(beacon_loc_data.lat);
-				//xbee_serial.println(beacon_loc_data.lon);
-				check_input_msg();
-				prev_et_ms = now_ms;
-			}
-			
-			break;
-		}
+		// メイン制御実行
+		beacon_main_run();
+		
+		// 時刻更新
 		prev_us = now_us;
 		prev_ms = now_ms;
 	} else {
-		// **ToDo**
-		// センサ値取得部
+		// 気圧センサ更新
 		baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
 		beacon_loc_data.pressure = baro_pressure;
+		
+		// GPS取得
 		get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+		
+		// 磁気センサ取得
 		mag_getADC();
+		
+		// ジャイロセンサ取得
 		computeIMU();
 	}
 }
 
-// ビーコンステート変更関数
-// ※first_timeの更新を忘れないように
-static void change_state(uint8_t next_state){
-	state = next_state;
-	first_time = true;
+// メイン制御関数
+// 各ステートでスイッチされる
+static void beacon_main_run(){
+	switch(state){
+		case BEACON_INIT:
+		beacon_init_run();
+		break;
+		
+		case BEACON_READY:
+		beacon_ready_run();
+		break;
+		
+		case BEACON_TAKEOFF:
+		beacon_takeoff_run();
+		break;
+		
+		case BEACON_STAY:
+		beacon_stay_run();
+		break;
+		
+		case BEACON_CHASE:
+		beacon_chase_run();
+		break;
+		
+		case BEACON_LAND:
+		beacon_land_run();
+		break;
+		
+		case BEACON_DEBUG:
+		beacon_debug_run();
+		
+		default:
+		break;
+	}
 }
+
+// ビーコンステート変更関数
+static void change_state(uint8_t next_state){
+	// 現在のステートと同じであれば変更無し
+	// (フェールセーフ、実際は使用無し)
+	if(state == next_state){
+		return;
+	}
+	
+	// ステートを変更
+	state = next_state;
+	
+	// ステート開始時の関数を呼ぶ
+	switch(state){
+		case BEACON_INIT:
+		beacon_init_start();
+		break;
+		
+		case BEACON_READY:
+		beacon_ready_start();
+		break;
+		
+		case BEACON_TAKEOFF:
+		beacon_takeoff_start();
+		break;
+		
+		case BEACON_STAY:
+		beacon_stay_start();
+		break;
+		
+		case BEACON_CHASE:
+		beacon_chase_start();
+		break;
+		
+		case BEACON_LAND:
+		beacon_land_start();
+		break;
+		
+		case BEACON_DEBUG:
+		beacon_debug_start();
+		
+		default:
+		break;
+	}
+}
+
+static void beacon_init_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(1,-1,-1,-1);
+}
+
+static void beacon_ready_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(-1,-1,-1,-1);
+}
+
+static void beacon_takeoff_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(-1,-1,1,-1);
+}
+
+static void beacon_stay_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(-1,-1,1,-1);
+}
+
+static void beacon_chase_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(-1,-1,-1,1);
+}
+
+static void beacon_land_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(1,1,1,1);
+}
+
+static void beacon_debug_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(1,-1,1,-1);
+}
+
+
+static void beacon_init_run(){
+	// ボタン1が押されたら次のステートへ
+	if(button1.update()==1 && button1.read() == HIGH){
+		change_state(BEACON_READY);
+	}
+	
+	// ボタン2が押されたらLANDモードへ
+	if(button2.update()==1 && button2.read() == HIGH){
+		//change_state(BEACON_LAND);
+		change_state(BEACON_DEBUG);
+	}
+}
+
+static void beacon_ready_run(){
+	// スイッチ１が押されたらBEACON_TAKEOFFに移行
+	if(button1.update()==1 && button1.read() == HIGH){
+		change_state(BEACON_TAKEOFF);
+	}
+	
+	// スイッチ２が押されたらBEACON_LANDに移行
+	if(button2.update()==1 && button2.read() == HIGH){
+		change_state(BEACON_LAND);
+	}
+	
+	// LED点滅
+	if(blink_on){blink_led(0,1,0,0);};
+	
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// 機体stateをCHASER_INITにする
+		send_change_chaser_state_cmd(CHASER_INIT);
+		SS_INCREMENT;
+		break;
+		
+		case 1:
+		// 10秒待って機体stateをCHASER_READYにする
+		if((now_ms - prev_ss_ms) > 10000){
+			send_change_chaser_state_cmd(CHASER_READY);
+			SS_INCREMENT;
+		}
+		break;
+		
+		case 2:
+		// 10秒待って機体をアームする
+		if((now_ms - prev_ss_ms) > 10000){
+			send_arm_cmd_for_chaser();
+			
+			// LED(黄)点灯
+			blink_on = false;
+			control_led(-1,1,-1,-1);
+			SS_INCREMENT;
+		}
+		break;
+	}
+}
+
+static void beacon_takeoff_run(){
+	// beacon位置情報を定期的に送信
+	if((now_ms - prev_et_ms) > 200){
+		send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+		prev_et_ms = now_ms;
+	}
+	
+	// スイッチ１が押されたらBEACOM_STAYに移行
+	if(substate ==1 && button1.update()==1 && button1.read() == HIGH){
+		change_state(BEACON_STAY);
+	}
+	
+	// スイッチ２が押されたらBEACON_LANDに移行
+	if(button2.update()==1 && button2.read() == HIGH){
+		change_state(BEACON_LAND);
+	}
+	
+	// LED点滅
+	if(blink_on){blink_led(0,0,1,0);};
+	
+	
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// テイクオフする
+		send_change_chaser_state_cmd(CHASER_TAKEOFF);
+		SS_INCREMENT;
+		break;
+	}
+}
+
+static void beacon_stay_run(){
+	// beacon位置情報を定期的に送信
+	if((now_ms - prev_et_ms) > 200){
+		send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+		prev_et_ms = now_ms;
+	}
+	
+	// ボタン1が押されたらCHASE開始
+	if(button1.update()==1 && button1.read() == HIGH){
+		change_state(BEACON_CHASE);
+	}
+	
+	// スイッチ２が押されたらBEACON_LANDに移行
+	if(button2.update()==1 && button2.read() == HIGH){
+		change_state(BEACON_LAND);
+	}
+	
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// ステイする
+		send_change_chaser_state_cmd(CHASER_STAY);
+		SS_INCREMENT;
+		break;
+	}
+}
+
+static void beacon_chase_run(){
+	// beacon位置情報を定期的に送信
+	if((now_ms - prev_et_ms) > 200){
+		send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+		prev_et_ms = now_ms;
+	}
+	
+	// スイッチ１が押されたらSTAYに戻る
+	if(button1.update()==1 && button1.read() == HIGH){
+		change_state(BEACON_STAY);
+	}
+	// スイッチ２が押されたらLANDする
+	if(button2.update()==1 && button2.read() == HIGH){
+		change_state(BEACON_LAND);
+	}
+	
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// CHASEする
+		send_change_chaser_state_cmd(CHASER_CHASE);
+		SS_INCREMENT;
+		break;
+	}
+}
+
+static void beacon_land_run(){
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// LANDする
+		send_change_chaser_state_cmd(CHASER_LAND);
+		SS_INCREMENT;
+		break;
+		
+		case 1:
+		// 10秒待ってINITステートへ
+		if((now_ms - prev_ss_ms) > 10000){
+			change_state(BEACON_INIT);
+		}
+		break;
+	}
+}
+
+static void beacon_debug_run(){
+	// ボタン2が押されたらLANDさせる
+	if(button2.update()==1 && button2.read() == HIGH){
+		change_state(BEACON_LAND);
+	}
+	
+	if((now_ms - prev_et_ms) > 100){
+		//static uint16_t count;
+		//send_beacon_loc(beacon_loc_data.lat,10000000,beacon_loc_data.pressure);
+		//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+		//xbee_serial.println(count++);
+		//xbee_serial.println(beacon_loc_data.lat);
+		//xbee_serial.println(beacon_loc_data.lon);
+		check_input_msg();
+		prev_et_ms = now_ms;
+	}
+}
+
 
 // LEDの点灯用関数
 // -1:消灯、0:そのまま、1:点灯
