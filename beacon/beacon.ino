@@ -1,6 +1,6 @@
 #include <BC_Compat.h>
+#include <BC_Bounce.h>
 #include <FastSerial.h>
-#include <Bounce2.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
@@ -110,8 +110,7 @@ Bounce button2 = Bounce();
 // ***********************************************************************************
 // 主要部分
 // ***********************************************************************************
-void setup()
-{
+void setup(){
 	// LED初期化と全点灯
 	pinMode(LED1, OUTPUT);	// R
 	pinMode(LED2, OUTPUT);	// Y
@@ -148,7 +147,7 @@ void setup()
 	control_led(-1,-1,-1,-1);
 	
 	// 初期ステート設定
-	state = BEACON_INIT;
+	change_state(BEACON_INIT);
 	
 	// 前回時間の初期化
 	prev_us = micros();
@@ -158,6 +157,9 @@ void setup()
 // loop関数の考え方（暫定版）
 // 50Hzで駆動されるメイン制御部とそれ以外の時間に実行されるセンサ取得部で構成される
 void loop(){
+	// サブタスクステート
+	static uint8_t subtask_state = 0;
+	
 	// 時刻取得
 	now_us = micros();
 	now_ms = millis();
@@ -170,18 +172,41 @@ void loop(){
 		prev_us = now_us;
 		prev_ms = now_ms;
 	} else {
-		// 気圧センサ更新
-		baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
-		beacon_loc_data.pressure = baro_pressure;
+		// サブタスク実行
+		switch(subtask_state){
+			case 0:
+			// 気圧センサ更新
+			baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
+			beacon_loc_data.pressure = baro_pressure;
+			break;
+			
+			case 1:
+			// GPS取得
+			get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+			break;
+			
+			case 2:
+			// 磁気センサ取得
+			mag_getADC();
+			break;
+			
+			case 3:
+			// ジャイロセンサ取得
+			computeIMU();
+			break;
+			
+			case 4:
+			// Mavlink メッセージ受信
+			//check_input_msg();
+			break;
+		}
 		
-		// GPS取得
-		get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
-		
-		// 磁気センサ取得
-		mag_getADC();
-		
-		// ジャイロセンサ取得
-		computeIMU();
+		// サブタスクステートを進める
+		// 注意：サブタスクを増やしたらこちらの数字も増やすこと
+		subtask_state++;
+		if(subtask_state > 4){
+			subtask_state = 0;
+		}
 	}
 }
 
@@ -225,7 +250,7 @@ static void beacon_main_run(){
 static void change_state(uint8_t next_state){
 	// 現在のステートと同じであれば変更無し
 	// (フェールセーフ、実際は使用無し)
-	if(state == next_state){
+	if(state > BEACON_INIT && state == next_state){
 		return;
 	}
 	
@@ -318,12 +343,12 @@ static void beacon_debug_start(){
 
 static void beacon_init_run(){
 	// ボタン1が押されたら次のステートへ
-	if(button1.update()==1 && button1.read() == HIGH){
+	if(button1.push_check()){
 		change_state(BEACON_READY);
 	}
 	
 	// ボタン2が押されたらLANDモードへ
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		//change_state(BEACON_LAND);
 		change_state(BEACON_DEBUG);
 	}
@@ -331,12 +356,12 @@ static void beacon_init_run(){
 
 static void beacon_ready_run(){
 	// スイッチ１が押されたらBEACON_TAKEOFFに移行
-	if(button1.update()==1 && button1.read() == HIGH){
+	if(button1.push_check()){
 		change_state(BEACON_TAKEOFF);
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		change_state(BEACON_LAND);
 	}
 	
@@ -381,12 +406,12 @@ static void beacon_takeoff_run(){
 	}
 	
 	// スイッチ１が押されたらBEACOM_STAYに移行
-	if(substate ==1 && button1.update()==1 && button1.read() == HIGH){
+	if(substate ==1 && button1.push_check()){
 		change_state(BEACON_STAY);
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		change_state(BEACON_LAND);
 	}
 	
@@ -412,12 +437,12 @@ static void beacon_stay_run(){
 	}
 	
 	// ボタン1が押されたらCHASE開始
-	if(button1.update()==1 && button1.read() == HIGH){
+	if(button1.push_check()){
 		change_state(BEACON_CHASE);
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		change_state(BEACON_LAND);
 	}
 	
@@ -439,11 +464,11 @@ static void beacon_chase_run(){
 	}
 	
 	// スイッチ１が押されたらSTAYに戻る
-	if(button1.update()==1 && button1.read() == HIGH){
+	if(button1.push_check()){
 		change_state(BEACON_STAY);
 	}
 	// スイッチ２が押されたらLANDする
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		change_state(BEACON_LAND);
 	}
 	
@@ -477,7 +502,7 @@ static void beacon_land_run(){
 
 static void beacon_debug_run(){
 	// ボタン2が押されたらLANDさせる
-	if(button2.update()==1 && button2.read() == HIGH){
+	if(button2.push_check()){
 		change_state(BEACON_LAND);
 	}
 	

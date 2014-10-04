@@ -6,7 +6,7 @@
 #else
 #include "WProgram.h"
 #endif
-#include "Bounce2.h"
+#include "BC_Bounce.h"
 
 
 
@@ -82,3 +82,6 @@ uint8_t Bounce::read()
 	return debouncedState;
 }
 
+bool Bounce::push_check(){
+	return (update()==1) && (read() == HIGH);
+}

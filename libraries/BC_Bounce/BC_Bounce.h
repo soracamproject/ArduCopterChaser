@@ -27,8 +27,8 @@
 //#define BOUNCE_LOCK-OUT
 
 
-#ifndef Bounce2_h
-#define Bounce2_h
+#ifndef BC_Bounce_h
+#define BC_Bounce_h
 
 #include <inttypes.h>
 
@@ -48,6 +48,9 @@ public:
   bool update(); 
 	// Returns the updated pin state
   uint8_t read();
+  
+  // ボタンが押されたかをチェックする
+  bool push_check();
 
   
 protected:

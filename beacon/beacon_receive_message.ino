@@ -26,15 +26,24 @@ static void check_input_msg(void)
 			//if (msg.msgid != MAVLINK_MSG_ID_RADIO && msg.msgid != MAVLINK_MSG_ID_RADIO_STATUS) {
 			//    mavlink_active |= (1U<<chan);
 			//}
-			//handleMessage(&msg);
-			if(flag_led_debug == 0)
-			{
-				control_led(0,0,0,1);
-				flag_led_debug = 1;
-			} else {
-				control_led(0,0,0,-1);
-				flag_led_debug = 0;
-			}
+			handleMessage(&msg);
 		}
 	}
 }
+
+void handleMessage(mavlink_message_t* msg){
+	//uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
+	
+	switch (msg->msgid) {
+		case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
+		{
+		// We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
+		//if(msg->sysid != g.sysid_my_gcs) break;
+		//failsafe.last_heartbeat_ms = millis();
+		//pmTest1++;
+		break;
+		}
+	}	// msgidのスイッチの中括弧とじ
+}	// handleMessage関数の中括弧とじ
+
+
