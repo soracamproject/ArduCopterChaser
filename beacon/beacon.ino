@@ -247,18 +247,15 @@ static void beacon_main_run(){
 }
 
 // ビーコンステート変更関数
-static void change_state(uint8_t next_state){
+static bool change_state(uint8_t next_state){
 	// 現在のステートと同じであれば変更無し
 	// (フェールセーフ、実際は使用無し)
 	if(state > BEACON_INIT && state == next_state){
-		return;
+		return false;
 	}
 	
-	// ステートを変更
-	state = next_state;
-	
 	// ステート開始時の関数を呼ぶ
-	switch(state){
+	switch(next_state){
 		case BEACON_INIT:
 		beacon_init_start();
 		break;
@@ -285,10 +282,16 @@ static void change_state(uint8_t next_state){
 		
 		case BEACON_DEBUG:
 		beacon_debug_start();
+		break;
 		
 		default:
+			return false;
 		break;
 	}
+	
+	// ステートを変更しtrueを返す
+	state = next_state;	
+	return true;
 }
 
 static void beacon_init_start(){
@@ -309,7 +312,7 @@ static void beacon_takeoff_start(){
 	substate = 0;
 	prev_ms = now_ms;
 	blink_on = true;
-	control_led(-1,-1,1,-1);
+	control_led(-1,-1,-1,-1);
 }
 
 static void beacon_stay_start(){
@@ -344,25 +347,25 @@ static void beacon_debug_start(){
 static void beacon_init_run(){
 	// ボタン1が押されたら次のステートへ
 	if(button1.push_check()){
-		change_state(BEACON_READY);
+		if(change_state(BEACON_READY)){return;}
 	}
 	
 	// ボタン2が押されたらLANDモードへ
 	if(button2.push_check()){
 		//change_state(BEACON_LAND);
-		change_state(BEACON_DEBUG);
+		if(change_state(BEACON_DEBUG)){return;}
 	}
 }
 
 static void beacon_ready_run(){
 	// スイッチ１が押されたらBEACON_TAKEOFFに移行
 	if(button1.push_check()){
-		change_state(BEACON_TAKEOFF);
+		if(change_state(BEACON_TAKEOFF)){return;}
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
 	if(button2.push_check()){
-		change_state(BEACON_LAND);
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	// LED点滅
@@ -407,12 +410,12 @@ static void beacon_takeoff_run(){
 	
 	// スイッチ１が押されたらBEACOM_STAYに移行
 	if(substate ==1 && button1.push_check()){
-		change_state(BEACON_STAY);
+		if(change_state(BEACON_STAY)){return;}
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
 	if(button2.push_check()){
-		change_state(BEACON_LAND);
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	// LED点滅
@@ -438,12 +441,12 @@ static void beacon_stay_run(){
 	
 	// ボタン1が押されたらCHASE開始
 	if(button1.push_check()){
-		change_state(BEACON_CHASE);
+		if(change_state(BEACON_CHASE)){return;}
 	}
 	
 	// スイッチ２が押されたらBEACON_LANDに移行
 	if(button2.push_check()){
-		change_state(BEACON_LAND);
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	// サブステート実行
@@ -465,11 +468,11 @@ static void beacon_chase_run(){
 	
 	// スイッチ１が押されたらSTAYに戻る
 	if(button1.push_check()){
-		change_state(BEACON_STAY);
+		if(change_state(BEACON_STAY)){return;}
 	}
 	// スイッチ２が押されたらLANDする
 	if(button2.push_check()){
-		change_state(BEACON_LAND);
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	// サブステート実行
@@ -503,7 +506,7 @@ static void beacon_land_run(){
 static void beacon_debug_run(){
 	// ボタン2が押されたらLANDさせる
 	if(button2.push_check()){
-		change_state(BEACON_LAND);
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	if((now_ms - prev_et_ms) > 100){
