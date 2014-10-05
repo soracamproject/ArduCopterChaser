@@ -446,9 +446,10 @@
 
 	<message id="200" name="CHASER_CMD">
         <description>Send chaser information. </description>
-        <field type="uint8_t" name="command">0:do nothing, 1:change state, 2:change throttle, 3:arm</field>
-        <field type="uint8_t" name="state">chaser state</field>
-        <field type="uint16_t" name="throttle">throttle(0-1000)</field>
+        <field type="uint8_t" name="command">1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)</field>
+        <field type="int8_t" name="p1">8bit unsigned int value</field>
+        <field type="int16_t" name="p2">16bit unsigned int value</field>		
+        <field type="int32_t" name="p3">32bit unsigned int value</field>
 	</message>
 	
 	<message id="201" name="CHASER_BEACON_LOCATION">

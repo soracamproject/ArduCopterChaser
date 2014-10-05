@@ -474,13 +474,13 @@ static bool set_chaser_state(uint8_t state) {
 	return success;
 }
 
-void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
+void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 	// 実行コマンド分岐
 	switch(command) {
 		case 1:
-			switch(state) {
+			switch(p1) {
 				case CHASER_INIT:
-					if (chaser_state_change_check(state)) {
+					if (chaser_state_change_check(p1)) {
 						set_mode(CHASER);
 					}
 					break;
@@ -489,22 +489,13 @@ void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
 				case CHASER_STAY:
 				case CHASER_CHASE:
 				case CHASER_LAND:
-					if (chaser_state_change_check(state)) {
-						set_chaser_state(state);
+					if (chaser_state_change_check(p1)) {
+						set_chaser_state(p1);
 					}
 					break;
 				
 				default:
 					break;
-			}
-			break;
-		
-		case 2:
-			// CHASERモード時のみスロットル値を変更する
-			// アーム後マニュアルスロットルモードでスロットル値を軽く変更しないとテイクオフできない
-			if (control_mode == CHASER) {
-				throttle = constrain_int16(throttle, 0, CHASER_MANUAL_THROTTLE_MAX);		// 暫定で制限
-				g.rc_3.control_in = throttle;
 			}
 			break;
 		
@@ -517,6 +508,12 @@ void handle_chaser_cmd(uint8_t command, uint8_t state, uint16_t throttle) {
 					init_arm_motors();
 				}
 			}
+			break;
+		
+		case 4:
+			// TODO: 受け取ったら機体のmillisをビーコンに返す
+			// p2の番号もそのまま返すことでいつのメッセージか同定する
+			
 			break;
 			
 		default:

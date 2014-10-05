@@ -1437,7 +1437,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		mavlink_chaser_cmd_t packet;
 		mavlink_msg_chaser_cmd_decode(msg, &packet);
 		
-		handle_chaser_cmd(packet.command, packet.state, packet.throttle);
+		handle_chaser_cmd(packet.command, packet.p1, packet.p2, packet.p3);
 		
 		break;
 	}
