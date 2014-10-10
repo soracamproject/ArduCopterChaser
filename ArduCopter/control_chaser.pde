@@ -32,6 +32,7 @@ static void chaser_run() {
 		
 		case CHASER_STAY:
 		case CHASER_CHASE:
+		case CHASER_CIRCLE:
 			chaser_chase_run();
 			break;
 		
@@ -185,7 +186,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
 	
 	
-	// リセットフラグが立っている場合はビーコン位置配列をクリアする（現在は使っていない）
+	// リセットフラグが立っている場合はビーコン位置配列をクリアする
 	if (chaser_beacon_loc_reset) {
 		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_loc[i](0,0);}
 		beacon_loc_relaxed_last(0,0);
@@ -262,20 +263,20 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				chaser_current_pos.y = inertial_nav.get_position().y;
 				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
-				if (!chaser_started && chaser_state == CHASER_CHASE) {
+				if (!chaser_started && (chaser_state == CHASER_CHASE || chaser_state == CHASER_CIRCLE)) {
 					chaser_target = chaser_current_pos;
 					chaser_target_vel(0,0);
 					chaser_started = true;
 				}
 				
-				if (chaser_state == CHASER_CHASE) {
+				if (chaser_state == CHASER_CHASE || chaser_state == CHASER_CIRCLE) {
 					// ジンバルの角度を更新する
 					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(chaser_current_pos,beacon_loc_relaxed))),
 												CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
 					change_mount_control_pitch_angle(chaser_gimbal_pitch_angle);
 					
 					// chaser_origin,chaser_destinationを更新する
-					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt_latch);
+					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt, dt_latch);
 					
 					// update_chaser()を呼ぶ
 					// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
@@ -292,14 +293,47 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 }
 
 
-static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt) {
+static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt, float dt_latch) {
 	static uint8_t yaw_relax_count = 0;
 	
 	// 起点を現在のターゲット位置にする
 	chaser_origin = chaser_target;
 	
-	// beaconの到達予測位置をdestinationとする
-	chaser_destination = beacon_loc * 2.0f - beacon_loc_last;
+	// beaconの到達予測位置を直線補間で推定する
+	Vector2f beacon_loc_next = beacon_loc * 2.0f - beacon_loc_last;
+	
+	if(chaser_state == CHASER_CHASE){	// Chaserの場合
+		// 目的地はビーコン到達予測位置
+		chaser_destination = beacon_loc_next;
+		
+	} else {	// Circle Chaserの場合
+		// 角速度定義(rad/s)
+		float cc_time = constrain_float(g.chaser_circle_time, CHASER_CIRCLE_TIME_MIN, CHASER_CIRCLE_TIME_MAX);
+		float angular_vel = 2.0f * M_PI_F / cc_time;
+		
+		// 並進移動ベクトル
+		Vector2f trans_vector = beacon_loc_next - beacon_loc;
+		
+		// 1個前の角度を保存、たぶんいらない
+		//float cc_angle_last = chaser_cc_angle;
+		
+		// 角度を増分
+		chaser_cc_angle += angular_vel*constrain_float(dt,0.0f,0.2f);	// 適当な値でdtに制限をかける
+		if(chaser_cc_angle > 2.0f*M_PI_F){
+			chaser_cc_angle -= 2.0f*M_PI_F;
+		}
+		
+		// 半径を増分
+		chaser_cc_radius = constrain_float(chaser_cc_radius+=2.0f,0.0f,g.chaser_circle_radius);	// 値は適当
+		
+		// 回転方向ベクトル
+		Vector2f rot_dest_base(chaser_cc_radius,0.0f);
+		Vector2f rot_dest = rotate_vector2f(rot_dest_base, chaser_cc_angle);
+		//Vector2f rot_vector=rot_dest-rot_dest_last;	// たぶんいらない
+		
+		// 目標位置計算
+		chaser_destination = beacon_loc_next + rot_dest;
+	}
 	
 	// track関連の計算
 	chaser_track_length = chaser_destination - chaser_origin;
@@ -322,15 +356,15 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	
 	// YAW制御
 	// 指定した回数に1回毎に方角を出す
-  #if CHASER_YAW_DEST_RELAX_NUM == 1
+ 	#if CHASER_YAW_DEST_RELAX_NUM == 1
 	// なまし数が1の場合はなまさないでchaser_dest_vel_abs_xyを用いて方角を出す
 	if (chaser_dest_vel_abs_xy > 100.0f) {
 		// 目標速度が1m/sより大の場合、その方向にyawを向ける（＝1m/s以下の場合はラッチ）
 		// 引数は順に(経度方向:lng、緯度方向:lat)
 		// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
 		chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
-	}
-  #else
+		
+	#else
 	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
 		chaser_dest_vel_sum_for_yaw += chaser_dest_vel;
 		yaw_relax_count++;
@@ -348,25 +382,8 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		chaser_dest_vel_sum_for_yaw(0,0);
 		yaw_relax_count = 0;
 	}
-  #endif
-}
-
-
-// CHASERモードでのGPSが必要な状態かの判定
-// 使ってない
-static bool mode_requires_GPS_chaser(uint8_t mode) {
-	switch(mode) {
-		case CHASER_READY:
-		case CHASER_TAKEOFF:
-		case CHASER_STAY:
-		case CHASER_CHASE:
-		case CHASER_LAND:
-			return true;
-		default:
-			return false;
-	}
-	return false;
-}
+	#endif
+}	
 
 // CHASERステートをセット（＝変更）する
 static bool set_chaser_state(uint8_t state) {
@@ -378,7 +395,6 @@ static bool set_chaser_state(uint8_t state) {
 			// フラグ類の初期値設定
 			chaser_beacon_loc_reset = false;
 			chaser_beacon_loc_ok = false;
-			chaser_started = false;
 			chaser_mount_activate = false;
 			
 			// ベース下降速度計算用斜度tan値の計算
@@ -445,6 +461,16 @@ static bool set_chaser_state(uint8_t state) {
 			break;
 		}
 		
+		case CHASER_CIRCLE:
+		{
+			// 変数初期化
+			chaser_cc_radius = 0.0f;
+			chaser_cc_angle = 0.0f;
+			
+			success = true;
+			break;
+		}
+		
 		case CHASER_LAND:
 		{
 			// AUTOモードのLAND関数をそのまま流用する
@@ -488,6 +514,7 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 				case CHASER_TAKEOFF:
 				case CHASER_STAY:
 				case CHASER_CHASE:
+				case CHASER_CIRCLE:
 				case CHASER_LAND:
 					if (chaser_state_change_check(p1)) {
 						set_chaser_state(p1);
@@ -513,7 +540,9 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 		case 4:
 			// TODO: 受け取ったら機体のmillisをビーコンに返す
 			// p2の番号もそのまま返すことでいつのメッセージか同定する
-			
+			chaser_debug_id = p2;
+			chaser_debug_millis = millis();
+			gcs_send_message(MSG_CHASER);
 			break;
 			
 		default:
@@ -536,11 +565,15 @@ static bool chaser_state_change_check(uint8_t state) {
 			break;
 		
 		case CHASER_STAY:
-			if(control_mode==CHASER && (chaser_state==CHASER_TAKEOFF || chaser_state==CHASER_CHASE)) {return true;}
+			if(control_mode==CHASER && (chaser_state==CHASER_TAKEOFF || chaser_state==CHASER_CHASE || chaser_state==CHASER_CIRCLE)) {return true;}
 			break;
 		
 		case CHASER_CHASE:
-			if(control_mode==CHASER && chaser_state==CHASER_STAY) {return true;}
+			if(control_mode==CHASER && (chaser_state==CHASER_STAY || chaser_state==CHASER_CIRCLE)) {return true;}
+			break;
+		
+		case CHASER_CIRCLE:
+			if(control_mode==CHASER && (chaser_state==CHASER_STAY || chaser_state==CHASER_CHASE)) {return true;}
 			break;
 		
 		case CHASER_LAND:
@@ -618,46 +651,9 @@ bool chaser_fs_beacon_pos() {
 }
 
 
-// ビーコンの圧力を機体のground_pressureとground_temperatureを使って高度[cm]に変換する
-// 引数：beacon_pressure [Pa, x100mbar] ※int32_tで飛んできたやつをそのままfloatに叩き込んでるはず
-// 注意：機体高度はAP_Baroで+_alt_offset（mission plannerから設定可能）を足してる。_alt_offsetがある場合値が変わるので注意
-//       また機体高度計算の方は返り値[m]だけどこっちは[cm]にしてる
-float get_beacon_altitude(float beacon_pressure) {
-	float scaling, temp, altitude;
-	
-	// on AVR use a less exact, but faster, calculation
-	scaling = barometer.get_ground_pressure() / beacon_pressure;
-	temp = barometer.get_ground_temperature() + 273.15f;
-	altitude = logf(scaling) * temp * 2927.1267f;
-	
-	return altitude;
-}
-
-// ビーコン位置情報デバッグ用関数
-// デバッグフラグON時のみコンパイル
-#if CHASER_LOCATION_DEBUG == 1
-static void chaser_beacon_location_debug(const struct Location *cmd){
-	//chaser_target = pv_location_to_vector(*cmd);
-	chaser_target.x = cmd->lat;
-	chaser_target.y = cmd->lng;
-	//chaser_target.z = cmd->alt;
-}
-#endif
-
 //ターゲット角度が小さい・距離が近い(未実装)の場合にyawの制限速度を変える
 // **速度制限機能廃止中**
 static float get_chaser_yaw_slew(float dt){
-	// **速度制限機能廃止中**
-	//uint16_t delta_yaw_abs = labs(delta_yaw);
-	//if(delta_yaw_abs < chaser_yaw_restrict_cd1){ //別途定義する角度以下であれば、制限速度ゼロ = 動かない
-	//	chaser_target_yaw = current_yaw;
-	//} else if(delta_yaw_abs < chaser_yaw_restrict_cd2){ //別途定義する角度域の場合は制限速度を抑える(線形)
-	//	int16_t tmp_slew_rate = slew_rate * (delta_yaw_abs - chaser_yaw_restrict_cd1) / (float)(chaser_yaw_restrict_cd2 - chaser_yaw_restrict_cd1);	//cd1の時0、cd2の時従来の制限値になるような1次式
-	//	chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -tmp_slew_rate, tmp_slew_rate));
-	//} else{
-	//	chaser_target_yaw = wrap_360_cd(current_yaw + constrain_int16(delta_yaw, -slew_rate, slew_rate));
-	//}
-	
 	return(wrap_360_cd_float(ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*dt, g.chaser_yaw_slew_rate*dt)));
 
 }
@@ -742,4 +738,9 @@ float get_distance_vector2f(const Vector2f &origin, const Vector2f &destination)
     return pythagorous2(destination.x-origin.x,destination.y-origin.y);
 }
 
-
+// ベクトルuを原点回りに角度angle[rad]回転させる
+Vector2f rotate_vector2f(const Vector2f &u, float angle)
+{
+	Vector2f temp(u.x*cosf(angle) - u.y*sinf(angle), u.x*sinf(angle) + u.y*cosf(angle));
+	return temp;
+}

@@ -39,6 +39,17 @@ static uint8_t calibOK_A = 0;
 static uint8_t calibOK_M = 0;
 static uint8_t calibrate_mag = 0;	// MAGキャリブレーション実行フラグ、オリジナル
 
+// 通信デバッグ用
+#define DEBUG_NUM 10
+static uint8_t debug_count;
+static bool debug_send_flag;
+static uint16_t beacon_id[DEBUG_NUM];
+static uint16_t copter_id[DEBUG_NUM];
+static uint32_t beacon_time_sended[DEBUG_NUM];
+static uint32_t copter_time_received[DEBUG_NUM];
+static uint32_t beacon_time_received[DEBUG_NUM];
+
+
 // ステートに入った際に必ず実行される部分のマクロ
 #define S_INIT       substate=0;prev_ms=now_ms;first_time=false;blink_on=true
 // サブステートをひとつ進めるマクロ
@@ -197,7 +208,7 @@ void loop(){
 			
 			case 4:
 			// Mavlink メッセージ受信
-			//check_input_msg();
+			check_input_msg();
 			break;
 		}
 		
@@ -232,6 +243,10 @@ static void beacon_main_run(){
 		
 		case BEACON_CHASE:
 		beacon_chase_run();
+		break;
+		
+		case BEACON_CIRCLE:
+		beacon_circle_run();
 		break;
 		
 		case BEACON_LAND:
@@ -329,6 +344,13 @@ static void beacon_chase_start(){
 	control_led(-1,-1,-1,1);
 }
 
+static void beacon_circle_start(){
+	substate = 0;
+	prev_ms = now_ms;
+	blink_on = true;
+	control_led(-1,1,-1,1);
+}
+
 static void beacon_land_start(){
 	substate = 0;
 	prev_ms = now_ms;
@@ -341,6 +363,10 @@ static void beacon_debug_start(){
 	prev_ms = now_ms;
 	blink_on = true;
 	control_led(1,-1,1,-1);
+	
+	// debug_countを0にする
+	debug_count = 0;
+	debug_send_flag = true;
 }
 
 
@@ -468,7 +494,7 @@ static void beacon_chase_run(){
 	
 	// スイッチ１が押されたらSTAYに戻る
 	if(button1.push_check()){
-		if(change_state(BEACON_STAY)){return;}
+		if(change_state(BEACON_CIRCLE)){return;}
 	}
 	// スイッチ２が押されたらLANDする
 	if(button2.push_check()){
@@ -484,6 +510,33 @@ static void beacon_chase_run(){
 		break;
 	}
 }
+
+static void beacon_circle_run(){
+	// beacon位置情報を定期的に送信
+	if((now_ms - prev_et_ms) > 200){
+		send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
+		prev_et_ms = now_ms;
+	}
+	
+	// スイッチ１が押されたらSTAYに戻る
+	if(button1.push_check()){
+		if(change_state(BEACON_STAY)){return;}
+	}
+	// スイッチ２が押されたらLANDする
+	if(button2.push_check()){
+		if(change_state(BEACON_LAND)){return;}
+	}
+	
+	// サブステート実行
+	switch(substate){
+		case 0:
+		// CHASEする
+		send_change_chaser_state_cmd(CHASER_CIRCLE);
+		SS_INCREMENT;
+		break;
+	}
+}
+
 
 static void beacon_land_run(){
 	// サブステート実行
@@ -510,13 +563,43 @@ static void beacon_debug_run(){
 	}
 	
 	if((now_ms - prev_et_ms) > 100){
-		//static uint16_t count;
-		//send_beacon_loc(beacon_loc_data.lat,10000000,beacon_loc_data.pressure);
-		//send_beacon_loc(beacon_loc_data.lat,beacon_loc_data.lon,beacon_loc_data.pressure);
-		//xbee_serial.println(count++);
-		//xbee_serial.println(beacon_loc_data.lat);
-		//xbee_serial.println(beacon_loc_data.lon);
-		check_input_msg();
+		if(debug_count > DEBUG_NUM){return;}
+		if(debug_count == DEBUG_NUM){
+			for(int8_t i=0; i<DEBUG_NUM; i++){
+				console.print("beacon_id=");
+				delay(50);
+				console.print(beacon_id[i]);
+				delay(50);
+				console.print(", copter_id=");
+				delay(50);
+				console.print(copter_id[i]);
+				delay(50);
+				console.print(", beacon_time_sended=");
+				delay(50);
+				console.print(beacon_time_sended[i]);
+				delay(50);
+				console.print(", copter_time_received=");
+				delay(50);
+				console.print(copter_time_received[i]);
+				delay(50);
+				console.print(", beacon_time_received=");
+				delay(50);
+				console.println(beacon_time_received[i]);
+				delay(50);
+			}
+			debug_count++;
+		}
+		if(debug_count < DEBUG_NUM){
+			if(debug_send_flag){
+				// 送信フラグがたっていたら、id,timeを記録し機体に送信
+				beacon_id[debug_count] = debug_count;
+				beacon_time_sended[debug_count] = millis();
+				send_debug_cmd_for_chaser(beacon_id[debug_count]);
+				debug_send_flag = false;
+				console.print("message_sended ");
+				console.println(debug_count);
+			}
+		}
 		prev_et_ms = now_ms;
 	}
 }

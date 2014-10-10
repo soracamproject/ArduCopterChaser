@@ -189,6 +189,11 @@ public:
 		k_param_chaser_desired_alt_leash,
 		k_param_chaser_beacon_offset_lat,
 		k_param_chaser_beacon_offset_lon,
+		k_param_chaser_alt_fix,
+		k_param_chaser_fixed_alt,
+		k_param_chaser_circle_radius,
+		k_param_chaser_circle_time,
+		
 
         //
         // 140: Sensor parameters
@@ -384,6 +389,11 @@ public:
 	AP_Float        chaser_desired_alt_leash;	// 高度制御時の目標高度の機体高度との差[cm]
 	AP_Float        chaser_beacon_offset_lat;	// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]
 	AP_Float        chaser_beacon_offset_lon;	// ビーコン位置のオフセット値（lon,経度方向,y方向）[cm]
+	AP_Int8         chaser_alt_fix;				// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御）
+	AP_Float        chaser_fixed_alt;			// 高度固定制御時の高度[cm]
+	AP_Float        chaser_circle_radius;		// Circle Chaser時の旋回半径[cm]
+	AP_Float        chaser_circle_time;			// Circle Chaser時の旋回時間[sec]
+
 
     // Throttle
     //

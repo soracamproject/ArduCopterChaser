@@ -10,15 +10,15 @@ static void send_arm_cmd_for_chaser(){
 }
 
 // CHASER用millisコマンド送信（デバッグ用）
-static void send_millis_cmd_for_chaser(uint32_t time){
-	send_chaser_cmd(4,0,0,time);
+static void send_debug_cmd_for_chaser(uint16_t id){
+	send_chaser_cmd(4,0,id,0);
 }
 
 // CHASER操作コマンド送信
-// uint8_t  command		1: CHASERステート変更, 2: 未使用, 3: アーム命令, 4: millisを送信する（デバッグ用）
+// uint8_t  command		1: CHASERステート変更, 2: 未使用, 3: アーム命令, 4: timeを送信する（デバッグ用）
 // uint8_t  p1			0〜255				CHASERステートで使用
 // uint16_t p2			0〜65535			現在使用無し
-// uint32_t p3			0〜4294967295		millis送信に利用（デバッグ用）
+// uint32_t p3			0〜4294967295		time送信に利用（デバッグ用）
 static void send_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3){
 	uint8_t system_id = 20;			// 実績値20
 	uint8_t component_id = 200;		// 実績値200

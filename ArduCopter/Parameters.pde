@@ -499,6 +499,34 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_beacon_offset_lon, "CHR_OFST_LON", CHASER_BEACON_OFFSET_LON),
 
+	// @Param: CHR_ALT_FIX
+	// @DisplayName: Chaser Altitude Fix
+	// @Description: disable terrain control and enable fixed altitude control (0: terrain, 1:fixed alt.)
+	// @Range 0 1
+	// @User: Advanced
+	GSCALAR(chaser_alt_fix, "CHR_ALT_FIX", CHASER_ALT_FIX),
+
+	// @Param: CHR_FIXED_ALT
+	// @DisplayName: Chaser Fixed Altitude
+	// @Description: altitude for fixed altitude control [cm]
+	// @Range 200 1000
+	// @User: Advanced
+	GSCALAR(chaser_fixed_alt, "CHR_FIXED_ALT", CHASER_FIXED_ALT),
+
+	// @Param: CHR_CIRCLE_RADIUS
+	// @DisplayName: Chaser Circle Radius
+	// @Description: circle radius for circle chaser mode [cm]
+	// @Range 100 300
+	// @User: Advanced
+	GSCALAR(chaser_circle_radius, "CHR_CLE_RADIUS", CHASER_CIRCLE_RADIUS),
+
+	// @Param: CHR_CIRCLE_TIME
+	// @DisplayName: Chaser Circle Time
+	// @Description: time spent on full circle [sec]
+	// @Range 5 30
+	// @User: Advanced
+	GSCALAR(chaser_circle_time, "CHR_CLE_TIME", CHASER_CIRCLE_TIME),
+
 #if POSHOLD_ENABLED == ENABLED
     // @Param: PHLD_BRAKE_RATE
     // @DisplayName: PosHold braking rate

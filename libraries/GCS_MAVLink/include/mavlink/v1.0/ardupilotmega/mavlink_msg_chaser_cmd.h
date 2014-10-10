@@ -4,27 +4,27 @@
 
 typedef struct __mavlink_chaser_cmd_t
 {
- int32_t p3; ///< 32bit unsigned int value
- int16_t p2; ///< 16bit unsigned int value
- uint8_t command; ///< 1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)
- int8_t p1; ///< 8bit unsigned int value
+ uint32_t p3; ///< 32bit unsigned int value
+ uint16_t p2; ///< 16bit unsigned int value
+ uint8_t command; ///< 1:change state, 2:NOT USE, 3:arm, 4: debug information
+ uint8_t p1; ///< 8bit unsigned int value
 } mavlink_chaser_cmd_t;
 
 #define MAVLINK_MSG_ID_CHASER_CMD_LEN 8
 #define MAVLINK_MSG_ID_200_LEN 8
 
-#define MAVLINK_MSG_ID_CHASER_CMD_CRC 238
-#define MAVLINK_MSG_ID_200_CRC 238
+#define MAVLINK_MSG_ID_CHASER_CMD_CRC 157
+#define MAVLINK_MSG_ID_200_CRC 157
 
 
 
 #define MAVLINK_MESSAGE_INFO_CHASER_CMD { \
 	"CHASER_CMD", \
 	4, \
-	{  { "p3", NULL, MAVLINK_TYPE_INT32_T, 0, 0, offsetof(mavlink_chaser_cmd_t, p3) }, \
-         { "p2", NULL, MAVLINK_TYPE_INT16_T, 0, 4, offsetof(mavlink_chaser_cmd_t, p2) }, \
+	{  { "p3", NULL, MAVLINK_TYPE_UINT32_T, 0, 0, offsetof(mavlink_chaser_cmd_t, p3) }, \
+         { "p2", NULL, MAVLINK_TYPE_UINT16_T, 0, 4, offsetof(mavlink_chaser_cmd_t, p2) }, \
          { "command", NULL, MAVLINK_TYPE_UINT8_T, 0, 6, offsetof(mavlink_chaser_cmd_t, command) }, \
-         { "p1", NULL, MAVLINK_TYPE_INT8_T, 0, 7, offsetof(mavlink_chaser_cmd_t, p1) }, \
+         { "p1", NULL, MAVLINK_TYPE_UINT8_T, 0, 7, offsetof(mavlink_chaser_cmd_t, p1) }, \
          } \
 }
 
@@ -35,21 +35,21 @@ typedef struct __mavlink_chaser_cmd_t
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param command 1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)
+ * @param command 1:change state, 2:NOT USE, 3:arm, 4: debug information
  * @param p1 8bit unsigned int value
  * @param p2 16bit unsigned int value
  * @param p3 32bit unsigned int value
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       uint8_t command, int8_t p1, int16_t p2, int32_t p3)
+						       uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, p3);
-	_mav_put_int16_t(buf, 4, p2);
+	_mav_put_uint32_t(buf, 0, p3);
+	_mav_put_uint16_t(buf, 4, p2);
 	_mav_put_uint8_t(buf, 6, command);
-	_mav_put_int8_t(buf, 7, p1);
+	_mav_put_uint8_t(buf, 7, p1);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
@@ -76,7 +76,7 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t co
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
- * @param command 1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)
+ * @param command 1:change state, 2:NOT USE, 3:arm, 4: debug information
  * @param p1 8bit unsigned int value
  * @param p2 16bit unsigned int value
  * @param p3 32bit unsigned int value
@@ -84,14 +84,14 @@ static inline uint16_t mavlink_msg_chaser_cmd_pack(uint8_t system_id, uint8_t co
  */
 static inline uint16_t mavlink_msg_chaser_cmd_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           uint8_t command,int8_t p1,int16_t p2,int32_t p3)
+						           uint8_t command,uint8_t p1,uint16_t p2,uint32_t p3)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, p3);
-	_mav_put_int16_t(buf, 4, p2);
+	_mav_put_uint32_t(buf, 0, p3);
+	_mav_put_uint16_t(buf, 4, p2);
 	_mav_put_uint8_t(buf, 6, command);
-	_mav_put_int8_t(buf, 7, p1);
+	_mav_put_uint8_t(buf, 7, p1);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_CMD_LEN);
 #else
@@ -143,21 +143,21 @@ static inline uint16_t mavlink_msg_chaser_cmd_encode_chan(uint8_t system_id, uin
  * @brief Send a chaser_cmd message
  * @param chan MAVLink channel to send the message
  *
- * @param command 1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)
+ * @param command 1:change state, 2:NOT USE, 3:arm, 4: debug information
  * @param p1 8bit unsigned int value
  * @param p2 16bit unsigned int value
  * @param p3 32bit unsigned int value
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, uint8_t command, int8_t p1, int16_t p2, int32_t p3)
+static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_CMD_LEN];
-	_mav_put_int32_t(buf, 0, p3);
-	_mav_put_int16_t(buf, 4, p2);
+	_mav_put_uint32_t(buf, 0, p3);
+	_mav_put_uint16_t(buf, 4, p2);
 	_mav_put_uint8_t(buf, 6, command);
-	_mav_put_int8_t(buf, 7, p1);
+	_mav_put_uint8_t(buf, 7, p1);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, buf, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -187,14 +187,14 @@ static inline void mavlink_msg_chaser_cmd_send(mavlink_channel_t chan, uint8_t c
   is usually the receive buffer for the channel, and allows a reply to an
   incoming message with minimum stack space usage.
  */
-static inline void mavlink_msg_chaser_cmd_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t command, int8_t p1, int16_t p2, int32_t p3)
+static inline void mavlink_msg_chaser_cmd_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char *buf = (char *)msgbuf;
-	_mav_put_int32_t(buf, 0, p3);
-	_mav_put_int16_t(buf, 4, p2);
+	_mav_put_uint32_t(buf, 0, p3);
+	_mav_put_uint16_t(buf, 4, p2);
 	_mav_put_uint8_t(buf, 6, command);
-	_mav_put_int8_t(buf, 7, p1);
+	_mav_put_uint8_t(buf, 7, p1);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_CMD, buf, MAVLINK_MSG_ID_CHASER_CMD_LEN, MAVLINK_MSG_ID_CHASER_CMD_CRC);
@@ -225,7 +225,7 @@ static inline void mavlink_msg_chaser_cmd_send_buf(mavlink_message_t *msgbuf, ma
 /**
  * @brief Get field command from chaser_cmd message
  *
- * @return 1:change state, 2:NOT USE, 3:arm, 4: send millis(debug)
+ * @return 1:change state, 2:NOT USE, 3:arm, 4: debug information
  */
 static inline uint8_t mavlink_msg_chaser_cmd_get_command(const mavlink_message_t* msg)
 {
@@ -237,9 +237,9 @@ static inline uint8_t mavlink_msg_chaser_cmd_get_command(const mavlink_message_t
  *
  * @return 8bit unsigned int value
  */
-static inline int8_t mavlink_msg_chaser_cmd_get_p1(const mavlink_message_t* msg)
+static inline uint8_t mavlink_msg_chaser_cmd_get_p1(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int8_t(msg,  7);
+	return _MAV_RETURN_uint8_t(msg,  7);
 }
 
 /**
@@ -247,9 +247,9 @@ static inline int8_t mavlink_msg_chaser_cmd_get_p1(const mavlink_message_t* msg)
  *
  * @return 16bit unsigned int value
  */
-static inline int16_t mavlink_msg_chaser_cmd_get_p2(const mavlink_message_t* msg)
+static inline uint16_t mavlink_msg_chaser_cmd_get_p2(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int16_t(msg,  4);
+	return _MAV_RETURN_uint16_t(msg,  4);
 }
 
 /**
@@ -257,9 +257,9 @@ static inline int16_t mavlink_msg_chaser_cmd_get_p2(const mavlink_message_t* msg
  *
  * @return 32bit unsigned int value
  */
-static inline int32_t mavlink_msg_chaser_cmd_get_p3(const mavlink_message_t* msg)
+static inline uint32_t mavlink_msg_chaser_cmd_get_p3(const mavlink_message_t* msg)
 {
-	return _MAV_RETURN_int32_t(msg,  0);
+	return _MAV_RETURN_uint32_t(msg,  0);
 }
 
 /**

@@ -15,6 +15,7 @@ control_chaser.pde
 defines.h
 　CHASERを追加しNUM_MODESを増やす。番号はCHASERが17とNUM_MODESが18
 GCS_Mavlink.pde
+　send_chaser_cmd関数を新規追加
 　GCS_MAVLINK::handleMessageの末尾に以下追加
 　　case MAVLINK_MSG_ID_CHASER_CMD
 　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
@@ -38,6 +39,8 @@ AC_PosControl.h
 　update_xy_controller_for_chaserを追加
 AC_PosControl.cpp
 　update_xy_controller_for_chaserを作成
+GCS.h
+　enum ap_messageにMSG_CHASERを追加
 
 ==以下Beacon関連==
 libraries/FastSerial

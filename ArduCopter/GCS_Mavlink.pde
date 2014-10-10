@@ -280,14 +280,14 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 	// CHASERデバッグ版
     mavlink_msg_nav_controller_output_send(
 		chan,
-		chaser_copter_pos.x,			//float,nav_roll
-		chaser_copter_pos.y,			//float,nav_pitch
-		0,								//int16_t,nav_bearing
-		chaser_yaw_target,				//int16_t,target_bearing
-		chaser_gimbal_pitch_angle,		//uint16_t,wp_dist
-		chaser_target.x,				//float,alt_error
-		chaser_target.y,				//float,aspd_error
-		chaser_sonar_alt				//float,xtrack_error
+		inertial_nav.get_position().x,		//float,nav_roll
+		inertial_nav.get_position().y,		//float,nav_pitch
+		0,									//int16_t,nav_bearing
+		chaser_yaw_target,					//int16_t,target_bearing
+		chaser_gimbal_pitch_angle,			//uint16_t,wp_dist
+		chaser_target.x,					//float,alt_error
+		chaser_target.y,					//float,aspd_error
+		0.0f								//float,xtrack_error
 	);
 #else
 	// 通常通信版
@@ -418,12 +418,12 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 	// CHASERデバッグ版
 	mavlink_msg_vfr_hud_send(
 		chan,
-		chaser_destination.x,		//float,airspeed
-		chaser_descent_rate,		//float,groundspeed
-		0,							//int16_t,heading
-		sonar_alt,					//uint16_t,throttle
-		chaser_copter_pos.z,		//float,alt
-		chaser_sonar_alt			//float,climb
+		chaser_destination.x,			//float,airspeed
+		chaser_destination.y,			//float,groundspeed
+		0,								//int16_t,heading
+		sonar_alt,						//uint16_t,throttle
+		inertial_nav.get_position().z,	//float,alt
+		chaser_sonar_alt				//float,climb
 	);
 #else
 	// 通常通信版
@@ -465,6 +465,17 @@ static void NOINLINE send_statustext(mavlink_channel_t chan)
         chan,
         s->severity,
         s->text);
+}
+
+// CHASER用デバッグコマンド送信
+static void NOINLINE send_chaser_cmd(mavlink_channel_t chan){
+	mavlink_msg_chaser_cmd_send(
+		chan,
+		4,					// uint8_t  command
+		0,					// uint8_t  p1
+		chaser_debug_id,	// uint16_t p2
+		chaser_debug_millis	// uint32_t p3
+	);
 }
 
 // are we still delaying telemetry to try to avoid Xbee bricking?
@@ -648,7 +659,13 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_WIND:
         // unused
         break;
-
+	
+	case MSG_CHASER:
+		CHECK_PAYLOAD_SIZE(CHASER_CMD);
+		send_chaser_cmd(chan);
+		// CHASER用に追加
+		break;
+		
     case MSG_RETRY_DEFERRED:
         break; // just here to prevent a warning
     }
@@ -1446,14 +1463,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻更新
 		struct Location tell_command = {};
 
-#if CHASER_LOCATION_DEBUG == 0
-		// 通常モード
 		mavlink_chaser_beacon_location_t packet;
 		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
 		
 		tell_command.lat = packet.lat;
 		tell_command.lng = packet.lon;
-		tell_command.alt = packet.pressure;		// altを気圧値として使用（暫定）
+		tell_command.alt = 0;;
 		
 		//受け取った値が上下限に収まっていたらビーコン位置情報を更新する
 		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
@@ -1464,19 +1479,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			chaser_count_beacon_pos_err++;
 		}
 		break;
-#else
-		// ビーコン位置情報デバッグモード
-		mavlink_chaser_beacon_location_t packet;
-		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
-		
-		tell_command.lat = packet.lat;
-		tell_command.lng = packet.lon;
-		tell_command.alt = packet.pressure;		// altを気圧値として使用（暫定）
-		
-		chaser_beacon_location_debug(&tell_command);
-		
-		break;
-#endif
 	}
 
     }     // end switch

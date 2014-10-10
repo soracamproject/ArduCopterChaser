@@ -760,11 +760,12 @@ static struct {
 
 ////////////////////////////////////////////////////////////////////////////////
 // CHASERモード用グローバル変数
+//
+// StaticなVector2f,3fはここに置かないとエラーはく
 ////////////////////////////////////////////////////////////////////////////////
 static Vector2f beacon_loc[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]
 static Vector2f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]
 static Vector2f beacon_loc_relaxed_latch;					// ビーコン位置なましのラッチ値[cm]不感帯に入っているかの基準とする
-															// StaticなVector2f,3fはここに置かないとエラーはく
 
 static Vector2f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
 static Vector2f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
@@ -778,27 +779,21 @@ static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_des
 static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）[cm/s]
 static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
+static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
+
 static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセットするフラグ
 static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
-static bool chaser_started;					// CHASER開始フラグ（CHASERステートがCHASER_CHASEだとTrue, それ以外だとFalse）
+static bool chaser_started;					// CHASER開始フラグ
 
 static float chaser_yaw_target;					// YAWの目標角度（-18000〜18000）[centi-degrees]
 static Vector2f chaser_dest_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
 static Vector2f chaser_dest_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
-static Vector3f chaser_copter_pos;			// CHASERデバッグ用の機体位置（inertial_navで取ってくる）
-static float chaser_baro_temp;				// CHASERデバッグ用の気圧センサ温度[deg.C]
-static float chaser_beacon_alt;				// CHASERデバッグ用ビーコン高さ[cm]
-
-static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
-
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 static uint8_t chaser_sonar_alt_health;		// CHASER用ソナー高度健常判断値（chaser_sonar_altで同じことをやっている）
+
 static float chaser_slope_angle_tan;		// ベース下降速度計算用斜度tan値[-]
 static float chaser_descent_rate;			// ベース下降速度[cm/s]
-
-static uint16_t chaser_yaw_restrict_cd1;	// YAW制御制限下限角度下限[centi-deg.](0-18000)（この角度以下で速度0＝動かない）
-static uint16_t chaser_yaw_restrict_cd2;	// YAW制御制限下限角度上限[centi-deg.](0-18000)（この角度以上で最大速度で回る）
 
 static bool chaser_mount_activate;			// CHASERカメラジンバルON
 static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角度[deg.](下向きがプラス側)
@@ -806,6 +801,13 @@ static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角�
 static bool chaser_fs_com_firsttime;		// 通信途絶FS初回フラグ（trueは初回）
 static uint32_t chaser_prev_ms_msg_receive;	// ビーコンからのメッセージを受け取った時間（前回値）[ms]
 static uint8_t chaser_count_beacon_pos_err;	// ビーコン位置情報がフェンスを連続して外れた回数[-]
+
+static uint16_t chaser_debug_id;			// ビーコンから届くデバッグID。この番号と時間で通信速度を推定する。※予定
+static uint32_t chaser_debug_millis;		// ビーコンに返すmillis。通信速度推定用。※予定
+
+static float chaser_cc_radius;				// Circle Chaserの現在の旋回半径[cm]
+static float chaser_cc_angle;				// Circle Chaserの現在の旋回角度[rad]
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
