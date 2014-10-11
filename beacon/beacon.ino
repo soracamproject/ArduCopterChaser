@@ -291,6 +291,10 @@ static bool change_state(uint8_t next_state){
 		beacon_chase_start();
 		break;
 		
+		case BEACON_CIRCLE:
+		beacon_circle_start();
+		break;
+		
 		case BEACON_LAND:
 		beacon_land_start();
 		break;

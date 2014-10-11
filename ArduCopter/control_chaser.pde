@@ -363,7 +363,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 引数は順に(経度方向:lng、緯度方向:lat)
 		// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
 		chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
-		
+	}
 	#else
 	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
 		chaser_dest_vel_sum_for_yaw += chaser_dest_vel;
@@ -383,7 +383,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		yaw_relax_count = 0;
 	}
 	#endif
-}	
+}
 
 // CHASERステートをセット（＝変更）する
 static bool set_chaser_state(uint8_t state) {
