@@ -1,20 +1,24 @@
 #include <BC_Compat.h>
 #include <BC_Bounce.h>
 #include <FastSerial.h>
+#include <BC_GPS.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
+
 
 // ***********************************************************************************
 // シリアルポート
 // ***********************************************************************************
-// ビーコンプロト3.0用
-FastSerialPort0(console);		// console(デバッグ用)、USB通信用
-FastSerialPort1(gps_serial);	// GPS用
-FastSerialPort2(xbee_serial);	// XBee用
+// ibis用
+//	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
+//	FastSerialPort1(gps_serial);	// GPS用
+//	FastSerialPort2(xbee_serial);	// XBee用
 
-// ビーコンプロト3.1用
-//FastSerialPort2(gps_serial);	// GPS用
-//FastSerialPort3(xbee_serial);	// XBee用
+// pheasant用
+	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
+	FastSerialPort2(xbee_serial);	// XBee用
+	FastSerialPort3(gps_serial);	// GPS用
+
 
 // ***********************************************************************************
 // メイン変数
@@ -103,19 +107,41 @@ static uint32_t neutralizeTime = 0;
 // ***********************************************************************************
 // LED関連変数および宣言
 // ***********************************************************************************
-#define LED1   2
-#define LED2   5
-#define LED3   7
-#define LED4   9
+// ibis用
+//	#define LED1   2
+//	#define LED2   5
+//	#define LED3   7
+//	#define LED4   9
+
+// pheasant用
+	#define LED1   2
+	#define LED2   3
+	#define LED3   5
+	#define LED4   6
+
 #define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
 
 // ***********************************************************************************
 // ボタン関連変数および宣言
 // ***********************************************************************************
-#define BUTTON1   33
-#define BUTTON2   32
+// ibis用
+//#define BUTTON1   33
+//#define BUTTON2   32
+//Bounce button1 = Bounce();
+//Bounce button2 = Bounce();
+
+// pheasant用
+#define BUTTON1   36
+#define BUTTON2   37
 Bounce button1 = Bounce();
 Bounce button2 = Bounce();
+
+
+// ***********************************************************************************
+// GPSインスタンス
+// ***********************************************************************************
+static BC_GPS  gps;
+
 
 
 // ***********************************************************************************
@@ -130,7 +156,7 @@ void setup(){
 	control_led(1,1,1,1);
 	
 	// GPS初期化
-	init_gps();
+	gps.init_gps();
 	
 	// XBee初期化
 	xbee_serial.begin(57600);
@@ -187,13 +213,15 @@ void loop(){
 		switch(subtask_state){
 			case 0:
 			// 気圧センサ更新
-			baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
-			beacon_loc_data.pressure = baro_pressure;
+			//baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
+			//beacon_loc_data.pressure = baro_pressure;
 			break;
 			
 			case 1:
 			// GPS取得
-			get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+			gps.get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+			beacon_loc_data.lat = gps.lat_data;
+			beacon_loc_data.lon = gps.lon_data;
 			break;
 			
 			case 2:
@@ -566,44 +594,19 @@ static void beacon_debug_run(){
 		if(change_state(BEACON_LAND)){return;}
 	}
 	
-	if((now_ms - prev_et_ms) > 100){
-		if(debug_count > DEBUG_NUM){return;}
-		if(debug_count == DEBUG_NUM){
-			for(int8_t i=0; i<DEBUG_NUM; i++){
-				console.print("beacon_id=");
-				delay(50);
-				console.print(beacon_id[i]);
-				delay(50);
-				console.print(", copter_id=");
-				delay(50);
-				console.print(copter_id[i]);
-				delay(50);
-				console.print(", beacon_time_sended=");
-				delay(50);
-				console.print(beacon_time_sended[i]);
-				delay(50);
-				console.print(", copter_time_received=");
-				delay(50);
-				console.print(copter_time_received[i]);
-				delay(50);
-				console.print(", beacon_time_received=");
-				delay(50);
-				console.println(beacon_time_received[i]);
-				delay(50);
-			}
-			debug_count++;
-		}
-		if(debug_count < DEBUG_NUM){
-			if(debug_send_flag){
-				// 送信フラグがたっていたら、id,timeを記録し機体に送信
-				beacon_id[debug_count] = debug_count;
-				beacon_time_sended[debug_count] = millis();
-				send_debug_cmd_for_chaser(beacon_id[debug_count]);
-				debug_send_flag = false;
-				console.print("message_sended ");
-				console.println(debug_count);
-			}
-		}
+	if((now_ms - prev_et_ms) > 1000){
+		// 通信速度チェック用
+		//debug_check_telem();
+		
+		xbee_serial.print("lat=");
+		delay(100);
+		xbee_serial.print(beacon_loc_data.lat);
+		delay(100);
+		xbee_serial.print(", lon=");
+		delay(100);
+		xbee_serial.println(beacon_loc_data.lon);
+		delay(100);
+		
 		prev_et_ms = now_ms;
 	}
 }
@@ -654,6 +657,46 @@ static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 		}
 		state = !state;
 		prev_ms = now_ms;
+	}
+}
+
+static void debug_check_telem(){
+	if(debug_count > DEBUG_NUM){return;}
+	if(debug_count == DEBUG_NUM){
+		for(int8_t i=0; i<DEBUG_NUM; i++){
+			console.print("beacon_id=");
+			delay(50);
+			console.print(beacon_id[i]);
+			delay(50);
+			console.print(", copter_id=");
+			delay(50);
+			console.print(copter_id[i]);
+			delay(50);
+			console.print(", beacon_time_sended=");
+			delay(50);
+			console.print(beacon_time_sended[i]);
+			delay(50);
+			console.print(", copter_time_received=");
+			delay(50);
+			console.print(copter_time_received[i]);
+			delay(50);
+			console.print(", beacon_time_received=");
+			delay(50);
+			console.println(beacon_time_received[i]);
+			delay(50);
+		}
+		debug_count++;
+	}
+	if(debug_count < DEBUG_NUM){
+		if(debug_send_flag){
+			// 送信フラグがたっていたら、id,timeを記録し機体に送信
+			beacon_id[debug_count] = debug_count;
+			beacon_time_sended[debug_count] = millis();
+			send_debug_cmd_for_chaser(beacon_id[debug_count]);
+			debug_send_flag = false;
+			console.print("message_sended ");
+			console.println(debug_count);
+		}
 	}
 }
 
