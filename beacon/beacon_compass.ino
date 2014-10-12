@@ -18,14 +18,13 @@
 #define HMC_POS_BIAS 1
 #define HMC_NEG_BIAS 2
 
-#define MAG_ADDRESS 0x1E	// I2C adress: 0x3C (8bit)   0x1E (7bit)
-#define MAG_DATA_REGISTER 0x03
 
 
 
 // ***********************************************************************************
 // compass関連変数
 // ***********************************************************************************
+uint8_t rawADC[6];
 int16_t magZero[3];
 int16_t magADC[3];
 static float   magGain[3] = {1.0,1.0,1.0};  // gain for each axis, populated at sensor init
@@ -94,18 +93,18 @@ void mag_init() {
 	bool bret=true;                // Error indicator
 	
 	delay(50);  //Wait before start
-	i2c_writeReg(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS); // Reg A DOR=0x010 + MS1,MS0 set to pos bias
+	i2c.writeReg(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS); // Reg A DOR=0x010 + MS1,MS0 set to pos bias
 	
 	// Note that the  very first measurement after a gain change maintains the same gain as the previous setting. 
 	// The new gain setting is effective from the second measurement and on.
 	
-	i2c_writeReg(MAG_ADDRESS, HMC58X3_R_CONFB, 2 << 5);  //Set the Gain
-	i2c_writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
+	i2c.writeReg(MAG_ADDRESS, HMC58X3_R_CONFB, 2 << 5);  //Set the Gain
+	i2c.writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
 	delay(100);
 	getADC();  //Get one sample, and discard it
 	
 	for (uint8_t i=0; i<10; i++) { //Collect 10 samples
-		i2c_writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
+		i2c.writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
 		delay(100);
 		getADC();   // Get the raw values in case the scales have already been changed.
 		
@@ -122,9 +121,9 @@ void mag_init() {
 	}
 	
 	// Apply the negative bias. (Same gain)
-	i2c_writeReg(MAG_ADDRESS,HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS); // Reg A DOR=0x010 + MS1,MS0 set to negative bias.
+	i2c.writeReg(MAG_ADDRESS,HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS); // Reg A DOR=0x010 + MS1,MS0 set to negative bias.
 	for (uint8_t i=0; i<10; i++) { 
-		i2c_writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
+		i2c.writeReg(MAG_ADDRESS,HMC58X3_R_MODE, 1);
 		delay(100);
 		getADC();  // Get the raw values in case the scales have already been changed.
 		
@@ -145,9 +144,9 @@ void mag_init() {
 	magGain[2]=fabs(820.0*HMC58X3_Z_SELF_TEST_GAUSS*2.0*10.0/xyz_total[2]);
 	
 	// leave test mode
-	i2c_writeReg(MAG_ADDRESS ,HMC58X3_R_CONFA ,0x70 ); //Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-	i2c_writeReg(MAG_ADDRESS ,HMC58X3_R_CONFB ,0x20 ); //Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-	i2c_writeReg(MAG_ADDRESS ,HMC58X3_R_MODE  ,0x00 ); //Mode register             -- 000000 00    continuous Conversion Mode
+	i2c.writeReg(MAG_ADDRESS ,HMC58X3_R_CONFA ,0x70 ); //Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+	i2c.writeReg(MAG_ADDRESS ,HMC58X3_R_CONFB ,0x20 ); //Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+	i2c.writeReg(MAG_ADDRESS ,HMC58X3_R_MODE  ,0x00 ); //Mode register             -- 000000 00    continuous Conversion Mode
 	delay(100);
 	magInit = 1;
 	
@@ -160,7 +159,7 @@ void mag_init() {
 
 
 void getADC() {
-	i2c_getSixRawADC(MAG_ADDRESS,MAG_DATA_REGISTER);
+	i2c.getSixRawADC(MAG_ADDRESS,MAG_DATA_REGISTER, rawADC);
 	MAG_ORIENTATION( ((rawADC[0]<<8) | rawADC[1]) ,
 					 ((rawADC[4]<<8) | rawADC[5]) ,
 					 ((rawADC[2]<<8) | rawADC[3]) );

@@ -3,6 +3,7 @@
 #include <BC_Bounce.h>
 #include <FastSerial.h>
 #include <BC_GPS.h>
+#include <BC_I2C.h>
 #include <BC_InertialSensor.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
@@ -60,11 +61,6 @@ static uint32_t beacon_time_received[DEBUG_NUM];
 #define SS_INCREMENT substate++;prev_ss_ms=now_ms
 
 
-// ***********************************************************************************
-// ボード上センサ方向定義
-// ***********************************************************************************
-#define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;} 
-
 
 // ***********************************************************************************
 // 位置関連変数
@@ -90,13 +86,6 @@ int32_t baro_pressure_raw;	// センサ生値（取得中に使用）
 int32_t baro_pressure_sum;	// 平均を取るための積算値（16個積算して4ビットシフト）
 int32_t baro_pressure;		// センサ平均値
 int16_t baro_temp;			// センサ温度（何も手を入れていない）
-
-// ***********************************************************************************
-// I2C関連変数
-// ***********************************************************************************
-int16_t i2c_errors_count = 0;
-uint8_t rawADC[6];
-static uint32_t neutralizeTime = 0;
 
 
 // ***********************************************************************************
@@ -135,8 +124,9 @@ Bounce button2 = Bounce();
 // ***********************************************************************************
 // GPSインスタンス
 // ***********************************************************************************
-static BC_GPS  gps;
-static BC_InertialSensor ins;
+static BC_GPS gps;
+static BC_I2C i2c;
+static BC_InertialSensor ins(i2c);
 
 
 
@@ -161,10 +151,10 @@ void setup(){
 	console.begin(115200);
 	
 	// 各種センサ類初期化
-	i2c_init();		// I2C通信
+	i2c.init();		// I2C通信
 	delay(100);
 	ins.gyro_init();	// MPU6050,GYRO
-	baro_init();	// BARO
+	//baro_init();	// BARO
 	mag_init();		// HMC5883C,MAG
 	ins.acc_init();		// MPU6050,ACC
 	
@@ -227,8 +217,9 @@ void loop(){
 			break;
 			
 			case 3:
-			// ジャイロセンサ取得
-			computeIMU();
+			// ジャイロセンサ、加速度センサ取得
+			ins.acc_getADC();
+			ins.gyro_getADC();
 			break;
 			
 			case 4:
@@ -396,6 +387,10 @@ static void beacon_debug_start(){
 	// debug_countを0にする
 	debug_count = 0;
 	debug_send_flag = true;
+	
+	// GYRO,ACCのキャリブレーションを開始
+	ins.gyro_calib_start();
+	ins.acc_calib_start();
 }
 
 
@@ -595,14 +590,11 @@ static void beacon_debug_run(){
 		// 通信速度チェック用
 		//debug_check_telem();
 		
-		xbee_serial.print("lat=");
-		delay(100);
-		xbee_serial.print(beacon_loc_data.lat);
-		delay(100);
-		xbee_serial.print(", lon=");
-		delay(100);
-		xbee_serial.println(beacon_loc_data.lon);
-		delay(100);
+		// GPSチェック用
+		//debug_check_gps();
+		
+		// ジャイロACCチェック用
+		debug_check_gyro_acc();
 		
 		prev_et_ms = now_ms;
 	}
@@ -696,5 +688,38 @@ static void debug_check_telem(){
 		}
 	}
 }
+
+static void debug_check_gps(){
+	xbee_serial.print("lat=");
+	delay(100);
+	xbee_serial.print(beacon_loc_data.lat);
+	delay(100);
+	xbee_serial.print(", lon=");
+	delay(100);
+	xbee_serial.println(beacon_loc_data.lon);
+	delay(100);
+}
+
+static void debug_check_gyro_acc(){
+	if(ins.gyro_calib_ok() && ins.acc_calib_ok()){
+		xbee_serial.print("gyro:");				delay(20);
+		xbee_serial.print(ins.gyroADC[1]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.print(ins.gyroADC[2]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.print(ins.gyroADC[3]);		delay(20);
+		
+		xbee_serial.print("       acc:");		delay(20);
+		xbee_serial.print(ins.accADC[1]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.print(ins.accADC[2]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.println(ins.accADC[3]);		delay(20);
+	} else {
+		xbee_serial.println("not calibrated or something wrong...");
+		delay(20);
+	}
+}
+
 
 
