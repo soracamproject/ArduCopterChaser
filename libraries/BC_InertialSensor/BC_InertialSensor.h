@@ -1,3 +1,5 @@
+/** charset=UTF-8 **/
+
 #ifndef __BC_INERTIAL_SENSOR_H__
 #define __BC_INERTIAL_SENSOR_H__
 
@@ -13,10 +15,10 @@
 #define ACC_VelScale (9.80665f / 10000.0f / ACC_1G)
 #define GYRO_SCALE (4 / 16.4 * PI / 180.0 / 1000000.0)   //MPU6050 and MPU3050   16.4 LSB/(deg/s) and we ignore the last 2 bits
 
-// MAGとりあえずここに置く
-#define MAG_ADDRESS 0x1E	// I2C adress: 0x3C (8bit)   0x1E (7bit)
-#define MAG_DATA_REGISTER 0x03
-#define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;} 
+// BC_Compassから読み込めるようにヘッダファイルに書く
+#define MPU6050_ADDRESS     0x68 // address pin AD0 low (GND)
+#define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;} 
+#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;} 
 
 
 // ***********************************************************************************
@@ -37,12 +39,19 @@ public:
 	int16_t		gyroADC[3];
 	int16_t 	accADC[3];
 	
+	void init();
 	void gyro_init();
 	void acc_init ();
+	
+	void get_data();
 	void gyro_getADC();
 	void acc_getADC();
+	
+	void calib_start();
 	void gyro_calib_start();
 	void acc_calib_start();
+	
+	bool calib_ok(){return (gyro_calib_ok() && acc_calib_ok());}
 	bool gyro_calib_ok(){return calib_OK_G;}
 	bool acc_calib_ok(){return calib_OK_A;}
 	

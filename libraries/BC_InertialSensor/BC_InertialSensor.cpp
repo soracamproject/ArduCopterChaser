@@ -3,8 +3,6 @@
 // ***********************************************************************************
 // defines
 // ***********************************************************************************
-#define MPU6050_ADDRESS     0x68 // address pin AD0 low (GND)
-
 //MPU6050 Gyro LPF setting
 #if defined(MPU6050_LPF_256HZ) || defined(MPU6050_LPF_188HZ) || defined(MPU6050_LPF_98HZ) || defined(MPU6050_LPF_42HZ) || defined(MPU6050_LPF_20HZ) || defined(MPU6050_LPF_10HZ) || defined(MPU6050_LPF_5HZ)
   #if defined(MPU6050_LPF_256HZ)
@@ -32,10 +30,6 @@
     //Default settings LPF 256Hz/8000Hz sample
     #define MPU6050_DLPF_CFG   0
 #endif
-
-
-#define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;} 
-#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;} 
 
 
 
@@ -112,7 +106,9 @@ void BC_InertialSensor::gyro_init() {
 	_i2c.writeReg(MPU6050_ADDRESS, 0x6B, 0x03);             //PWR_MGMT_1    -- SLEEP 0; CYCLE 0; TEMP_DIS 0; CLKSEL 3 (PLL with Z Gyro reference)
 	_i2c.writeReg(MPU6050_ADDRESS, 0x1A, MPU6050_DLPF_CFG); //CONFIG        -- EXT_SYNC_SET 0 (disable input pin for data sync) ; default DLPF_CFG = 0 => ACC bandwidth = 260Hz  GYRO bandwidth = 256Hz)
 	_i2c.writeReg(MPU6050_ADDRESS, 0x1B, 0x18);             //GYRO_CONFIG   -- FS_SEL = 3: Full scale set to 2000 deg/sec
-	// enable I2C bypass for AUX I2C	// MAG用
+	
+	// BC_Compassへ移植
+	// enable I2C bypass for AUX I2C
 	//_i2c.writeReg(MPU6050_ADDRESS, 0x37, 0x02);           //INT_PIN_CFG   -- INT_LEVEL=0 ; INT_OPEN=0 ; LATCH_INT_EN=0 ; INT_RD_CLEAR=0 ; FSYNC_INT_LEVEL=0 ; FSYNC_INT_EN=0 ; I2C_BYPASS_EN=1 ; CLKOUT_EN=0
 }
 
@@ -130,6 +126,7 @@ void BC_InertialSensor::acc_init () {
 	//note: something seems to be wrong in the spec here. With AFS=2 1G = 4096 but according to my measurement: 1G=2048 (and 2048/8 = 256)
 	//confirmed here: http://www.multiwii.com/forum/viewtopic.php?f=8&t=1080&start=10#p7480
 	
+	// BC_Compassへ移植
 	//at this stage, the MAG is configured via the original MAG init function in I2C bypass mode
 	//now we configure MPU as a I2C Master device to handle the MAG via the I2C AUX port (done here for HMC5883)
 	//_i2c.writeReg(MPU6050_ADDRESS, 0x6A, 0b00100000);       //USER_CTRL     -- DMP_EN=0 ; FIFO_EN=0 ; I2C_MST_EN=1 (I2C master mode) ; I2C_IF_DIS=0 ; FIFO_RESET=0 ; I2C_MST_RESET=0 ; SIG_COND_RESET=0
@@ -149,16 +146,6 @@ void BC_InertialSensor::acc_getADC () {
 	acc_common();
 }
 
-/*
-//The MAG acquisition function must be replaced because we now talk to the MPU device
-void BC_InertialSensor::device_mag_getADC() {
-	_i2c.getSixRawADC(MPU6050_ADDRESS, 0x49, rawADC);               //0x49 is the first memory room for EXT_SENS_DATA
-	MAG_ORIENTATION( ((rawADC[0]<<8) | rawADC[1]) ,
-					 ((rawADC[4]<<8) | rawADC[5]) ,
-					 ((rawADC[2]<<8) | rawADC[3]) );
-}
-*/
-
 void BC_InertialSensor::gyro_calib_start(){
 	calibratingG = 512;
 	return;
@@ -167,4 +154,19 @@ void BC_InertialSensor::gyro_calib_start(){
 void BC_InertialSensor::acc_calib_start(){
 	calibratingA = 512;
 	return;
+}
+
+void BC_InertialSensor::init(){
+	gyro_init();
+	acc_init();
+}
+
+void BC_InertialSensor::get_data(){
+	gyro_getADC();
+	acc_getADC();
+}
+
+void BC_InertialSensor::calib_start(){
+	gyro_calib_start();
+	acc_calib_start();
 }

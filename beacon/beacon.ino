@@ -5,6 +5,7 @@
 #include <BC_GPS.h>
 #include <BC_I2C.h>
 #include <BC_InertialSensor.h>
+#include <BC_Compass.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
@@ -39,10 +40,6 @@ static uint8_t substate;		// サブステート
 
 // MultiWii移植部、暫定
 uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
-static uint8_t calibOK_G = 0;
-static uint8_t calibOK_A = 0;
-static uint8_t calibOK_M = 0;
-static uint8_t calibrate_mag = 0;	// MAGキャリブレーション実行フラグ、オリジナル
 
 // 通信デバッグ用
 #define DEBUG_NUM 10
@@ -127,7 +124,7 @@ Bounce button2 = Bounce();
 static BC_GPS gps;
 static BC_I2C i2c;
 static BC_InertialSensor ins(i2c);
-
+static BC_Compass mag(i2c);
 
 
 // ***********************************************************************************
@@ -153,10 +150,8 @@ void setup(){
 	// 各種センサ類初期化
 	i2c.init();		// I2C通信
 	delay(100);
-	ins.gyro_init();	// MPU6050,GYRO
-	//baro_init();	// BARO
-	mag_init();		// HMC5883C,MAG
-	ins.acc_init();		// MPU6050,ACC
+	ins.init();			// MPU6050,GYRO+ACC
+	mag.init();			// HMC5883C,MAG		//たぶん大丈夫だと思うけどinsより後に初期化で実績有
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -180,9 +175,6 @@ void setup(){
 // loop関数の考え方（暫定版）
 // 50Hzで駆動されるメイン制御部とそれ以外の時間に実行されるセンサ取得部で構成される
 void loop(){
-	// サブタスクステート
-	static uint8_t subtask_state = 0;
-	
 	// 時刻取得
 	now_us = micros();
 	now_ms = millis();
@@ -195,45 +187,8 @@ void loop(){
 		prev_us = now_us;
 		prev_ms = now_ms;
 	} else {
-		// サブタスク実行
-		switch(subtask_state){
-			case 0:
-			// 気圧センサ更新
-			//baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
-			//beacon_loc_data.pressure = baro_pressure;
-			break;
-			
-			case 1:
-			// GPS取得
-			gps.get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
-			beacon_loc_data.lat = gps.lat_data;
-			beacon_loc_data.lon = gps.lon_data;
-			break;
-			
-			case 2:
-			// 磁気センサ取得
-			// どうもMPU6050のほうを取っていたようなので、要チェック
-			getADC();
-			break;
-			
-			case 3:
-			// ジャイロセンサ、加速度センサ取得
-			ins.acc_getADC();
-			ins.gyro_getADC();
-			break;
-			
-			case 4:
-			// Mavlink メッセージ受信
-			check_input_msg();
-			break;
-		}
-		
-		// サブタスクステートを進める
-		// 注意：サブタスクを増やしたらこちらの数字も増やすこと
-		subtask_state++;
-		if(subtask_state > 4){
-			subtask_state = 0;
-		}
+		// サブ制御実行
+		beacon_sub_run();
 	}
 }
 
@@ -274,6 +229,50 @@ static void beacon_main_run(){
 		
 		default:
 		break;
+	}
+}
+
+// サブ制御関数
+// 順に実行される
+static void beacon_sub_run(){
+	// サブタスクステート
+	static uint8_t subtask_state = 0;
+	
+	switch(subtask_state){
+		case 0:
+		// 気圧センサ更新
+		//baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
+		//beacon_loc_data.pressure = baro_pressure;
+		break;
+		
+		case 1:
+		// GPS取得
+		gps.get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
+		beacon_loc_data.lat = gps.lat_data;
+		beacon_loc_data.lon = gps.lon_data;
+		break;
+		
+		case 2:
+		// ジャイロセンサ、加速度センサ取得
+		ins.get_data();
+		break;
+		
+		case 3:
+		// 磁気センサ取得
+		mag.get_data();
+		break;
+		
+		case 4:
+		// Mavlink メッセージ受信
+		check_input_msg();
+		break;
+	}
+	
+	// サブタスクステートを進める
+	// 注意：サブタスクを増やしたらこちらの数字も増やすこと
+	subtask_state++;
+	if(subtask_state > 4){
+		subtask_state = 0;
 	}
 }
 
@@ -391,6 +390,7 @@ static void beacon_debug_start(){
 	// GYRO,ACCのキャリブレーションを開始
 	ins.gyro_calib_start();
 	ins.acc_calib_start();
+	mag.calib_start();
 }
 
 
@@ -587,14 +587,14 @@ static void beacon_debug_run(){
 	}
 	
 	if((now_ms - prev_et_ms) > 1000){
-		// 通信速度チェック用
+		// 通信速度チェック
 		//debug_check_telem();
 		
-		// GPSチェック用
+		// GPSチェック
 		//debug_check_gps();
 		
-		// ジャイロACCチェック用
-		debug_check_gyro_acc();
+		// センサチェック
+		debug_check_gyro_acc_mag();
 		
 		prev_et_ms = now_ms;
 	}
@@ -700,8 +700,8 @@ static void debug_check_gps(){
 	delay(100);
 }
 
-static void debug_check_gyro_acc(){
-	if(ins.gyro_calib_ok() && ins.acc_calib_ok()){
+static void debug_check_gyro_acc_mag(){
+	if(ins.calib_ok() && mag.calib_ok()){
 		xbee_serial.print("gyro:");				delay(20);
 		xbee_serial.print(ins.gyroADC[0]);		delay(20);
 		xbee_serial.print(", ");				delay(20);
@@ -714,9 +714,22 @@ static void debug_check_gyro_acc(){
 		xbee_serial.print(", ");				delay(20);
 		xbee_serial.print(ins.accADC[1]);		delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.println(ins.accADC[2]);		delay(20);
+		xbee_serial.print(ins.accADC[2]);		delay(20);
+		
+		xbee_serial.print("       mag:");		delay(20);
+		xbee_serial.print(mag.magADC[0]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.print(mag.magADC[1]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
+		xbee_serial.println(mag.magADC[2]);		delay(20);
+	} else if(ins.calib_ok()) {
+		xbee_serial.println("gyro+acc calibration ok.");
+		delay(20);
+	} else if(mag.calib_ok()) {
+		xbee_serial.println("mag calibration ok.");
+		delay(20);
 	} else {
-		xbee_serial.println("not calibrated or something wrong...");
+		xbee_serial.println("now calibrating or something wrong.");
 		delay(20);
 	}
 }
