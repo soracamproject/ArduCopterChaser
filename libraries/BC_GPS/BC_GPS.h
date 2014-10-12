@@ -1,14 +1,12 @@
 #ifndef __BC_GPS_H__
 #define __BC_GPS_H__
 
-#include <inttypes.h>
+#include <BC_Common.h>
 #include <avr/pgmspace.h>
 #include <FastSerial.h>
 #include <Arduino.h>
 
 #define GPS_BAUD        38400
-#define LAT             0
-#define LON             1
 #define BLINK_INTERVAL  90
 
 class BC_GPS

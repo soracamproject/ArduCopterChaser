@@ -42,7 +42,8 @@ static t_int32_t_vector EstG32;
 static t_fp_vector EstM;
 static t_int32_t_vector EstM32;
 
-
+static int16_t gyroData[3];
+static int16_t accSmooth[3];
 
 // ***********************************************************************************
 // IMU関連関数
@@ -57,19 +58,19 @@ void computeIMU() {
 	//we separate the 2 situations because reading gyro values with a gyro only setup can be acchieved at a higher rate
 	//gyro+nunchuk: we must wait for a quite high delay betwwen 2 reads to get both WM+ and Nunchuk data. It works with 3ms
 	//gyro only: the delay to read 2 consecutive values can be reduced to only 0.65ms
-	acc_getADC();
+	ins.acc_getADC();
 	getEstimatedAttitude();
-	gyro_getADC();
+	ins.gyro_getADC();
 	for (axis = 0; axis < 3; axis++)
-		gyroADCp[axis] =  gyroADC[axis];
+		gyroADCp[axis] =  ins.gyroADC[axis];
 	timeInterleave=micros();
 	//annexCode();
 	uint8_t t=0;
 	while((uint16_t)(micros()-timeInterleave)<650) t=1; //empirical, interleaving delay between 2 consecutive reads	// 650μs待つ。たぶんセンサ取得周期2回分とか？
 	//if (!t) annex650_overrun_count++;	// 650μs以上かかったらt=1にならないのでエラーカウントされる
-	gyro_getADC();
+	ins.gyro_getADC();
 	for (axis = 0; axis < 3; axis++) {
-		gyroADCinter[axis] =  gyroADC[axis]+gyroADCp[axis];
+		gyroADCinter[axis] =  ins.gyroADC[axis]+gyroADCp[axis];
 		// empirical, we take a weighted value of the current and the previous values
 		gyroData[axis] = (gyroADCinter[axis]+gyroADCprevious[axis])/3;
  		gyroADCprevious[axis] = gyroADCinter[axis]>>1;
@@ -100,10 +101,10 @@ void getEstimatedAttitude(){
 	
 	// Initialization
 	for (axis = 0; axis < 3; axis++) {
-		deltaGyroAngle[axis] = gyroADC[axis]  * scale; // radian
+		deltaGyroAngle[axis] = ins.gyroADC[axis]  * scale; // radian
 		
 		accLPF32[axis]    -= accLPF32[axis]>>ACC_LPF_FACTOR;
-		accLPF32[axis]    += accADC[axis];
+		accLPF32[axis]    += ins.accADC[axis];
 		accSmooth[axis]    = accLPF32[axis]>>ACC_LPF_FACTOR;
 		
 		accMag += (int32_t)accSmooth[axis]*accSmooth[axis] ;

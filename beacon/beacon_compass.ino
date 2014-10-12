@@ -40,6 +40,7 @@ int16_t mag_declination = -72;	// MAG DECLINATION変数、ほぼオリジナル
 // ***********************************************************************************
 // compass関連関数
 // ***********************************************************************************
+/*
 uint8_t mag_getADC() { // return 1 when news values are available, 0 otherwise
 	static uint32_t t,tCal = 0;
 	static int16_t magZeroTempMin[3];
@@ -86,7 +87,7 @@ uint8_t mag_getADC() { // return 1 when news values are available, 0 otherwise
 	}
 	return 1;
 }
-
+*/
 
 void mag_init() {
 	int32_t xyz_total[3]={0,0,0};  // 32 bit totals so they won't overflow.

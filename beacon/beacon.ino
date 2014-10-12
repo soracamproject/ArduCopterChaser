@@ -1,7 +1,9 @@
+#include <BC_Common.h>
 #include <BC_Compat.h>
 #include <BC_Bounce.h>
 #include <FastSerial.h>
 #include <BC_GPS.h>
+#include <BC_InertialSensor.h>
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
@@ -35,8 +37,6 @@ static uint8_t state;			// ビーコンステート
 static uint8_t substate;		// サブステート
 
 // MultiWii移植部、暫定
-uint16_t calibratingG = 0;	// gyro
-uint16_t calibratingA = 0;  // the calibration is done in the main loop. Calibrating decreases at each cycle down to 0, then we enter in a normal mode.
 uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
 static uint8_t calibOK_G = 0;
 static uint8_t calibOK_A = 0;
@@ -63,11 +63,6 @@ static uint32_t beacon_time_received[DEBUG_NUM];
 // ***********************************************************************************
 // ボード上センサ方向定義
 // ***********************************************************************************
-#define ROLL   0
-#define PITCH  1
-#define YAW    2
-#define ACC_ORIENTATION(X, Y, Z)  {accADC[ROLL]  = -X; accADC[PITCH]  = -Y; accADC[YAW]  =  Z;} 
-#define GYRO_ORIENTATION(X, Y, Z) {gyroADC[ROLL] =  Y; gyroADC[PITCH] = -X; gyroADC[YAW] = -Z;} 
 #define MAG_ORIENTATION(X, Y, Z)  {magADC[ROLL]  =  X; magADC[PITCH]  =  Y; magADC[YAW]  = -Z;} 
 
 
@@ -141,6 +136,7 @@ Bounce button2 = Bounce();
 // GPSインスタンス
 // ***********************************************************************************
 static BC_GPS  gps;
+static BC_InertialSensor ins;
 
 
 
@@ -167,10 +163,10 @@ void setup(){
 	// 各種センサ類初期化
 	i2c_init();		// I2C通信
 	delay(100);
-	gyro_init();	// MPU6050,GYRO
+	ins.gyro_init();	// MPU6050,GYRO
 	baro_init();	// BARO
 	mag_init();		// HMC5883C,MAG
-	acc_init();		// MPU6050,ACC
+	ins.acc_init();		// MPU6050,ACC
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -226,7 +222,8 @@ void loop(){
 			
 			case 2:
 			// 磁気センサ取得
-			mag_getADC();
+			// どうもMPU6050のほうを取っていたようなので、要チェック
+			getADC();
 			break;
 			
 			case 3:
