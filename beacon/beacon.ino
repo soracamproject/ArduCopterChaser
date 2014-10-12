@@ -703,18 +703,18 @@ static void debug_check_gps(){
 static void debug_check_gyro_acc(){
 	if(ins.gyro_calib_ok() && ins.acc_calib_ok()){
 		xbee_serial.print("gyro:");				delay(20);
+		xbee_serial.print(ins.gyroADC[0]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
 		xbee_serial.print(ins.gyroADC[1]);		delay(20);
 		xbee_serial.print(", ");				delay(20);
 		xbee_serial.print(ins.gyroADC[2]);		delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.gyroADC[3]);		delay(20);
 		
 		xbee_serial.print("       acc:");		delay(20);
+		xbee_serial.print(ins.accADC[0]);		delay(20);
+		xbee_serial.print(", ");				delay(20);
 		xbee_serial.print(ins.accADC[1]);		delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.accADC[2]);		delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.println(ins.accADC[3]);		delay(20);
+		xbee_serial.println(ins.accADC[2]);		delay(20);
 	} else {
 		xbee_serial.println("not calibrated or something wrong...");
 		delay(20);
