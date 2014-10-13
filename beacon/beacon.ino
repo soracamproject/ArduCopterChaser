@@ -1,5 +1,5 @@
 #include <BC_Common.h>
-#include <BC_Compat.h>
+#include <BC_Math.h>
 #include <BC_Bounce.h>
 #include <FastSerial.h>
 #include <BC_GPS.h>
@@ -124,7 +124,7 @@ Bounce button2 = Bounce();
 static BC_GPS gps;
 static BC_I2C i2c;
 static BC_InertialSensor ins(i2c);
-static BC_Compass mag(i2c);
+static BC_Compass compass(i2c);
 
 
 // ***********************************************************************************
@@ -151,7 +151,7 @@ void setup(){
 	i2c.init();		// I2C通信
 	delay(100);
 	ins.init();			// MPU6050,GYRO+ACC
-	mag.init();			// HMC5883C,MAG		//たぶん大丈夫だと思うけどinsより後に初期化で実績有
+	compass.init();		// HMC5883C,MAG		//たぶん大丈夫だと思うけどinsより後に初期化で実績有
 	
 	// BUTTON初期化
 	pinMode(BUTTON1, INPUT);
@@ -259,7 +259,7 @@ static void beacon_sub_run(){
 		
 		case 3:
 		// 磁気センサ取得
-		mag.get_data();
+		compass.get_data();
 		break;
 		
 		case 4:
@@ -390,7 +390,7 @@ static void beacon_debug_start(){
 	// GYRO,ACCのキャリブレーションを開始
 	ins.gyro_calib_start();
 	ins.acc_calib_start();
-	mag.calib_start();
+	compass.calib_start();
 }
 
 
@@ -701,7 +701,9 @@ static void debug_check_gps(){
 }
 
 static void debug_check_gyro_acc_mag(){
-	if(ins.calib_ok() && mag.calib_ok()){
+	if(ins.calib_ok() && compass.calib_ok()){
+		Vector3f accel = ins.get_accel();
+		
 		xbee_serial.print("gyro:");				delay(20);
 		xbee_serial.print(ins.gyroADC[0]);		delay(20);
 		xbee_serial.print(", ");				delay(20);
@@ -710,22 +712,22 @@ static void debug_check_gyro_acc_mag(){
 		xbee_serial.print(ins.gyroADC[2]);		delay(20);
 		
 		xbee_serial.print("       acc:");		delay(20);
-		xbee_serial.print(ins.accADC[0]);		delay(20);
+		xbee_serial.print(accel.x);				delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.accADC[1]);		delay(20);
+		xbee_serial.print(accel.y);				delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.accADC[2]);		delay(20);
+		xbee_serial.print(accel.z);				delay(20);
 		
 		xbee_serial.print("       mag:");		delay(20);
-		xbee_serial.print(mag.magADC[0]);		delay(20);
+		xbee_serial.print(compass.magADC[0]);	delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(mag.magADC[1]);		delay(20);
+		xbee_serial.print(compass.magADC[1]);	delay(20);
 		xbee_serial.print(", ");				delay(20);
-		xbee_serial.println(mag.magADC[2]);		delay(20);
+		xbee_serial.println(compass.magADC[2]);	delay(20);
 	} else if(ins.calib_ok()) {
 		xbee_serial.println("gyro+acc calibration ok.");
 		delay(20);
-	} else if(mag.calib_ok()) {
+	} else if(compass.calib_ok()) {
 		xbee_serial.println("mag calibration ok.");
 		delay(20);
 	} else {

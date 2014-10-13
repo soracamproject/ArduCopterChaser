@@ -1,8 +1,9 @@
+/** charset=UTF-8 **/
+
 #ifndef __BC_I2C_H__
 #define __BC_I2C_H__
 
 #include <BC_Common.h>
-#include <Arduino.h>
 
 class BC_I2C
 {

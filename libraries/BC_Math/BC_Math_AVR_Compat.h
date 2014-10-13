@@ -1,5 +1,8 @@
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+#ifndef BC_MATH_AVR_COMPAT_H
+#define BC_MATH_AVR_COMPAT_H
+
 // This file defines the floating-point version of standard C math
 // functions on doubles, if they are not present in avr-libc.
 
@@ -146,3 +149,5 @@
 #ifndef lrintf
 # define lrintf lrint
 #endif
+
+#endif  // !defined BC_MATH_AVR_COMPAT_H

@@ -1,13 +1,9 @@
+/** charset=UTF-8 **/
+
 #ifndef __BC_GPS_H__
 #define __BC_GPS_H__
 
 #include <BC_Common.h>
-#include <avr/pgmspace.h>
-#include <FastSerial.h>
-#include <Arduino.h>
-
-#define GPS_BAUD        38400
-#define BLINK_INTERVAL  90
 
 class BC_GPS
 {
@@ -17,25 +13,35 @@ public:
 	int32_t lat_data;
 	int32_t lon_data;
 	
+	enum GPS_Status{
+		NO_GPS = 0,             ///< No GPS connected/detected
+		NO_FIX = 1,             ///< Receiving valid GPS messages but no lock
+		GPS_OK_FIX_2D = 2,      ///< Receiving valid messages and 2D lock
+		GPS_OK_FIX_3D = 3,      ///< Receiving valid messages and 3D lock
+	};
+	
 	void init_gps();
 	void get_gps_new_data();
+	
+	GPS_Status status() const {return GPS_status;}
 	
 private:
 	// GPS関連の変数
 	int32_t		GPS_read[2];
 	uint8_t		GPS_numSats;
-	int16_t		GPS_altitude;	// 単位[m]
-	uint8_t		GPS_2dfix;
-	uint8_t		GPS_3dfix;
-	uint16_t	GPS_ground_speed;	// 単位[m/s*100]
+	int16_t		GPS_altitude;				// 単位[m]
+	uint16_t	GPS_ground_speed;			// 単位[m/s*100]
 	uint16_t	GPS_ground_ground_course;
-	uint32_t	GPS_time;
+	uint32_t	GPS_last_gps_time_ms;
+	GPS_Status	GPS_status;
+	uint16_t	GPS_hdop;					// horizontal dilution of precision in cm
+	uint32_t	GPS_time_week_ms;              ///< GPS time (milliseconds from start of GPS week)
+	uint16_t	GPS_time_week;                 ///< GPS week number
+	uint32_t	_last_pos_time;
+	uint32_t	_last_5hz_time;
+    
+
 	
-	// LED関連の変数
-	uint32_t	lastframe_time;
-	uint32_t	_statusled_timer;
-	int8_t		_statusled_blinks;
-	bool		_statusled_state;
 	
 	// UBLOX関連の変数（必要性を精査できていない）
 	struct ubx_header {
@@ -139,7 +145,7 @@ private:
 	uint16_t	_payload_length;
 	uint16_t	_payload_counter;
 	
-	bool		next_fix;
+	GPS_Status	next_fix;
 	
 	uint8_t		_class;
 	
@@ -162,13 +168,12 @@ private:
 	
 	static const prog_char _initialisation[];
 	
+
 	
-	// 関数
 	void print_P(const char *str);
 	void _update_checksum(uint8_t *data, uint8_t len, uint8_t &ck_a, uint8_t &ck_b);
 	bool GPS_UBLOX_newFrame(uint8_t data);
 	bool UBLOX_parse_gps(void);
-	void blink_update();
 };
 
 

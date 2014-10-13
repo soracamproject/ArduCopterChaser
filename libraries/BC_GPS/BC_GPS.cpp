@@ -1,8 +1,13 @@
+/** charset=UTF-8 **/
+
 #include "BC_GPS.h"
+#include <FastSerial.h>
+#include <Arduino.h>
 
 extern FastSerial gps_serial;
 
-// GPS取得関連
+#define GPS_BAUD   38400
+
 const prog_char BC_GPS::_initialisation[] PROGMEM = {                          // PROGMEM array must be outside any function !!!
 	0xB5,0x62,0x06,0x01,0x03,0x00,0xF0,0x05,0x00,0xFF,0x19,                            //disable all default NMEA messages
 	0xB5,0x62,0x06,0x01,0x03,0x00,0xF0,0x03,0x00,0xFD,0x15,
@@ -17,6 +22,8 @@ const prog_char BC_GPS::_initialisation[] PROGMEM = {                          /
 	0xB5,0x62,0x06,0x16,0x08,0x00,0x03,0x07,0x03,0x00,0x51,0x08,0x00,0x00,0x8A,0x41,   //set WAAS to EGNOS
 	0xB5,0x62,0x06,0x08,0x06,0x00,0xC8,0x00,0x01,0x00,0x01,0x00,0xDE,0x6A //set rate to 5Hz
 };
+
+
 
 
 // *************************************************************************************************
@@ -79,7 +86,7 @@ void BC_GPS::get_gps_new_data() {
 			
 			// Think this line was in the wrong place. The way it used to be the lastframe_time was only updated when we had a (3D fix && we have 5 or more sats).
 			// This stops the single led blink from indicating a good packet, and the double led blink from indicating a 2D fix
-			lastframe_time = millis();
+			//lastframe_time = millis();
 			
 			lat_data = GPS_read[LAT];
 			lon_data = GPS_read[LON];
@@ -161,27 +168,66 @@ bool BC_GPS::GPS_UBLOX_newFrame(uint8_t data){
 bool BC_GPS::UBLOX_parse_gps(void){
 	switch (_msg_id) {
 		case MSG_POSLLH:
-			GPS_time = _buffer.posllh.time;
+			_last_pos_time = _buffer.posllh.time;
 			GPS_read[LON] = _buffer.posllh.longitude;
 			GPS_read[LAT] = _buffer.posllh.latitude;
 			GPS_altitude = _buffer.posllh.altitude_msl / 10 /100;      //alt in m
-			GPS_3dfix = next_fix;
+			GPS_status = next_fix;
 			_new_position = true;
 			break;
+			
 		case MSG_STATUS:
-			next_fix = (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.status.fix_type == FIX_3D);
-			if (!next_fix) GPS_3dfix = false;
+			if(_buffer.status.fix_status & NAV_STATUS_FIX_VALID) {
+				if( _buffer.status.fix_type == FIX_3D) {
+					next_fix = GPS_OK_FIX_3D;
+				}else if (_buffer.status.fix_type == FIX_2D) {
+					next_fix = GPS_OK_FIX_2D;
+				}else{
+					next_fix = NO_FIX;
+					GPS_status = NO_FIX;
+				}
+			}else{
+				next_fix = NO_FIX;
+				GPS_status = NO_FIX;
+			}
 			break;
+			
 		case MSG_SOL:
-			next_fix = (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) && (_buffer.solution.fix_type == FIX_3D);
-			if (!next_fix) GPS_3dfix = false;
-				GPS_numSats	= _buffer.solution.satellites;
+			if(_buffer.solution.fix_status & NAV_STATUS_FIX_VALID){
+				if( _buffer.solution.fix_type == FIX_3D) {
+					next_fix = GPS_OK_FIX_3D;
+				}else if (_buffer.solution.fix_type == FIX_2D) {
+					next_fix = GPS_OK_FIX_2D;
+				}else{
+					next_fix = NO_FIX;
+					GPS_status = NO_FIX;
+				}
+			}else{
+				next_fix = NO_FIX;
+				GPS_status = NO_FIX;
+			}
+			GPS_numSats    = _buffer.solution.satellites;
+			GPS_hdop        = _buffer.solution.position_DOP;
+			if (next_fix >= GPS_OK_FIX_2D) {
+				GPS_last_gps_time_ms = millis();
+				if (GPS_time_week == _buffer.solution.week &&
+					GPS_time_week_ms + 200 == _buffer.solution.time) {
+					// we got a 5Hz update. This relies on the way
+					// that uBlox gives timestamps that are always
+					// multiples of 200 for 5Hz
+					_last_5hz_time = GPS_last_gps_time_ms;
+				}
+				GPS_time_week_ms    = _buffer.solution.time;
+				GPS_time_week       = _buffer.solution.week;
+			}
 			break;
+			
 		case MSG_VELNED:
-		GPS_ground_speed = _buffer.velned.speed_2d;				// cm/s
+			GPS_ground_speed = _buffer.velned.speed_2d;				// cm/s
 			GPS_ground_ground_course = (uint16_t)(_buffer.velned.heading_2d / 10000);	// Heading 2D deg * 100000 rescaled to deg * 10
 			_new_speed = true;
 			break;
+			
 		default:
 			return false;
 	}
@@ -201,6 +247,7 @@ bool BC_GPS::UBLOX_parse_gps(void){
 // **************************************************************************************
 // LED点滅関連
 // **************************************************************************************
+/*
 void BC_GPS::blink_update() {
 	uint32_t now = millis();
 	
@@ -234,4 +281,5 @@ void BC_GPS::blink_update() {
 		digitalWrite(13, HIGH);   // set the LED on
 	}
 }
+*/
 

@@ -6,7 +6,6 @@
 #include <BC_Common.h>
 #include <BC_I2C.h>
 #include <BC_InertialSensor.h>
-#include <Arduino.h>
 
 // ***********************************************************************************
 // defines
