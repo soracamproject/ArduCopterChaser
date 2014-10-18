@@ -9,20 +9,27 @@
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
+#define BEACON_IBIS
+//#define BEACON_PHEASANT
 
 // ***********************************************************************************
 // シリアルポート
 // ***********************************************************************************
-// ibis用
-//	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
-//	FastSerialPort1(gps_serial);	// GPS用
-//	FastSerialPort2(xbee_serial);	// XBee用
+#if defined(BEACON_IBIS)
+	// ibis用
+	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
+	FastSerialPort1(gps_serial);	// GPS用
+	FastSerialPort2(xbee_serial);	// XBee用
+#endif
 
-// pheasant用
+static bool dummy0;
+
+#if defined(BEACON_PHEASANT)
+	// pheasant用
 	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
 	FastSerialPort2(xbee_serial);	// XBee用
 	FastSerialPort3(gps_serial);	// GPS用
-
+#endif
 
 // ***********************************************************************************
 // メイン変数
@@ -88,40 +95,53 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 // ***********************************************************************************
 // LED関連変数および宣言
 // ***********************************************************************************
-// ibis用
-//	#define LED1   2
-//	#define LED2   5
-//	#define LED3   7
-//	#define LED4   9
+#if defined(BEACON_IBIS)
+	// ibis用
+	#define LED1   2
+	#define LED2   5
+	#define LED3   7
+	#define LED4   9
+#endif
 
-// pheasant用
+static bool dummy1;
+
+#if defined(BEACON_PHEASANT)
+	// pheasant用
 	#define LED1   2
 	#define LED2   3
 	#define LED3   5
 	#define LED4   6
+
+#endif
 
 #define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
 
 // ***********************************************************************************
 // ボタン関連変数および宣言
 // ***********************************************************************************
-// ibis用
-//#define BUTTON1   33
-//#define BUTTON2   32
-//Bounce button1 = Bounce();
-//Bounce button2 = Bounce();
+#if defined(BEACON_IBIS)
+	// ibis用
+	#define BUTTON1   33
+	#define BUTTON2   32
+	Bounce button1 = Bounce();
+	Bounce button2 = Bounce();
+#endif
 
-// pheasant用
-#define BUTTON1   36
-#define BUTTON2   37
-Bounce button1 = Bounce();
-Bounce button2 = Bounce();
+static bool dummy2;
+
+#if defined(BEACON_PHEASANT)
+	// pheasant用
+	#define BUTTON1   36
+	#define BUTTON2   37
+	Bounce button1 = Bounce();
+	Bounce button2 = Bounce();
+#endif
 
 
 // ***********************************************************************************
 // GPSインスタンス
 // ***********************************************************************************
-static BC_GPS gps;
+static BC_GPS gps(gps_serial);
 static BC_I2C i2c;
 static BC_InertialSensor ins(i2c);
 static BC_Compass compass(i2c);
@@ -591,10 +611,10 @@ static void beacon_debug_run(){
 		//debug_check_telem();
 		
 		// GPSチェック
-		//debug_check_gps();
+		debug_check_gps();
 		
 		// センサチェック
-		debug_check_gyro_acc_mag();
+		//debug_check_gyro_acc_mag();
 		
 		prev_et_ms = now_ms;
 	}

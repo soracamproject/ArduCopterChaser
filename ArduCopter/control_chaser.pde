@@ -124,8 +124,10 @@ static void chaser_chase_run()
 				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_decel * dt);
 			}
 			
-			// z方向計算
-			calc_chaser_pos_z(dt);
+			// alt_holdフラグが立っていなかったら、z方向計算
+			if(g.chaser_alt_hold==0){
+				calc_chaser_pos_z(dt);
+			}
 			
 			// ターゲット位置更新
 			pos_control.set_xy_target(chaser_target.x,chaser_target.y);
@@ -432,7 +434,7 @@ static bool set_chaser_state(uint8_t state) {
 			
 			// initialise wpnav destination
 			Vector3f target_pos = inertial_nav.get_position();
-			target_pos.z = CHASER_TAKEOFF_ALT;
+			target_pos.z = g.chaser_takeoff_alt;
 			wp_nav.set_wp_destination(target_pos);
 			
 			// initialise yaw

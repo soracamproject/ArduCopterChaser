@@ -30,7 +30,6 @@
 // CHASER制御関連
 // ==============================
 #define CHASER_TARGET_RELAX_NUM      4			// ビーコン位置のなまし数
-#define CHASER_TAKEOFF_ALT           650.0f		// テイクオフ時の高さ[cm]
 #define CHASER_TARGET_VEL_MAX        600.0f		// ターゲットの移動速度の最大値[m/s]
 #define CHASER_YAW_SLEW_RATE         15			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 #define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
@@ -68,10 +67,11 @@
 #define CHASER_SLOPE_ANGLE           10			// ベース下降速度計算用斜度（変更可、初期値）[deg.]
 #define CHASER_DESIRED_ALT_LEASH     200.0f		// 高度制御時の目標高度の機体高度との差（変更可、初期値）[cm]※200は池の平でうまくいった実績値
 #define CHASER_GIMBAL_ALT            150		// ジンバル角度計算用高度（変更可、初期値）[cm]
-#define CHASER_ALT_FIX               0			// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御）
-#define CHASER_FIXED_ALT             450.0f		// 高度固定制御時の高度[cm]
+#define CHASER_ALT_HOLD              0			// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御（現在値固定））
 #define CHASER_CIRCLE_RADIUS         200.0f		// Circle Chaser時の旋回半径[cm]
 #define CHASER_CIRCLE_TIME           10.0f		// Circle Chaser時の旋回時間[sec]
+#define CHASER_TAKEOFF_ALT           400.0f		// テイクオフ時の高さ[cm]
+
 
 
 

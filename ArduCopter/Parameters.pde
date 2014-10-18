@@ -499,19 +499,12 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_beacon_offset_lon, "CHR_OFST_LON", CHASER_BEACON_OFFSET_LON),
 
-	// @Param: CHR_ALT_FIX
-	// @DisplayName: Chaser Altitude Fix
-	// @Description: disable terrain control and enable fixed altitude control (0: terrain, 1:fixed alt.)
+	// @Param: CHR_ALT_HOLD
+	// @DisplayName: Chaser Altitude Hold
+	// @Description: disable terrain control and enable fixed altitude control (0: terrain, 1:alt hold (current alt.) )
 	// @Range 0 1
 	// @User: Advanced
-	GSCALAR(chaser_alt_fix, "CHR_ALT_FIX", CHASER_ALT_FIX),
-
-	// @Param: CHR_FIXED_ALT
-	// @DisplayName: Chaser Fixed Altitude
-	// @Description: altitude for fixed altitude control [cm]
-	// @Range 200 1000
-	// @User: Advanced
-	GSCALAR(chaser_fixed_alt, "CHR_FIXED_ALT", CHASER_FIXED_ALT),
+	GSCALAR(chaser_alt_hold, "CHR_ALT_HOLD", CHASER_ALT_HOLD),
 
 	// @Param: CHR_CIRCLE_RADIUS
 	// @DisplayName: Chaser Circle Radius
@@ -526,6 +519,13 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @Range 5 30
 	// @User: Advanced
 	GSCALAR(chaser_circle_time, "CHR_CLE_TIME", CHASER_CIRCLE_TIME),
+
+	// @Param: CHR_TAKEOFF_ALT
+	// @DisplayName: Chaser Takeoff Altitude
+	// @Description: target altitude in takeoff [cm]
+	// @Range 200 700
+	// @User: Advanced
+	GSCALAR(chaser_takeoff_alt, "CHR_TKOF_ALT", CHASER_TAKEOFF_ALT),
 
 #if POSHOLD_ENABLED == ENABLED
     // @Param: PHLD_BRAKE_RATE

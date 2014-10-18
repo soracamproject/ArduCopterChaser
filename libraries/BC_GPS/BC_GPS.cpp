@@ -4,7 +4,7 @@
 #include <FastSerial.h>
 #include <Arduino.h>
 
-extern FastSerial gps_serial;
+//extern FastSerial gps_serial;
 
 #define GPS_BAUD   38400
 
@@ -37,21 +37,21 @@ void BC_GPS::print_P(const char *str){
   while (true) {
     val=pgm_read_byte(str);
     if (!val) break;
-    gps_serial.write(val);
+    _gps_serial.write(val);
     str++;
   }
 }
 
 
 void BC_GPS::init_gps() {
-	gps_serial.begin(GPS_BAUD);
+	_gps_serial.begin(GPS_BAUD);
 	delay(1000);
 	
 	uint32_t	init_speed[5] = {9600,19200,38400,57600,115200};
 	
 	//Set speed
 	for(uint8_t i=0;i<5;i++){
-		gps_serial.begin(init_speed[i]);          // switch UART speed for sending SET BAUDRATE command (NMEA mode)
+		_gps_serial.begin(init_speed[i]);          // switch UART speed for sending SET BAUDRATE command (NMEA mode)
 		#if (GPS_BAUD==19200)
 			print_P(PSTR("$PUBX,41,1,0003,0001,19200,0*23\r\n"));     // 19200 baud - minimal speed for 5Hz update rate
 		#endif  
@@ -67,9 +67,9 @@ void BC_GPS::init_gps() {
 		delay(300);		//Wait for init 
 	}
 	delay(200);
-	gps_serial.begin(GPS_BAUD);
+	_gps_serial.begin(GPS_BAUD);
 	for(uint8_t i=0; i<sizeof(_initialisation); i++) {                        // send configuration data in UBX protocol
-		gps_serial.write(pgm_read_byte(_initialisation+i));
+		_gps_serial.write(pgm_read_byte(_initialisation+i));
 		delay(5);	//simulating a 38400baud pace (or less), otherwise commands are not accepted by the device. 
 					//I found this delay essential for the V1 CN-06 GPS (The one without EEPROM)
 					//Also essential is the bridging of pins 13- and 14 on the NEO-6M module	
@@ -78,8 +78,8 @@ void BC_GPS::init_gps() {
 
 
 void BC_GPS::get_gps_new_data() {
-	while (gps_serial.available()) {
-		if (GPS_UBLOX_newFrame(gps_serial.read())) {
+	while (_gps_serial.available()) {
+		if (GPS_UBLOX_newFrame(_gps_serial.read())) {
 			// We have a valid GGA frame and we have lat and lon in GPS_read_lat and GPS_read_lon, apply moving average filter
 			// this is a little bit tricky since the 1e7/deg precision easily overflow a long, so we apply the filter to the fractions
 			// only, and strip the full degrees part. This means that we have to disable the filter if we are very close to a degree line

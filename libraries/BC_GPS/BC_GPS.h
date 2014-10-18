@@ -4,11 +4,14 @@
 #define __BC_GPS_H__
 
 #include <BC_Common.h>
+#include <FastSerial.h>
 
 class BC_GPS
 {
 public:
-	BC_GPS() {}
+	BC_GPS(FastSerial &gps_serial):
+		_gps_serial(gps_serial)
+	{}
 	
 	int32_t lat_data;
 	int32_t lon_data;
@@ -174,6 +177,10 @@ private:
 	void _update_checksum(uint8_t *data, uint8_t len, uint8_t &ck_a, uint8_t &ck_b);
 	bool GPS_UBLOX_newFrame(uint8_t data);
 	bool UBLOX_parse_gps(void);
+
+protected:
+	FastSerial	&_gps_serial;
+
 };
 
 
