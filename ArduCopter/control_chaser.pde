@@ -31,6 +31,8 @@ static void chaser_run() {
 			break;
 		
 		case CHASER_STAY:
+			chaser_stay_run();
+			break;
 		case CHASER_CHASE:
 		case CHASER_CIRCLE:
 			chaser_chase_run();
@@ -72,6 +74,83 @@ static void chaser_takeoff_run()
 	attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), 0.0f);
 }
 
+// CHASER_STAY時に実行するもの
+static void chaser_stay_run(){
+	// loiter_run - runs the loiter controller
+	// should be called at 100hz or more
+    
+	float target_yaw_rate = 0;
+    float target_climb_rate = 0;
+
+    // if not auto armed set throttle to zero and exit immediately
+    if(!ap.auto_armed || !inertial_nav.position_ok()) {
+        wp_nav.init_loiter_target();
+        attitude_control.relax_bf_rate_controller();
+        attitude_control.set_yaw_target_to_current_heading();
+        attitude_control.set_throttle_out(0, false);
+        pos_control.set_alt_target_to_current_alt();
+        return;
+    }
+	
+	/*
+    // process pilot inputs
+    if (!failsafe.radio) {
+        // apply SIMPLE mode transform to pilot inputs
+        update_simple_mode();
+
+        // process pilot's roll and pitch input
+        wp_nav.set_pilot_desired_acceleration(g.rc_1.control_in, g.rc_2.control_in);
+
+        // get pilot's desired yaw rate
+        target_yaw_rate = get_pilot_desired_yaw_rate(g.rc_4.control_in);
+
+        // get pilot desired climb rate
+        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in);
+
+        // check for pilot requested take-off
+        if (ap.land_complete && target_climb_rate > 0) {
+            // indicate we are taking off
+            set_land_complete(false);
+            // clear i term when we're taking off
+            set_throttle_takeoff();
+        }
+    } else {
+        // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
+    */
+	wp_nav.clear_pilot_desired_acceleration();
+    //}
+	
+	
+	/*
+    // when landed reset targets and output zero throttle
+    if (ap.land_complete) {
+        wp_nav.init_loiter_target();
+        attitude_control.relax_bf_rate_controller();
+        attitude_control.set_yaw_target_to_current_heading();
+        // move throttle to between minimum and non-takeoff-throttle to keep us on the ground
+        attitude_control.set_throttle_out(get_throttle_pre_takeoff(g.rc_3.control_in), false);
+        pos_control.set_alt_target_to_current_alt();
+    }else{
+	*/
+		// run loiter controller
+		wp_nav.update_loiter();
+		
+		// call attitude controller
+		attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
+		
+        // body-frame rate controller is run directly from 100hz loop
+		
+        // run altitude controller
+        if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
+            // if sonar is ok, use surface tracking
+            target_climb_rate = get_throttle_surface_tracking(target_climb_rate, pos_control.get_alt_target(), G_Dt);
+        }
+		
+        // update altitude target and call position controller
+        pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
+        pos_control.update_z_controller();
+    //}
+}
 
 // CHASER_CHASE時に実行するもの
 static void chaser_chase_run()
@@ -84,7 +163,7 @@ static void chaser_chase_run()
 	float dt = (now - last)/1000.0f;
 	
 	// 50Hz毎にupdate_xy_controllerのstepを0に戻す
-	if (dt > 0.02f) {
+	if (dt >= 0.02f) {
 		// dtがリーズナブルな値かどうかのダブルチェック
 		if(dt >= 1.0f){
 			dt = 0.0;
@@ -136,24 +215,23 @@ static void chaser_chase_run()
 			// stepを0にリセット
 			pos_control.trigger_xy();
 			
-		} else {	// chaserモードの準備ができていない場合はloiter状態にする
-			// stepを0にリセット
-			pos_control.trigger_xy();
+		//} else {	// chaserモードの準備ができていない場合はloiter状態にする
+		//	// stepを0にリセット
+		//	pos_control.trigger_xy();
 		}
 	} else {	//50Hzの中。stepを進める
 		if(chaser_started){
 			// ポジションコントローラを呼ぶ
-			pos_control.update_xy_controller(true);
+			pos_control.update_xy_controller_for_chaser(true);
 			pos_control.update_z_controller();
 			
 			// YAWコントローラを呼ぶ
 			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 			
-		} else {	// chaserモードの準備ができていない場合はloiter状態にする
-			// ポジションコントローラを呼ぶ
-			pos_control.update_xy_controller(false);
-			pos_control.update_z_controller();
-			
+		//} else {	// chaserモードの準備ができていない場合はloiter状態にする
+		//	// ポジションコントローラを呼ぶ
+		//	pos_control.update_xy_controller_for_chaser(false);
+		//	pos_control.update_z_controller();
 		}
 	}
 }
@@ -286,9 +364,6 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 					// chaser_origin,chaser_destinationを更新する
 					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt, dt_latch);
 					
-					// update_chaser()を呼ぶ
-					// originを現在のtarget位置としているので更新後即呼び出したほうがいいのではないかという考え
-					//update_chaser();
 				}
 				
 				// ビーコン位置配列なまし前回値を更新する
@@ -456,8 +531,9 @@ static bool set_chaser_state(uint8_t state) {
 		{
 			chaser_started = false;
 			
-			Vector3f pos = inertial_nav.get_position();
-			pos_control.set_pos_target(pos);
+			//Vector3f pos = inertial_nav.get_position();
+			//pos_control.set_pos_target(pos);
+			loiter_init(true);
 			
 			success = true;
 			break;
