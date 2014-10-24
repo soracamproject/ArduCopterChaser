@@ -27,6 +27,7 @@ public:
 		magInit(false),
 		calibrate_mag(false),
 		calib_OK_M(false),
+		_healthy(false),
 		_i2c(i2c)
 	{}
 	
@@ -36,7 +37,8 @@ public:
 	void		init();
 	bool		get_data();
 	void		calib_start();
-	bool		calib_ok(){return calib_OK_M;}
+	bool		calib_ok() const {return calib_OK_M;}
+	bool		use_for_yaw() const {return _healthy;}	// 健常度を返す
 	
 private:
 	int16_t		magZero[3];
@@ -45,6 +47,7 @@ private:
 	bool		calibrate_mag;
 	int16_t		mag_declination;
 	bool		calib_OK_M;
+	bool		_healthy;
 	
 	void		getADC();
 	void		getADC_via_MPU6050();

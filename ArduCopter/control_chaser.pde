@@ -163,7 +163,7 @@ static void chaser_chase_run()
 	float dt = (now - last)/1000.0f;
 	
 	// 50Hz毎にupdate_xy_controllerのstepを0に戻す
-	if (dt >= 0.02f) {
+	if (dt >= CHASER_POSCON_UPDATE_TIME) {
 		// dtがリーズナブルな値かどうかのダブルチェック
 		if(dt >= 1.0f){
 			dt = 0.0;
@@ -212,26 +212,12 @@ static void chaser_chase_run()
 			pos_control.set_xy_target(chaser_target.x,chaser_target.y);
 			pos_control.set_desired_velocity_xy(chaser_target_vel.x,chaser_target_vel.y);
 			
-			// stepを0にリセット
-			pos_control.trigger_xy();
-			
-		//} else {	// chaserモードの準備ができていない場合はloiter状態にする
-		//	// stepを0にリセット
-		//	pos_control.trigger_xy();
-		}
-	} else {	//50Hzの中。stepを進める
-		if(chaser_started){
 			// ポジションコントローラを呼ぶ
-			pos_control.update_xy_controller_for_chaser(true);
+			pos_control.update_xy_controller_for_chaser(dt,true);
 			pos_control.update_z_controller();
 			
 			// YAWコントローラを呼ぶ
 			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
-			
-		//} else {	// chaserモードの準備ができていない場合はloiter状態にする
-		//	// ポジションコントローラを呼ぶ
-		//	pos_control.update_xy_controller_for_chaser(false);
-		//	pos_control.update_z_controller();
 		}
 	}
 }

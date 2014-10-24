@@ -585,15 +585,6 @@ void AC_PosControl::update_xy_controller(bool use_desired_velocity)
     }
 }
 
-// update_xy_controller CHASER用
-void AC_PosControl::update_xy_controller_for_chaser(bool use_desired_velocity)
-{
-	// 目標位置を速度でずらしたくないのでフラグを立ててオリジナルを呼ぶ
-	// かなり無駄があるけどとりあえずこれでテスト
-	_flags.reset_desired_vel_to_pos = true;
-	update_xy_controller(use_desired_velocity);
-}
-
 /// init_vel_controller_xyz - initialise the velocity controller - should be called once before the caller attempts to use the controller
 void AC_PosControl::init_vel_controller_xyz()
 {
@@ -892,4 +883,24 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
     }
 
     return leash_length;
+}
+
+// ==============================
+// CHASER関連
+// ==============================
+void
+AC_PosControl::update_xy_controller_for_chaser(float dt, bool use_desired_velocity)
+{
+	if (dt >= 0.2f) {
+		return;
+	}
+	
+	// run position controller's position error to desired velocity step
+	pos_to_rate_xy(true, dt);
+	
+	// run velocity to acceleration step
+	rate_to_accel_xy(dt);
+	
+	// run acceleration to lean angle step
+	accel_to_lean_angles();
 }

@@ -27,7 +27,8 @@ public:
 		calib_OK_A(false),
 		_last_us(0),
 		_dt_sec(0.0f),
-		_i2c(i2c)
+		_i2c(i2c),
+		_healthy(false)
 	{}
 	
 	uint8_t		rawADC[6];
@@ -46,13 +47,14 @@ public:
 	void gyro_calib_start();
 	void acc_calib_start();
 	
-	bool calib_ok(){return (gyro_calib_ok() && acc_calib_ok());}
-	bool gyro_calib_ok(){return calib_OK_G;}
-	bool acc_calib_ok(){return calib_OK_A;}
+	bool calib_ok() const {return (gyro_calib_ok() && acc_calib_ok());}
+	bool gyro_calib_ok() const {return calib_OK_G;}
+	bool acc_calib_ok() const {return calib_OK_A;}
 	
-	float get_delta_time(){return _dt_sec;}
+	float get_delta_time() const {return _dt_sec;}
 	const Vector3f &get_accel() const { return _accel; }
-    
+	const Vector3f &get_gyro()  const { return _gyro; }
+	bool get_gyro_health() const {return _healthy;}
 	
 	
 private:
@@ -64,7 +66,11 @@ private:
 	bool		calib_OK_A;
 	uint32_t	_last_us;		// 前回データ取得時刻[us]
 	float		_dt_sec;		// 前回データ取得から今回取得までの時間[sec]
-	Vector3f	_accel;			// 加速度値
+	Vector3f	_accel;			// 加速度値[m/s^2]
+	Vector3f	_gyro;			// ジャイロ値[rad/s]
+	bool		_healthy;		// センサの正常度（正常ならtrue、異常ならfalse）
+	
+	static const float	_gyro_scale;
 	
 	void gyro_common();
 	void acc_common();

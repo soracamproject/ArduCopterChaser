@@ -201,9 +201,6 @@ public:
     ///     when use_desired_velocity is true the desired velocity (i.e. feed forward) is incorporated at the pos_to_rate step
     void update_xy_controller(bool use_desired_velocity);
 
-	// update_xy_controller CHASER用
-	void update_xy_controller_for_chaser(bool use_desired_velocity);
-
     /// set_target_to_stopping_point_xy - sets horizontal target to reasonable stopping position in cm from home
     void set_target_to_stopping_point_xy();
 
@@ -252,7 +249,13 @@ public:
     void lean_angles_to_accel(float& accel_x_cmss, float& accel_y_cmss) const;
 
     static const struct AP_Param::GroupInfo var_info[];
-
+	
+	// ==============================
+	// CHASER制御関連
+	// ==============================
+	void update_xy_controller_for_chaser(float dt, bool use_desired_velocity);
+	
+	
 private:
 
     // general purpose flags

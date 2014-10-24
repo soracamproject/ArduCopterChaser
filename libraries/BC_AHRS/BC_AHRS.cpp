@@ -32,13 +32,6 @@ const AP_Param::GroupInfo BC_AHRS::var_info[] PROGMEM = {
     // @Increment: .01
     AP_GROUPINFO("GPS_GAIN",  2, AP_AHRS, gps_gain, 1.0f),
 
-    // @Param: GPS_USE
-    // @DisplayName: AHRS use GPS for navigation
-    // @Description: This controls whether to use dead-reckoning or GPS based navigation. If set to 0 then the GPS won't be used for navigation, and only dead reckoning will be used. A value of zero should never be used for normal flight.
-    // @Values: 0:Disabled,1:Enabled
-    // @User: Advanced
-    AP_GROUPINFO("GPS_USE",  3, AP_AHRS, _gps_use, 1),
-
     // @Param: YAW_P
     // @DisplayName: Yaw P
     // @Description: This controls the weight the compass or GPS has on the heading. A higher value means the heading will track the yaw source (GPS or compass) more rapidly.
@@ -301,29 +294,24 @@ BC_AHRS::update(void)
 
 // update the DCM matrix using only the gyros
 void
-BC_AHRS::matrix_update(float _G_Dt)
+BC_AHRS::matrix_update(float _G_Dt)		// ★チェックOK
 {
-    // note that we do not include the P terms in _omega. This is
-    // because the spin_rate is calculated from _omega.length(),
-    // and including the P terms would give positive feedback into
-    // the _P_gain() calculation, which can lead to a very large P
-    // value
-    _omega.zero();
-
-    // average across all healthy gyros. This reduces noise on systems
-    // with more than one gyro    
-    uint8_t healthy_count = 0;    
-    for (uint8_t i=0; i<_ins.get_gyro_count(); i++) {
-        if (_ins.get_gyro_health(i)) {
-            _omega += _ins.get_gyro(i);
-            healthy_count++;
-        }
-    }
-    if (healthy_count > 1) {
-        _omega /= healthy_count;
-    }
-    _omega += _omega_I;
-    _dcm_matrix.rotate((_omega + _omega_P + _omega_yaw_P) * _G_Dt);
+	// note that we do not include the P terms in _omega. This is
+	// because the spin_rate is calculated from _omega.length(),
+	// and including the P terms would give positive feedback into
+	// the _P_gain() calculation, which can lead to a very large P
+	// value
+	_omega.zero();
+	
+	// average across all healthy gyros. This reduces noise on systems
+	// with more than one gyro
+	// gyroが正常だったらジャイロデータを足す。
+	// 移植前は積算して割ってたけど今回はセンサーがひとつなので。
+	if (_ins.get_gyro_health()) {
+		_omega += _ins.get_gyro();
+	}
+	_omega += _omega_I;
+	_dcm_matrix.rotate((_omega + _omega_P + _omega_yaw_P) * _G_Dt);
 }
 
 
@@ -332,23 +320,24 @@ BC_AHRS::matrix_update(float _G_Dt)
  *  extreme errors in the matrix
  */
 void
-BC_AHRS::reset(bool recover_eulers)
+BC_AHRS::reset(bool recover_eulers)		// ★チェックOK
 {
-    // reset the integration terms
-    _omega_I.zero();
-    _omega_P.zero();
-    _omega_yaw_P.zero();
-    _omega.zero();
-
-    // if the caller wants us to try to recover to the current
-    // attitude then calculate the dcm matrix from the current
-    // roll/pitch/yaw values
-    if (recover_eulers && !isnan(roll) && !isnan(pitch) && !isnan(yaw)) {
-        _dcm_matrix.from_euler(roll, pitch, yaw);
-    } else {
-        // otherwise make it flat
-        _dcm_matrix.from_euler(0, 0, 0);
-    }
+	// reset the integration terms
+	// 積分項をリセット
+	_omega_I.zero();
+	_omega_P.zero();
+	_omega_yaw_P.zero();
+	_omega.zero();
+	
+	// if the caller wants us to try to recover to the current
+	// attitude then calculate the dcm matrix from the current
+	// roll/pitch/yaw values
+	if (recover_eulers && !isnan(roll) && !isnan(pitch) && !isnan(yaw)) {
+		_dcm_matrix.from_euler(roll, pitch, yaw);
+	} else {
+		// otherwise make it flat
+		_dcm_matrix.from_euler(0, 0, 0);
+	}
 }
 
 // reset the current attitude, used by HIL
@@ -391,49 +380,49 @@ BC_AHRS::check_matrix(void)
 // renormalise one vector component of the DCM matrix
 // this will return false if renormalization fails
 bool
-BC_AHRS::renorm(Vector3f const &a, Vector3f &result)
+BC_AHRS::renorm(Vector3f const &a, Vector3f &result)	// ★チェックOK
 {
-    float renorm_val;
-
-    // numerical errors will slowly build up over time in DCM,
-    // causing inaccuracies. We can keep ahead of those errors
-    // using the renormalization technique from the DCM IMU paper
-    // (see equations 18 to 21).
-
-    // For APM we don't bother with the taylor expansion
-    // optimisation from the paper as on our 2560 CPU the cost of
-    // the sqrt() is 44 microseconds, and the small time saving of
-    // the taylor expansion is not worth the potential of
-    // additional error buildup.
-
-    // Note that we can get significant renormalisation values
-    // when we have a larger delta_t due to a glitch eleswhere in
-    // APM, such as a I2c timeout or a set of EEPROM writes. While
-    // we would like to avoid these if possible, if it does happen
-    // we don't want to compound the error by making DCM less
-    // accurate.
-
-    renorm_val = 1.0f / a.length();
-
-    // keep the average for reporting
-    _renorm_val_sum += renorm_val;
-    _renorm_val_count++;
-
-    if (!(renorm_val < 2.0f && renorm_val > 0.5f)) {
-        // this is larger than it should get - log it as a warning
-        if (!(renorm_val < 1.0e6f && renorm_val > 1.0e-6f)) {
-            // we are getting values which are way out of
-            // range, we will reset the matrix and hope we
-            // can recover our attitude using drift
-            // correction before we hit the ground!
-            //Serial.printf("ERROR: DCM renormalisation error. renorm_val=%f\n",
-            //	   renorm_val);
-            return false;
-        }
-    }
-
-    result = a * renorm_val;
-    return true;
+	float renorm_val;
+	
+	// numerical errors will slowly build up over time in DCM,
+	// causing inaccuracies. We can keep ahead of those errors
+	// using the renormalization technique from the DCM IMU paper
+	// (see equations 18 to 21).
+	
+	// For APM we don't bother with the taylor expansion
+	// optimisation from the paper as on our 2560 CPU the cost of
+	// the sqrt() is 44 microseconds, and the small time saving of
+	// the taylor expansion is not worth the potential of
+	// additional error buildup.
+	
+	// Note that we can get significant renormalisation values
+	// when we have a larger delta_t due to a glitch eleswhere in
+	// APM, such as a I2c timeout or a set of EEPROM writes. While
+	// we would like to avoid these if possible, if it does happen
+	// we don't want to compound the error by making DCM less
+	// accurate.
+	
+	renorm_val = 1.0f / a.length();
+	
+	// keep the average for reporting
+	_renorm_val_sum += renorm_val;
+	_renorm_val_count++;
+	
+	if (!(renorm_val < 2.0f && renorm_val > 0.5f)) {
+		// this is larger than it should get - log it as a warning
+		if (!(renorm_val < 1.0e6f && renorm_val > 1.0e-6f)) {
+			// we are getting values which are way out of
+			// range, we will reset the matrix and hope we
+			// can recover our attitude using drift
+			// correction before we hit the ground!
+			//Serial.printf("ERROR: DCM renormalisation error. renorm_val=%f\n",
+			//	   renorm_val);
+			return false;
+		}
+	}
+	
+	result = a * renorm_val;
+	return true;
 }
 
 /*************************************************
@@ -444,28 +433,26 @@ BC_AHRS::renorm(Vector3f const &a, Vector3f &result)
  *  to approximations rather than identities. In effect, the axes in the two frames of reference no
  *  longer describe a rigid body. Fortunately, numerical error accumulates very slowly, so it is a
  *  simple matter to stay ahead of it.
- *  We call the process of enforcing the orthogonality conditions �renormalization�.
+ *  We call the process of enforcing the orthogonality conditions renormalization.
  */
-void
-BC_AHRS::normalize(void)
-{
-    float error;
-    Vector3f t0, t1, t2;
-
-    error = _dcm_matrix.a * _dcm_matrix.b;                                              // eq.18
-
-    t0 = _dcm_matrix.a - (_dcm_matrix.b * (0.5f * error));              // eq.19
-    t1 = _dcm_matrix.b - (_dcm_matrix.a * (0.5f * error));              // eq.19
-    t2 = t0 % t1;                                                       // c= a x b // eq.20
-
-    if (!renorm(t0, _dcm_matrix.a) ||
-        !renorm(t1, _dcm_matrix.b) ||
-        !renorm(t2, _dcm_matrix.c)) {
-        // Our solution is blowing up and we will force back
-        // to last euler angles
-        _last_failure_ms = hal.scheduler->millis();
-        reset(true);
-    }
+void BC_AHRS::normalize(void) {		// ★チェックOK
+	float error;
+	Vector3f t0, t1, t2;
+	
+	error = _dcm_matrix.a * _dcm_matrix.b;                                              // eq.18
+	
+	t0 = _dcm_matrix.a - (_dcm_matrix.b * (0.5f * error));              // eq.19
+	t1 = _dcm_matrix.b - (_dcm_matrix.a * (0.5f * error));              // eq.19
+	t2 = t0 % t1;                                                       // c= a x b // eq.20
+	
+	if (!renorm(t0, _dcm_matrix.a) ||
+		!renorm(t1, _dcm_matrix.b) ||
+		!renorm(t2, _dcm_matrix.c)) {
+		// Our solution is blowing up and we will force back
+		// to last euler angles
+		_last_failure_ms = millis();
+		reset(true);
+	}
 }
 
 
@@ -533,7 +520,7 @@ BC_AHRS::_yaw_gain(void) const
 // return true if we have and should use GPS
 bool BC_AHRS::have_gps(void) const
 {
-    if (_gps.status() <= AP_GPS::NO_FIX || !_gps_use) {
+    if (_gps.status() <= BC_GPS::NO_FIX || !_gps_use) {
         return false;
     }
     return true;
@@ -542,23 +529,27 @@ bool BC_AHRS::have_gps(void) const
 // return true if we should use the compass for yaw correction
 bool BC_AHRS::use_compass(void)
 {
-    if (!_compass || !_compass->use_for_yaw()) {
-        // no compass available
-        return false;
-    }
-    if (!_flags.fly_forward || !have_gps()) {
-        // we don't have any alterative to the compass
-        return true;
-    }
-    if (_gps.ground_speed() < GPS_SPEED_MIN) {
-        // we are not going fast enough to use the GPS
-        return true;
-    }
-
-    // if the current yaw differs from the GPS yaw by more than 45
-    // degrees and the estimated wind speed is less than 80% of the
-    // ground speed, then switch to GPS navigation. This will help
-    // prevent flyaways with very bad compass offsets
+	if (_compass->use_for_yaw()) {
+		// no compass available
+		return false;
+	}
+	if (!have_gps()) {
+		// we don't have any alterative to the compass
+		return true;
+	}
+	if (_gps.ground_speed() < GPS_SPEED_MIN) {
+		// we are not going fast enough to use the GPS
+		return true;
+	}
+	
+	// if the current yaw differs from the GPS yaw by more than 45
+	// degrees and the estimated wind speed is less than 80% of the
+	// ground speed, then switch to GPS navigation. This will help
+	// prevent flyaways with very bad compass offsets
+	// (超訳) 現在のYAWとGPSのYAWが45度以上離れていてかつ推定風速が
+	//        地上速の80%以下だったらGPSナビゲーションにシフトする
+	//        これは異常なコンパスオフセットによりどこかにぶっとんで
+	//        いかないようにするため
     int32_t error = abs(wrap_180_cd(yaw_sensor - _gps.ground_course_cd()));
     if (error > 4500 && _wind.length() < _gps.ground_speed()*0.8f) {
         if (hal.scheduler->millis() - _last_consistent_heading > 2000) {
@@ -580,11 +571,11 @@ bool BC_AHRS::use_compass(void)
 void
 BC_AHRS::drift_correction_yaw(void)
 {
-    bool new_value = false;
-    float yaw_error;
-    float yaw_deltat;
-
-    if (use_compass()) {
+	bool new_value = false;
+	float yaw_error;
+	float yaw_deltat;
+	
+	if (use_compass()) {
         /*
           we are using compass for yaw
          */
@@ -718,13 +709,13 @@ Vector3f BC_AHRS::ra_delayed(uint8_t instance, const Vector3f &ra)
 void
 BC_AHRS::drift_correction(float deltat)
 {
-    Vector3f velocity;
-    uint32_t last_correction_time;
-
-    // perform yaw drift correction if we have a new yaw reference
-    // vector
-    drift_correction_yaw();
-
+	Vector3f velocity;
+	uint32_t last_correction_time;
+	
+	// perform yaw drift correction if we have a new yaw reference
+	// vector
+	drift_correction_yaw();
+	
 	// rotate accelerometer values into the earth frame
 	// 加速度センサの値を地上座標系に変換
 	// インスタンス数を1に固定

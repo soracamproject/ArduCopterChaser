@@ -41,6 +41,9 @@
 #define ACC_SCALE  0.0191536f	// 加速度センサのスケール、m/s^2に変換
 								// 計算式：GRAVITY_MSS(9.80665) / ACC_1G(512)
 
+const float BC_InertialSensor::_gyro_scale = (0.0174532f / 16.4f);	// ジャイロセンサのスケール。LSBが16.4deg/s。[rad/s]に変換。
+
+
 
 // ***********************************************************************************
 // functions
@@ -78,6 +81,12 @@ void BC_InertialSensor::gyro_common() {
 		gyroADC[axis] = constrain(gyroADC[axis],previousGyroADC[axis]-800,previousGyroADC[axis]+800);
 		previousGyroADC[axis] = gyroADC[axis];
 	}
+	
+	// rad/sに変換
+	_gyro.x = gyroADC[ROLL] *_gyro_scale;
+	_gyro.y = gyroADC[PITCH]*_gyro_scale;
+	_gyro.z = gyroADC[YAW]  *_gyro_scale;
+
 }
 
 void BC_InertialSensor::acc_common() {
@@ -159,6 +168,9 @@ void BC_InertialSensor::acc_calib_start(){
 void BC_InertialSensor::init(){
 	gyro_init();
 	acc_init();
+	
+	// データ取得時間初期化
+	_last_us = micros();
 }
 
 void BC_InertialSensor::get_data(){
@@ -176,4 +188,5 @@ void BC_InertialSensor::calib_start(){
 	gyro_calib_start();
 	acc_calib_start();
 }
+
 

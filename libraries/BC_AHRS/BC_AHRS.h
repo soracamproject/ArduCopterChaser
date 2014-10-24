@@ -27,7 +27,7 @@ class BC_AHRS
 {
 public:
 	// コンストラクタ
-	BC_AHRS(BC_InertialSensor &_ins, BC_GPS &_gps) :
+	BC_AHRS(BC_InertialSensor &_ins, BC_GPS &_gps, BC_Compass &_compass) :
         //roll(0.0f),
         //pitch(0.0f),
         //yaw(0.0f),
@@ -35,7 +35,6 @@ public:
         //pitch_sensor(0),
         //yaw_sensor(0),
         //_vehicle_class(AHRS_VEHICLE_UNKNOWN),
-        //_compass(NULL),
         //_airspeed(NULL),
         //_compass_last_update(0),
         //_ins(ins),
@@ -53,8 +52,8 @@ public:
 		// AHRS_DCMより移植
 		// ***************************************************************************
 		//_omega_I_sum_time(0.0f),
-        //_renorm_val_sum(0.0f),
-        //_renorm_val_count(0),
+		_renorm_val_sum(0.0f),
+		_renorm_val_count(0),
         //_error_rp_sum(0.0f),
         //_error_rp_count(0),
         //_error_rp_last(0.0f),
@@ -62,7 +61,7 @@ public:
         //_error_yaw_count(0),
         //_error_yaw_last(0.0f),
         //_gps_last_update(0),
-        _ra_deltat(0.0f),
+		_ra_deltat(0.0f),
         //_ra_sum_start(0),
         //_last_declination(0.0f),
         //_mag_earth(1,0),
@@ -75,7 +74,12 @@ public:
         //_last_wind_time(0),
         //_last_airspeed(0.0f),
         //_last_consistent_heading(0),
-        //_last_failure_ms(0)
+		_last_failure_ms(0),
+		_gps_use(false),
+		_ins(ins),
+		_gps(gps),
+		_compass(compass)
+		
     {
         // load default values from var_info table
         //AP_Param::setup_object_defaults(this, var_info);
@@ -118,14 +122,15 @@ public:
     //    set_orientation();
     //};
 
-    // Accessors
-    //void set_fly_forward(bool b) {
-    //    _flags.fly_forward = b;
-    //}
-
-    //bool get_fly_forward(void) const {
-    //    return _flags.fly_forward;
-    //}
+	// Accessors
+	// アクセッサ
+	void set_gps_use(bool b) {
+		_gps_use = b;
+	}
+	
+	bool get_gps_use(void) const {
+		return _gps_use;
+	}
 
     //AHRS_VehicleClass get_vehicle_class(void) const {
     //    return _vehicle_class;
@@ -443,37 +448,37 @@ private:
 /*
     // primary representation of attitude of flight vehicle body
     Matrix3f _body_dcm_matrix;
-
-    Vector3f _omega_P;                          // accel Omega proportional correction
-    Vector3f _omega_yaw_P;                      // proportional yaw correction
-    Vector3f _omega_I;                          // Omega Integrator correction
-    Vector3f _omega_I_sum;
-    float _omega_I_sum_time;
-    Vector3f _omega;                            // Corrected Gyro_Vector data
-
+*/
+	Vector3f _omega_P;                          // accel Omega proportional correction
+	Vector3f _omega_yaw_P;                      // proportional yaw correction
+	Vector3f _omega_I;                          // Omega Integrator correction
+	//Vector3f _omega_I_sum;
+	//float _omega_I_sum_time;
+	Vector3f _omega;                            // Corrected Gyro_Vector data
+	
     // variables to cope with delaying the GA sum to match GPS lag
-    Vector3f ra_delayed(uint8_t instance, const Vector3f &ra);
-    Vector3f _ra_delay_buffer[INS_MAX_INSTANCES];
-
+    //Vector3f ra_delayed(uint8_t instance, const Vector3f &ra);
+    //Vector3f _ra_delay_buffer[INS_MAX_INSTANCES];
+	
     // P term gain based on spin rate
-    float           _P_gain(float spin_rate);
-
+    //float           _P_gain(float spin_rate);
+	
     // P term yaw gain based on rate of change of horiz velocity
-    float           _yaw_gain(void) const;
-
+    //float           _yaw_gain(void) const;
+	
     // state to support status reporting
     float _renorm_val_sum;
     uint16_t _renorm_val_count;
-    float _error_rp_sum;
-    uint16_t _error_rp_count;
-    float _error_rp_last;
-    float _error_yaw_sum;
-    uint16_t _error_yaw_count;
-    float _error_yaw_last;
-
+    //float _error_rp_sum;
+    //uint16_t _error_rp_count;
+    //float _error_rp_last;
+    //float _error_yaw_sum;
+    //uint16_t _error_yaw_count;
+    //float _error_yaw_last;
+	
     // time in millis when we last got a GPS heading
-    uint32_t _gps_last_update;
-*/
+    //uint32_t _gps_last_update;
+	
 	// state of accel drift correction
 	Vector3f _ra_sum;
 	//Vector3f _last_velocity;
@@ -507,10 +512,13 @@ private:
 
     // estimated wind in m/s
     Vector3f _wind;
-
-    // last time AHRS failed in milliseconds
-    uint32_t _last_failure_ms;
 	*/
+	// last time AHRS failed in milliseconds
+	// 前回計算失敗した時刻
+	uint32_t _last_failure_ms;
+	
+	bool _gps_use;	// AHRSにgpsを使用するか
+	
 
 protected:
 	/*
@@ -518,23 +526,21 @@ protected:
 
     // settable parameters
     AP_Float beta;
-    AP_Int8 _gps_use;
     AP_Int8 _wind_max;
     AP_Int8 _board_orientation;
     AP_Int8 _gps_minsats;
     AP_Int8 _gps_delay;
     AP_Int8 _ekf_use;
-
-    // flags structure
-    struct ahrs_flags {
-        uint8_t have_initial_yaw        : 1;    // whether the yaw value has been intialised with a reference
-        uint8_t fast_ground_gains       : 1;    // should we raise the gain on the accelerometers for faster convergence, used when disarmed for ArduCopter
-        uint8_t fly_forward             : 1;    // 1 if we can assume the aircraft will be flying forward on its X axis
-        uint8_t correct_centrifugal     : 1;    // 1 if we should correct for centrifugal forces (allows arducopter to turn this off when motors are disarmed)
-        uint8_t wind_estimation         : 1;    // 1 if we should do wind estimation
-        uint8_t armed                   : 1;    // 1 if we are armed for flight
-    } _flags;
-
+*/
+	// flags structure
+	struct ahrs_flags {
+		//uint8_t have_initial_yaw        : 1;    // whether the yaw value has been intialised with a reference
+		//uint8_t fast_ground_gains       : 1;    // should we raise the gain on the accelerometers for faster convergence, used when disarmed for ArduCopter
+		//uint8_t correct_centrifugal     : 1;    // 1 if we should correct for centrifugal forces (allows arducopter to turn this off when motors are disarmed)
+		//uint8_t wind_estimation         : 1;    // 1 if we should do wind estimation
+		//uint8_t armed                   : 1;    // 1 if we are armed for flight
+	} _flags;
+/*
     // update_trig - recalculates _cos_roll, _cos_pitch, etc based on latest attitude
     //      should be called after _dcm_matrix is updated
     void update_trig(void);
@@ -580,6 +586,11 @@ protected:
     // which accelerometer instance is active
     uint8_t _active_accel_instance;
 	*/
+	
+	BC_InertialSensor	&_ins;
+	BC_GPS				&_gps;
+	BC_Compass			&_compass;
+	
 };
 
 

@@ -52,6 +52,8 @@
 #define CHASER_CIRCLE_RADIUS_MAX     300.0f		// Circle Chaser時の旋回半径max[cm]
 #define CHASER_CIRCLE_TIME_MIN       5.0f		// Circle Chaser時の旋回時間min[cm]
 #define CHASER_CIRCLE_TIME_MAX       30.0f		// Circle Chaser時の旋回時間max[cm]
+#define CHASER_POSCON_UPDATE_TIME    0.05f		// Chaserの位置制御の更新周期[sec]
+
 
 // APMデフォルト機能に対する変更
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
