@@ -774,7 +774,7 @@ static float chaser_target_z;				// ターゲットのz位置
 
 static Vector2f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
 static Vector2f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
-static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
+//static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
 
 static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）[cm/s]
 static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
@@ -808,9 +808,9 @@ static uint32_t chaser_debug_millis;		// ビーコンに返すmillis。通信速
 static float chaser_cc_radius;				// Circle Chaserの現在の旋回半径[cm]
 static float chaser_cc_angle;				// Circle Chaserの現在の旋回角度[rad]
 
-static Vector2f chaser_accel;
-static bool chaser_overrun_flag_x;
-static bool chaser_overrun_flag_y;
+static Vector2f chaser_accel;				// chaser_targetの加速度[cm/s^2]
+static uint32_t chaser_last_update_dest;	// destinationの前回更新時刻[ms]
+static float chaser_last_update_dest_dt;	// destinationの前回更新周期[s]
 
 
 

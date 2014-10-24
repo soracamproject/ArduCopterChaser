@@ -78,78 +78,40 @@ static void chaser_takeoff_run()
 static void chaser_stay_run(){
 	// loiter_run - runs the loiter controller
 	// should be called at 100hz or more
-    
+	
 	float target_yaw_rate = 0;
-    float target_climb_rate = 0;
-
-    // if not auto armed set throttle to zero and exit immediately
-    if(!ap.auto_armed || !inertial_nav.position_ok()) {
-        wp_nav.init_loiter_target();
-        attitude_control.relax_bf_rate_controller();
-        attitude_control.set_yaw_target_to_current_heading();
-        attitude_control.set_throttle_out(0, false);
-        pos_control.set_alt_target_to_current_alt();
-        return;
-    }
+	float target_climb_rate = 0;
 	
-	/*
-    // process pilot inputs
-    if (!failsafe.radio) {
-        // apply SIMPLE mode transform to pilot inputs
-        update_simple_mode();
-
-        // process pilot's roll and pitch input
-        wp_nav.set_pilot_desired_acceleration(g.rc_1.control_in, g.rc_2.control_in);
-
-        // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(g.rc_4.control_in);
-
-        // get pilot desired climb rate
-        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in);
-
-        // check for pilot requested take-off
-        if (ap.land_complete && target_climb_rate > 0) {
-            // indicate we are taking off
-            set_land_complete(false);
-            // clear i term when we're taking off
-            set_throttle_takeoff();
-        }
-    } else {
-        // clear out pilot desired acceleration in case radio failsafe event occurs and we do not switch to RTL for some reason
-    */
+	// if not auto armed set throttle to zero and exit immediately
+	if(!ap.auto_armed || !inertial_nav.position_ok()) {
+		wp_nav.init_loiter_target();
+		attitude_control.relax_bf_rate_controller();
+		attitude_control.set_yaw_target_to_current_heading();
+		attitude_control.set_throttle_out(0, false);
+		pos_control.set_alt_target_to_current_alt();
+		return;
+	}
+	
+	// パイロットの加速度入力をクリア
 	wp_nav.clear_pilot_desired_acceleration();
-    //}
 	
+	// run loiter controller
+	wp_nav.update_loiter();
 	
-	/*
-    // when landed reset targets and output zero throttle
-    if (ap.land_complete) {
-        wp_nav.init_loiter_target();
-        attitude_control.relax_bf_rate_controller();
-        attitude_control.set_yaw_target_to_current_heading();
-        // move throttle to between minimum and non-takeoff-throttle to keep us on the ground
-        attitude_control.set_throttle_out(get_throttle_pre_takeoff(g.rc_3.control_in), false);
-        pos_control.set_alt_target_to_current_alt();
-    }else{
-	*/
-		// run loiter controller
-		wp_nav.update_loiter();
-		
-		// call attitude controller
-		attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
-		
-        // body-frame rate controller is run directly from 100hz loop
-		
-        // run altitude controller
-        if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
-            // if sonar is ok, use surface tracking
-            target_climb_rate = get_throttle_surface_tracking(target_climb_rate, pos_control.get_alt_target(), G_Dt);
-        }
-		
-        // update altitude target and call position controller
-        pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
-        pos_control.update_z_controller();
-    //}
+	// call attitude controller
+	attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
+	
+	// body-frame rate controller is run directly from 100hz loop
+	
+	// run altitude controller
+	if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
+		// if sonar is ok, use surface tracking
+		target_climb_rate = get_throttle_surface_tracking(target_climb_rate, pos_control.get_alt_target(), G_Dt);
+	}
+	
+	// update altitude target and call position controller
+	pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
+	pos_control.update_z_controller();
 }
 
 // CHASER_CHASE時に実行するもの
@@ -161,6 +123,7 @@ static void chaser_chase_run()
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
 	float dt = (now - last)/1000.0f;
+	float dt_update_dest = (now - chaser_last_update_dest);
 	
 	// 20Hz駆動
 	if (dt >= CHASER_POSCON_UPDATE_TIME) {
@@ -179,39 +142,18 @@ static void chaser_chase_run()
 			target_distance = target_distance + chaser_target_vel * dt;
 			chaser_target = chaser_origin + target_distance;
 			
-			// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
-			if (!chaser_overrun_flag_x && fabsf(target_distance.x) >= chaser_overrun_thres.x) {chaser_overrun_flag_x = true;}
-			if (chaser_overrun_flag_x){
-				chaser_dest_vel.x = 0.f;
-				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
-			} else {
+			// chaser_target_vel更新
+			if(dt_update_dest <= chaser_last_update_dest_dt){
+				// 加速
 				chaser_target_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-			}
-			
-			if (!chaser_overrun_flag_y && fabsf(target_distance.y) >= chaser_overrun_thres.y) {chaser_overrun_flag_y = true;}
-			if (chaser_overrun_flag_y){
-				chaser_dest_vel.y = 0;
-				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
-			} else {
 				chaser_target_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-			}
-			
-			// chaser_target_velを加減速
-			// 加速度と減速度を分離
-			/*if (chaser_target_vel.x > 0) {
-				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_decel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
+			} else if(dt_update_dest <= chaser_last_update_dest_dt + CHASER_OVERRUN_SEC){
+				// 速度維持
 			} else {
-				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_decel * dt);
-			}
-			if (chaser_target_vel.y > 0) {
-				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_decel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
-			} else {
-				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_decel * dt);
-			}*/
-			
-			// alt_holdフラグが立っていなかったら、z方向計算
-			if(g.chaser_alt_hold==0){
-				calc_chaser_pos_z(dt);
+				// 減速
+				chaser_dest_vel(0.0f,0.0f);
+				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
+				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
 			}
 			
 			// ターゲット位置更新
@@ -220,24 +162,22 @@ static void chaser_chase_run()
 			
 			// ポジションコントローラを呼ぶ
 			pos_control.update_xy_controller_for_chaser(dt,true);
-			//pos_control.update_z_controller();
 			
-			// alt_holdフラグが立っていなかったら、z方向計算
-			//if(g.chaser_alt_hold==0){
-			//	calc_chaser_pos_z(dt);
-			//}
 			
+			// ===z方向===
+			// alt_holdフラグが立っていなかったらz方向計算
+			if(g.chaser_alt_hold==0){
+				calc_chaser_pos_z(dt);
+			}
+			
+			// ===yaw方向===
 			// YAWコントローラを呼ぶ
 			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 		}
 	}
-	
-	if (chaser_started){		
+	if (chaser_started){
 		// ポジションコントローラを呼ぶ
 		pos_control.update_z_controller();
-		
-		// YAWコントローラを呼ぶ
-		//attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 	}
 }
 
@@ -272,10 +212,11 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
 	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
 	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
-	static uint32_t last = 0;								// 前回格納時刻[ms]
+	static uint32_t last_store = 0;							// 前回格納時刻[ms]
+	static uint32_t last = 0;								// 前回update関数呼び出し時刻[ms]
 	static uint32_t last_latch = 0;							// 前回ラッチ時刻[ms]
 	static uint8_t latch_count = 0;							// 不感帯判定カウント数[-]
-	
+	static bool latch_status = false;						// 現在のラッチ状態
 	
 	// リセットフラグが立っている場合はビーコン位置配列をクリアする
 	if (chaser_beacon_loc_reset) {
@@ -287,17 +228,22 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		relax_stored_num = 0;
 		chaser_beacon_loc_ok = false;
 		latch_count = 0;
+		latch_status = false;
 		
 		chaser_beacon_loc_reset = false;
 	}
 	
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
-	float dt = (now - last)/1000.0f;			// 前回からの経過時間[sec]
-	float dt_latch = (now - last_latch)/1000.0f;
+	uint32_t dt_store  = now - last_store;			// 前回配列格納後時間[sec]
+	float dt = (now - last)/1000.0f;				// 前回update関数呼び出しからの経過時間[sec]
+	float dt_latch = (now - last_latch)/1000.0f;	// 前回ラッチからの経過時間[sec]
 	
-	// 経過時間が0以下で無ければ処理を実行する
-	if (dt > 0.0 && dt_latch > 0.0) {
+	// 前回格納から時間が経過していたら処理実行
+	if (dt_store > 0) {
+		// 格納時刻を更新
+		last_store = now;
+		
 		// 緯度経度高度情報をHome基準の位置情報に変換（単位はcm）
 		Vector3f pos = pv_location_to_vector(*cmd);
 		
@@ -313,9 +259,6 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		if (relax_stored_num >= CHASER_TARGET_RELAX_NUM) {
 			relax_stored_num = CHASER_TARGET_RELAX_NUM;
 		}
-		
-		// 格納時刻を更新
-		last = now;
 		
 		// 配列が全て埋まっている場合のみchaser_origin,chaser_destinationを更新する
 		if (relax_stored_num == CHASER_TARGET_RELAX_NUM) {
@@ -334,41 +277,52 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 			} else {
 				// 予測可能時の処置
 				
+				// ラッチトリガ
+				bool trigger_latch = false;
+				
 				// 不感帯内かの判断
 				float beacon_movement = get_distance_vector2f(beacon_loc_relaxed,beacon_loc_relaxed_latch);
 				
 				if (beacon_movement < CHASER_BEACON_MOVE_DB) {
 					latch_count++;
-					if (latch_count >= CHASER_BEACON_MOVE_DB_COUNT_THRES) {
+					if(latch_count == CHASER_BEACON_MOVE_DB_COUNT_THRES){
+						beacon_loc_relaxed_latch = beacon_loc_relaxed;
+						latch_status = true;
+						last_latch = now;
+					}
+					if(latch_count > CHASER_BEACON_MOVE_DB_COUNT_THRES){
 						beacon_loc_relaxed = beacon_loc_relaxed_latch;
 						latch_count = CHASER_BEACON_MOVE_DB_COUNT_THRES;
 					}
 				} else {
 					beacon_loc_relaxed_latch = beacon_loc_relaxed;
-					last_latch = now;
 					latch_count = 0;
+					if(latch_status){ trigger_latch = true; }
+					latch_status = false;
 				}
 				
-				Vector2f chaser_current_pos;
-				chaser_current_pos.x = inertial_nav.get_position().x;
-				chaser_current_pos.y = inertial_nav.get_position().y;
+				Vector2f curr_pos(inertial_nav.get_position().x, inertial_nav.get_position().y);
 				
 				// 1回目の場合、chaser_targetを現在位置とし、chaser_target_velを0にする
 				if (!chaser_started && (chaser_state == CHASER_CHASE || chaser_state == CHASER_CIRCLE)) {
-					chaser_target = chaser_current_pos;
+					chaser_target = curr_pos;
 					chaser_target_vel(0,0);
 					chaser_started = true;
 				}
 				
 				if (chaser_state == CHASER_CHASE || chaser_state == CHASER_CIRCLE) {
 					// ジンバルの角度を更新する
-					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(chaser_current_pos,beacon_loc_relaxed))),
+					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(curr_pos,beacon_loc_relaxed))),
 												CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
 					change_mount_control_pitch_angle(chaser_gimbal_pitch_angle);
 					
 					// chaser_origin,chaser_destinationを更新する
-					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt, dt_latch);
+					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt, dt_latch, trigger_latch);
+					last = now;
 					
+					// update関数呼び出し時刻に関するグローバル変数更新
+					chaser_last_update_dest = now;
+					chaser_last_update_dest_dt = dt;
 				}
 				
 				// ビーコン位置配列なまし前回値を更新する
@@ -381,8 +335,13 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 }
 
 
-static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt, float dt_latch) {
+static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt, float dt_l, bool trigger_latch) {
 	static uint8_t yaw_relax_count = 0;
+	
+	// フェールセーフ（原理上入らないはず）
+	if(dt < 0.05f || dt_l < 0.05f){ return;	}
+	
+	// 更新時刻を記録
 	
 	// 起点を現在のターゲット位置にする
 	chaser_origin = chaser_target;
@@ -402,9 +361,6 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 並進移動ベクトル
 		Vector2f trans_vector = beacon_loc_next - beacon_loc;
 		
-		// 1個前の角度を保存、たぶんいらない
-		//float cc_angle_last = chaser_cc_angle;
-		
 		// 角度を増分
 		chaser_cc_angle += angular_vel*constrain_float(dt,0.0f,0.2f);	// 適当な値でdtに制限をかける
 		if(chaser_cc_angle > 2.0f*M_PI_F){
@@ -417,7 +373,6 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 回転方向ベクトル
 		Vector2f rot_dest_base(chaser_cc_radius,0.0f);
 		Vector2f rot_dest = rotate_vector2f(rot_dest_base, chaser_cc_angle);
-		//Vector2f rot_vector=rot_dest-rot_dest_last;	// たぶんいらない
 		
 		// 目標位置計算
 		chaser_destination = beacon_loc_next + rot_dest;
@@ -427,24 +382,22 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	chaser_track_length = chaser_destination - chaser_origin;
 	
 	// 理想加速度計算
-	//chaser_accel = 2.0f * (chaser_track_length - chaser_target_vel * dt) / sq(dt);
-	chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
-	chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
-	chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x*dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-	chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y*dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	if(!trigger_latch){
+		// 通常はupdate関数呼び出し間隔で計算する
+		chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
+		chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
+		chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+		chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	} else {
+		// ラッチ解除時はラッチ後時間で計算する
+		chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt_l) / sq(dt_l), -g.chaser_target_accel, g.chaser_target_accel);
+		chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt_l) / sq(dt_l), -g.chaser_target_accel, g.chaser_target_accel);
+		chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt_l, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+		chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt_l, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	}
 	
 	// target_distanceを0にする
 	target_distance(0,0);
-	
-	// 目標速度計算
-	//chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-	//chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-	
-	// 目標到達判定距離の計算
-	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);
-	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
-	chaser_overrun_flag_x = false;
-	chaser_overrun_flag_y = false;
 	
 	// ベース下降速度の計算
 	// とりあえず毎回更新
