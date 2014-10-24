@@ -527,6 +527,8 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_CHASE:
 		{
+			pos_control.init_xy_controller_for_chaser();
+			
 			success = true;
 			break;
 		}

@@ -888,8 +888,35 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
 // ==============================
 // CHASER関連
 // ==============================
-void
-AC_PosControl::update_xy_controller_for_chaser(float dt, bool use_desired_velocity)
+void AC_PosControl::init_xy_controller_for_chaser()
+{
+	// set roll, pitch lean angle targets to current attitude
+	// 現在角度を目標角度とする
+	_roll_target = _ahrs.roll_sensor;
+	_pitch_target = _ahrs.pitch_sensor;
+	
+	// reset last velocity if this controller has just been engaged or dt is zero
+	// 現在の姿勢から加速度を算出しI項に入れる
+	lean_angles_to_accel(_accel_target.x, _accel_target.y);
+	_pid_rate_lat.set_integrator(_accel_target.x);
+	_pid_rate_lon.set_integrator(_accel_target.y);
+	
+	// flag reset required in rate to accel step
+	// 未検討
+	_flags.reset_rate_to_accel_xy = true;
+	
+	// set target position in xy axis
+	// 現在値を目的地にする
+	const Vector3f& curr_pos = _inav.get_position();
+	set_xy_target(curr_pos.x, curr_pos.y);
+	
+	// move current vehicle velocity into feed forward velocity
+	// 現在速度を目標速度とする
+	const Vector3f& curr_vel = _inav.get_velocity();
+	set_desired_velocity_xy(curr_vel.x, curr_vel.y);
+}
+
+void AC_PosControl::update_xy_controller_for_chaser(float dt, bool use_desired_velocity)
 {
 	if (dt >= 0.2f) {
 		return;

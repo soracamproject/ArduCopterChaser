@@ -253,6 +253,7 @@ public:
 	// ==============================
 	// CHASER制御関連
 	// ==============================
+	void init_xy_controller_for_chaser();
 	void update_xy_controller_for_chaser(float dt, bool use_desired_velocity);
 	
 	
