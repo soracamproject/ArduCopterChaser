@@ -808,6 +808,10 @@ static uint32_t chaser_debug_millis;		// ビーコンに返すmillis。通信速
 static float chaser_cc_radius;				// Circle Chaserの現在の旋回半径[cm]
 static float chaser_cc_angle;				// Circle Chaserの現在の旋回角度[rad]
 
+static Vector2f chaser_accel;
+static bool chaser_overrun_flag_x;
+static bool chaser_overrun_flag_y;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -180,19 +180,24 @@ static void chaser_chase_run()
 			chaser_target = chaser_origin + target_distance;
 			
 			// chaser_targetが目標到達判定距離chaser_overrun_thresを越えている場合、目標速度を0とする
-			if (fabsf(target_distance.x) >= chaser_overrun_thres.x) {
-				chaser_dest_vel.x = 0;
+			if (!chaser_overrun_flag_x && fabsf(target_distance.x) >= chaser_overrun_thres.x) {chaser_overrun_flag_x = true;}
+			if (chaser_overrun_flag_x){
+				chaser_dest_vel.x = 0.f;
+				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
 			}
-			if (fabsf(target_distance.y) >= chaser_overrun_thres.y) {
+			if (!chaser_overrun_flag_y && fabsf(target_distance.y) >= chaser_overrun_thres.y) {chaser_overrun_flag_y = true;}
+			if (chaser_overrun_flag_y){
 				chaser_dest_vel.y = 0;
+				chaser_target_vel.x = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
 			}
 			
 			// chaser_target_velを計算
-			chaser_target_vel = (target_distance - target_distance_last) / dt;
+			chaser_target_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+			chaser_target_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 			
 			// chaser_target_velを加減速
 			// 加速度と減速度を分離
-			if (chaser_target_vel.x > 0) {
+			/*if (chaser_target_vel.x > 0) {
 				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_decel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
 			} else {
 				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_decel * dt);
@@ -201,7 +206,7 @@ static void chaser_chase_run()
 				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_decel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
 			} else {
 				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_decel * dt);
-			}
+			}*/
 			
 			// alt_holdフラグが立っていなかったら、z方向計算
 			if(g.chaser_alt_hold==0){
@@ -214,11 +219,24 @@ static void chaser_chase_run()
 			
 			// ポジションコントローラを呼ぶ
 			pos_control.update_xy_controller_for_chaser(dt,true);
-			pos_control.update_z_controller();
+			//pos_control.update_z_controller();
 			
 			// YAWコントローラを呼ぶ
 			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 		}
+	}
+	
+	if (chaser_started){
+		// alt_holdフラグが立っていなかったら、z方向計算
+		if(g.chaser_alt_hold==0){
+			calc_chaser_pos_z(dt);
+		}
+		
+		// ポジションコントローラを呼ぶ
+		pos_control.update_z_controller();
+		
+		// YAWコントローラを呼ぶ
+		//attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 	}
 }
 
@@ -407,12 +425,19 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	// track関連の計算
 	chaser_track_length = chaser_destination - chaser_origin;
 	
+	// 理想加速度計算
+	//chaser_accel = 2.0f * (chaser_track_length - chaser_target_vel * dt) / sq(dt);
+	chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
+	chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
+	chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x*dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y*dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	
 	// target_distanceを0にする
 	target_distance(0,0);
 	
 	// 目標速度計算
-	chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-	chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	//chaser_dest_vel.x = constrain_float(chaser_track_length.x / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
+	//chaser_dest_vel.y = constrain_float(chaser_track_length.y / dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 	
 	// 目標到達判定距離の計算
 	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);

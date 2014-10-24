@@ -485,7 +485,8 @@ static void Log_Write_Attitude()
         control_roll    : (int16_t)targets.x,
         roll            : (int16_t)ahrs.roll_sensor,
         control_pitch   : (int16_t)targets.y,
-        pitch           : (int16_t)ahrs.pitch_sensor,
+        //pitch           : (int16_t)ahrs.pitch_sensor,
+		pitch			: (int16_t)(chaser_yaw_target/100.f),	// CHASER用
         control_yaw     : (uint16_t)targets.z,
         yaw             : (uint16_t)ahrs.yaw_sensor
     };

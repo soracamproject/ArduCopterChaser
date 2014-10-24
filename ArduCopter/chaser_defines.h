@@ -34,8 +34,8 @@
 #define CHASER_YAW_SLEW_RATE         15			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 #define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
 												// なまし数1だとなまさない（当然だけど）
-#define CHASER_YAW_DEST_THRES        100.0f		// YAW制御するターゲット移動速度の閾値[cm/s]
-#define CHASER_OVERRUN_SEC           0.0f		// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
+#define CHASER_YAW_DEST_THRES        0.0f		// YAW制御するターゲット移動速度の閾値[cm/s]
+#define CHASER_OVERRUN_SEC           0.05f		// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
 												// target_dest_vel*CHASER_OVERRUN_SECで計算
 #define CHASER_BEACON_MOVE_DB        0.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（以前は150.0f、現在機能停止中）
 #define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
