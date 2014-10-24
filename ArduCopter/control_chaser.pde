@@ -162,7 +162,7 @@ static void chaser_chase_run()
 	uint32_t now = hal.scheduler->millis();
 	float dt = (now - last)/1000.0f;
 	
-	// 50Hz毎にupdate_xy_controllerのstepを0に戻す
+	// 20Hz駆動
 	if (dt >= CHASER_POSCON_UPDATE_TIME) {
 		// dtがリーズナブルな値かどうかのダブルチェック
 		if(dt >= 1.0f){
@@ -184,16 +184,17 @@ static void chaser_chase_run()
 			if (chaser_overrun_flag_x){
 				chaser_dest_vel.x = 0.f;
 				chaser_target_vel.x = constrain_float(chaser_dest_vel.x, chaser_target_vel.x - g.chaser_target_accel * dt, chaser_target_vel.x + g.chaser_target_accel * dt);
+			} else {
+				chaser_target_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 			}
+			
 			if (!chaser_overrun_flag_y && fabsf(target_distance.y) >= chaser_overrun_thres.y) {chaser_overrun_flag_y = true;}
 			if (chaser_overrun_flag_y){
 				chaser_dest_vel.y = 0;
-				chaser_target_vel.x = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
+				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
+			} else {
+				chaser_target_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 			}
-			
-			// chaser_target_velを計算
-			chaser_target_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
-			chaser_target_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 			
 			// chaser_target_velを加減速
 			// 加速度と減速度を分離
@@ -221,17 +222,17 @@ static void chaser_chase_run()
 			pos_control.update_xy_controller_for_chaser(dt,true);
 			//pos_control.update_z_controller();
 			
+			// alt_holdフラグが立っていなかったら、z方向計算
+			//if(g.chaser_alt_hold==0){
+			//	calc_chaser_pos_z(dt);
+			//}
+			
 			// YAWコントローラを呼ぶ
 			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
 		}
 	}
 	
-	if (chaser_started){
-		// alt_holdフラグが立っていなかったら、z方向計算
-		if(g.chaser_alt_hold==0){
-			calc_chaser_pos_z(dt);
-		}
-		
+	if (chaser_started){		
 		// ポジションコントローラを呼ぶ
 		pos_control.update_z_controller();
 		
@@ -442,6 +443,8 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	// 目標到達判定距離の計算
 	chaser_overrun_thres.x = fabsf(chaser_track_length.x + chaser_dest_vel.x * CHASER_OVERRUN_SEC);
 	chaser_overrun_thres.y = fabsf(chaser_track_length.y + chaser_dest_vel.y * CHASER_OVERRUN_SEC);
+	chaser_overrun_flag_x = false;
+	chaser_overrun_flag_y = false;
 	
 	// ベース下降速度の計算
 	// とりあえず毎回更新

@@ -905,6 +905,10 @@ void AC_PosControl::init_xy_controller_for_chaser()
 	// 未検討
 	_flags.reset_rate_to_accel_xy = true;
 	
+	// アクセルFFを禁止
+	_accel_feedforward.x = 0.0f;
+	_accel_feedforward.y = 0.0f;
+	
 	// set target position in xy axis
 	// 現在値を目的地にする
 	const Vector3f& curr_pos = _inav.get_position();
@@ -921,6 +925,8 @@ void AC_PosControl::update_xy_controller_for_chaser(float dt, bool use_desired_v
 	if (dt >= 0.2f) {
 		return;
 	}
+	
+	_flags.freeze_ff_xy = true;
 	
 	// run position controller's position error to desired velocity step
 	pos_to_rate_xy(true, dt);
