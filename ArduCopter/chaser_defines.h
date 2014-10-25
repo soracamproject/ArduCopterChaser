@@ -53,7 +53,11 @@
 #define CHASER_CIRCLE_TIME_MIN       5.0f		// Circle Chaser時の旋回時間min[cm]
 #define CHASER_CIRCLE_TIME_MAX       30.0f		// Circle Chaser時の旋回時間max[cm]
 #define CHASER_POSCON_UPDATE_TIME    0.05f		// Chaserの位置制御の更新周期[sec]
-#define CHASER_TARGET_LEASH          100.0f		// 現在位置がchaser_destinationからchaser_track_length方向にこの距離以上離れたらchaser_target_velは0にする
+#define CHASER_VEL_FF_LEASH          100.0f		// 機体の現在位置がchaser_destinationからchaser_track_length方向にこの距離以上離れたら速度のFF項を0にする[cm]
+												// chaser_track_lengthで1、そこからこの距離間で線型に0になる
+#define CHASER_SLOW_START_COUNT      10			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
+#define CHASER_SLOW_START_RATIO      0.2f		// Chaser開始時の加速度割合[-]
+
 
 
 // APMデフォルト機能に対する変更

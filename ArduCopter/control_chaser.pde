@@ -228,7 +228,14 @@ static void chaser_chase_run()
 			
 			// ===yaw方向===
 			// YAWコントローラを呼ぶ
-			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), get_chaser_yaw_slew(dt), false);
+			if(chaser_yaw_update){
+				chaser_yaw_target_slew = ahrs.yaw_sensor;
+				chaser_yaw_update = false;
+			}
+			chaser_yaw_target_slew = wrap_360_cd(chaser_yaw_target_slew
+									+ constrain_int32(wrap_180_cd(chaser_yaw_target - chaser_yaw_target_slew)
+										,(int32_t)(-g.chaser_yaw_slew_rate*100.0f*dt), (int32_t)(g.chaser_yaw_slew_rate*100.0f*dt)));
+			attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), (float)chaser_yaw_target_slew, false);
 		}
 	}
 	if (chaser_started){
@@ -364,6 +371,10 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 					chaser_target = curr_pos;
 					chaser_target_vel(0,0);
 					chaser_started = true;
+					
+					// 開始時の加速度抑制関連変数初期化
+					chaser_start_count = 0;
+					chaser_start_slow = true;
 				}
 				
 				if (chaser_state == CHASER_CHASE || chaser_state == CHASER_CIRCLE) {
@@ -442,12 +453,28 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 通常はupdate関数呼び出し間隔で計算する
 		chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
 		chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt) / sq(dt), -g.chaser_target_accel, g.chaser_target_accel);
+		
+		// Chaser開始から所定回数は加速度を抑制する
+		if(chaser_start_slow){
+			chaser_accel.x *= CHASER_SLOW_START_RATIO;
+			chaser_accel.y *= CHASER_SLOW_START_RATIO;
+			if(++chaser_start_count >= CHASER_SLOW_START_COUNT){ chaser_start_slow = false; }
+		}
+		
 		chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 		chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 	} else {
 		// ラッチ解除時はラッチ後時間で計算する
 		chaser_accel.x = constrain_float(2.0f * (chaser_track_length.x - chaser_target_vel.x * dt_l) / sq(dt_l), -g.chaser_target_accel, g.chaser_target_accel);
 		chaser_accel.y = constrain_float(2.0f * (chaser_track_length.y - chaser_target_vel.y * dt_l) / sq(dt_l), -g.chaser_target_accel, g.chaser_target_accel);
+		
+		// Chaser開始から所定回数は加速度を抑制する
+		if(chaser_start_slow){
+			chaser_accel.x *= CHASER_SLOW_START_RATIO;
+			chaser_accel.y *= CHASER_SLOW_START_RATIO;
+			if(++chaser_start_count >= CHASER_SLOW_START_COUNT){ chaser_start_slow = false; }
+		}
+		
 		chaser_dest_vel.x = constrain_float(chaser_target_vel.x + chaser_accel.x * dt_l, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 		chaser_dest_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt_l, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 	}
@@ -468,8 +495,11 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 目標速度が1m/sより大の場合、その方向にyawを向ける（＝1m/s以下の場合はラッチ）
 		// 引数は順に(経度方向:lng、緯度方向:lat)
 		// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
-		chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
-		if(chaser_yaw_target < 0){ chaser_yaw_target += 36000.0f; }
+		chaser_yaw_target = (int32_t)RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
+		if(chaser_yaw_target < 0){ chaser_yaw_target += 36000; }
+		
+		// yaw_targetの更新フラグを立てる
+		chaser_yaw_update = true;
 	}
 	#else
 	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
@@ -482,8 +512,11 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 			// 目標速度が閾値(1m/s)より大の場合、その方向にyawを向ける（＝閾値以下の場合はラッチ）
 			// 引数は順に(経度方向:lng、緯度方向:lat)
 			// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
-			chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel_relaxed_for_yaw.y, chaser_dest_vel_relaxed_for_yaw.x));
-			if(chaser_yaw_target < 0){ chaser_yaw_target += 36000.0f; }
+			chaser_yaw_target = (int32_t)RadiansToCentiDegrees(fast_atan2(chaser_dest_vel_relaxed_for_yaw.y, chaser_dest_vel_relaxed_for_yaw.x));
+			if(chaser_yaw_target < 0){ chaser_yaw_target += 36000; }
+			
+			// yaw_targetの更新フラグを立てる
+			chaser_yaw_update = true;
 		}
 		
 		// 積算とカウントをリセット
@@ -491,6 +524,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		yaw_relax_count = 0;
 	}
 	#endif
+	
 }
 
 // CHASERステートをセット（＝変更）する
@@ -765,7 +799,7 @@ bool chaser_fs_beacon_pos() {
 //ターゲット角度が小さい・距離が近い(未実装)の場合にyawの制限速度を変える
 // **速度制限機能廃止中**
 static float get_chaser_yaw_slew(float dt){
-	return(wrap_360_cd_float(ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*100.0f*dt, g.chaser_yaw_slew_rate*100.0f*dt)));
+	return(wrap_360_cd_float((float)ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - (float)ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*100.0f*dt, g.chaser_yaw_slew_rate*100.0f*dt)));
 
 }
 

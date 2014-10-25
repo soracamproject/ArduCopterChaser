@@ -785,7 +785,7 @@ static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセット
 static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
 static bool chaser_started;					// CHASER開始フラグ
 
-static float chaser_yaw_target;					// YAWの目標角度（-18000〜18000）[centi-degrees]
+static int32_t chaser_yaw_target;					// YAWの目標角度（0〜36000）[centi-degrees]
 static Vector2f chaser_dest_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
 static Vector2f chaser_dest_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
@@ -812,7 +812,10 @@ static Vector2f chaser_accel;				// chaser_targetの加速度[cm/s^2]
 static uint32_t chaser_last_update_dest;	// destinationの前回更新時刻[ms]
 static float chaser_last_update_dest_dt;	// destinationの前回更新周期[s]
 
-
+static bool chaser_yaw_update;				// chaser_yaw_targetの更新フラグ
+static int32_t chaser_yaw_target_slew;		// chaser_yaw_targetに制限をかけたもの
+static uint8_t chaser_start_count;			// Chaser開始からdestinationが呼び出された数
+static bool chaser_start_slow;				// Chaser開始時の加速度抑制フラグ
 
 ////////////////////////////////////////////////////////////////////////////////
 // function definitions to keep compiler from complaining about undeclared functions
