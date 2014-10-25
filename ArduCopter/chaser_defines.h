@@ -57,6 +57,7 @@
 												// chaser_track_lengthで1、そこからこの距離間で線型に0になる
 #define CHASER_SLOW_START_COUNT      10			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
 #define CHASER_SLOW_START_RATIO      0.2f		// Chaser開始時の加速度割合[-]
+#define CHASER_TARGET_VEL_MAX_SLOW   100.0f		// Chaser開始時の制限速度[cm/s]
 
 
 

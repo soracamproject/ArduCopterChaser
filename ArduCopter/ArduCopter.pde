@@ -777,7 +777,7 @@ static Vector2f target_distance;			// chaser_originからchaser_targetまでの�
 //static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
 
 static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）[cm/s]
-static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
+//static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
@@ -786,8 +786,8 @@ static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まって�
 static bool chaser_started;					// CHASER開始フラグ
 
 static int32_t chaser_yaw_target;					// YAWの目標角度（0〜36000）[centi-degrees]
-static Vector2f chaser_dest_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
-static Vector2f chaser_dest_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
+static Vector2f chaser_target_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
+static Vector2f chaser_target_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 static uint8_t chaser_sonar_alt_health;		// CHASER用ソナー高度健常判断値（chaser_sonar_altで同じことをやっている）
@@ -808,7 +808,7 @@ static uint32_t chaser_debug_millis;		// ビーコンに返すmillis。通信速
 static float chaser_cc_radius;				// Circle Chaserの現在の旋回半径[cm]
 static float chaser_cc_angle;				// Circle Chaserの現在の旋回角度[rad]
 
-static Vector2f chaser_accel;				// chaser_targetの加速度[cm/s^2]
+//static Vector2f chaser_accel;				// chaser_targetの加速度[cm/s^2]
 static uint32_t chaser_last_update_dest;	// destinationの前回更新時刻[ms]
 static float chaser_last_update_dest_dt;	// destinationの前回更新周期[s]
 
@@ -816,6 +816,11 @@ static bool chaser_yaw_update;				// chaser_yaw_targetの更新フラグ
 static int32_t chaser_yaw_target_slew;		// chaser_yaw_targetに制限をかけたもの
 static uint8_t chaser_start_count;			// Chaser開始からdestinationが呼び出された数
 static bool chaser_start_slow;				// Chaser開始時の加速度抑制フラグ
+
+static Vector2f chaser_ff_vel;				// Chaser時フィードフォワード用速度[cm/s]
+static Vector2f chaser_ff_accel;			// Chaser時フィードフォワード用加速度[cm/s^2]
+											// この加速度で速度を変化させる
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // function definitions to keep compiler from complaining about undeclared functions
