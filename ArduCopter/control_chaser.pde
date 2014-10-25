@@ -123,7 +123,7 @@ static void chaser_chase_run()
 	// 前回からの経過時間を計算する
 	uint32_t now = hal.scheduler->millis();
 	float dt = (now - last)/1000.0f;
-	float dt_update_dest = (now - chaser_last_update_dest);
+	float dt_update_dest = (now - chaser_last_update_dest)/1000.0f;
 	
 	// 20Hz駆動
 	if (dt >= CHASER_POSCON_UPDATE_TIME) {
@@ -149,6 +149,7 @@ static void chaser_chase_run()
 				chaser_target_vel.y = constrain_float(chaser_target_vel.y + chaser_accel.y * dt, -g.chaser_target_vel_max, g.chaser_target_vel_max);
 			} else if(dt_update_dest <= chaser_last_update_dest_dt + CHASER_OVERRUN_SEC){
 				// 速度維持
+				
 			} else {
 				// 減速
 				chaser_dest_vel(0.0f,0.0f);
@@ -156,9 +157,64 @@ static void chaser_chase_run()
 				chaser_target_vel.y = constrain_float(chaser_dest_vel.y, chaser_target_vel.y - g.chaser_target_accel * dt, chaser_target_vel.y + g.chaser_target_accel * dt);
 			}
 			
-			// ターゲット位置更新
+			const Vector3f& curr_pos = inertial_nav.get_position();
+			Vector2f ff_ratio;
+			if(chaser_target_vel.x >= 0){
+				// x(+)方向
+				if(curr_pos.x <= chaser_target.x){
+					// そのままFF
+					ff_ratio.x = 1.0f;
+				} else if(curr_pos.x <= chaser_target.x + 100.0f){
+					// FF量を減らす
+					ff_ratio.x = (chaser_target.x + 100.0f - curr_pos.x)/100.0f;
+				} else {
+					// FF量0
+					ff_ratio.x = 0.0f;
+				}
+			} else {
+				// x(-)方向
+				if(chaser_target.x <= curr_pos.x){
+					// そのままFF
+					ff_ratio.x = 1.0f;
+				} else if(chaser_target.x - 100.0f <= curr_pos.x){
+					// FF量を減らす
+					ff_ratio.x = (curr_pos.x - chaser_target.x + 100.0f)/100.0f;
+				} else {
+					// FF量0
+					ff_ratio.x = 0.0f;
+				}
+			}
+			
+			if(chaser_target_vel.y >= 0){
+				// x(+)方向
+				if(curr_pos.y <= chaser_target.y){
+					// そのままFF
+					ff_ratio.y = 1.0f;
+				} else if(curr_pos.y <= chaser_target.y + 100.0f){
+					// FF量を減らす
+					ff_ratio.y = (chaser_target.y + 100.0f - curr_pos.y)/100.0f;
+				} else {
+					// FF量0
+					ff_ratio.y = 0.0f;
+				}
+			} else {
+				// x(-)方向
+				if(chaser_target.y <= curr_pos.y){
+					// そのままFF
+					ff_ratio.y = 1.0f;
+				} else if(chaser_target.y - 100.0f <= curr_pos.y){
+					// FF量を減らす
+					ff_ratio.y = (curr_pos.y - chaser_target.y + 100.0f)/100.0f;
+				} else {
+					// FF量0
+					ff_ratio.y = 0.0f;
+				}
+			}
+			
+			
+			// ターゲット位置、速度更新
 			pos_control.set_xy_target(chaser_target.x,chaser_target.y);
-			pos_control.set_desired_velocity_xy(chaser_target_vel.x,chaser_target_vel.y);
+			pos_control.set_desired_velocity_xy(chaser_target_vel.x*ff_ratio.x,chaser_target_vel.y*ff_ratio.y);
 			
 			// ポジションコントローラを呼ぶ
 			pos_control.update_xy_controller_for_chaser(dt,true);
@@ -413,6 +469,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		// 引数は順に(経度方向:lng、緯度方向:lat)
 		// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
 		chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel.y, chaser_dest_vel.x));
+		if(chaser_yaw_target < 0){ chaser_yaw_target += 36000.0f; }
 	}
 	#else
 	if(yaw_relax_count < CHASER_YAW_DEST_RELAX_NUM-1) {
@@ -426,6 +483,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 			// 引数は順に(経度方向:lng、緯度方向:lat)
 			// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す(はず)
 			chaser_yaw_target = RadiansToCentiDegrees(fast_atan2(chaser_dest_vel_relaxed_for_yaw.y, chaser_dest_vel_relaxed_for_yaw.x));
+			if(chaser_yaw_target < 0){ chaser_yaw_target += 36000.0f; }
 		}
 		
 		// 積算とカウントをリセット
@@ -707,7 +765,7 @@ bool chaser_fs_beacon_pos() {
 //ターゲット角度が小さい・距離が近い(未実装)の場合にyawの制限速度を変える
 // **速度制限機能廃止中**
 static float get_chaser_yaw_slew(float dt){
-	return(wrap_360_cd_float(ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*dt, g.chaser_yaw_slew_rate*dt)));
+	return(wrap_360_cd_float(ahrs.yaw_sensor + constrain_float(wrap_180_cd_float(chaser_yaw_target - ahrs.yaw_sensor), -g.chaser_yaw_slew_rate*100.0f*dt, g.chaser_yaw_slew_rate*100.0f*dt)));
 
 }
 
