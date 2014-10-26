@@ -25,16 +25,18 @@ public:
 	
 	void init_gps();
 	void get_gps_new_data();
+	GPS_Status status() const { return GPS_status; }
+	float ground_speed() const { return _ground_speed;}
+	int32_t ground_course_cd() const { return _ground_course_cd; }
 	
-	GPS_Status status() const {return GPS_status;}
 	
 private:
 	// GPS関連の変数
 	int32_t		GPS_read[2];
 	uint8_t		GPS_numSats;
 	int16_t		GPS_altitude;				// 単位[m]
-	uint16_t	GPS_ground_speed;			// 単位[m/s*100]
-	uint16_t	GPS_ground_ground_course;
+	float		_ground_speed;				// 単位[m/s]
+	int32_t		_ground_course_cd;
 	uint32_t	GPS_last_gps_time_ms;
 	GPS_Status	GPS_status;
 	uint16_t	GPS_hdop;					// horizontal dilution of precision in cm

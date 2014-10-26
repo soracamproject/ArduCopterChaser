@@ -31,15 +31,12 @@ public:
         //roll(0.0f),
         //pitch(0.0f),
         //yaw(0.0f),
-        //roll_sensor(0),
-        //pitch_sensor(0),
-        //yaw_sensor(0),
+		roll_sensor(0),
+		pitch_sensor(0),
+		yaw_sensor(0),
         //_vehicle_class(AHRS_VEHICLE_UNKNOWN),
         //_airspeed(NULL),
         //_compass_last_update(0),
-        //_ins(ins),
-        //_baro(baro),
-        //_gps(gps),
         //_cos_roll(1.0f),
         //_cos_pitch(1.0f),
         //_cos_yaw(1.0f),
@@ -73,7 +70,7 @@ public:
         //_have_position(false),
         //_last_wind_time(0),
         //_last_airspeed(0.0f),
-        //_last_consistent_heading(0),
+        _last_consistent_heading(0),
 		_last_failure_ms(0),
 		_gps_use(false),
 		_ins(ins),
@@ -193,10 +190,10 @@ public:
     //float pitch;
     //float yaw;
 
-    // integer Euler angles (Degrees * 100)
-    //int32_t roll_sensor;
-    //int32_t pitch_sensor;
-    //int32_t yaw_sensor;
+	// integer Euler angles (Degrees * 100)
+	int32_t roll_sensor;
+	int32_t pitch_sensor;
+	int32_t yaw_sensor;
 
     // return a smoothed and corrected gyro vector
     //virtual const Vector3f &get_gyro(void) const = 0;
@@ -502,17 +499,17 @@ private:
 
     // whether we have a position estimate
     bool _have_position;
-
+	*/
     // support for wind estimation
-    Vector3f _last_fuse;
-    Vector3f _last_vel;
-    uint32_t _last_wind_time;
-    float _last_airspeed;
+    //Vector3f _last_fuse;
+    //Vector3f _last_vel;
+    //uint32_t _last_wind_time;
+    //float _last_airspeed;
     uint32_t _last_consistent_heading;
 
     // estimated wind in m/s
     Vector3f _wind;
-	*/
+
 	// last time AHRS failed in milliseconds
 	// 前回計算失敗した時刻
 	uint32_t _last_failure_ms;

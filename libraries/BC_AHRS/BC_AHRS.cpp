@@ -267,11 +267,11 @@ BC_AHRS::update(void)
 	}
 	
 	// Integrate the DCM matrix using gyro inputs
-	// (超訳)ジャイロ値で方向余弦行列を更新
+	// (超訳)ジャイロ値で方向余弦行列を更新		// ★チェックOK
 	matrix_update(delta_t);
 	
 	// Normalize the DCM matrix
-	// (超訳)方向余弦行列をノーマライズ
+	// (超訳)方向余弦行列をノーマライズ		// ★チェックOK
 	normalize();
 	
 	// Perform drift correction
@@ -527,9 +527,10 @@ bool BC_AHRS::have_gps(void) const
 }
 
 // return true if we should use the compass for yaw correction
+// (超訳) YAW補正にコンパスを使うべきかを返す		// ★チェックOK
 bool BC_AHRS::use_compass(void)
 {
-	if (_compass->use_for_yaw()) {
+	if (_compass.use_for_yaw()) {
 		// no compass available
 		return false;
 	}
@@ -550,19 +551,19 @@ bool BC_AHRS::use_compass(void)
 	//        地上速の80%以下だったらGPSナビゲーションにシフトする
 	//        これは異常なコンパスオフセットによりどこかにぶっとんで
 	//        いかないようにするため
-    int32_t error = abs(wrap_180_cd(yaw_sensor - _gps.ground_course_cd()));
-    if (error > 4500 && _wind.length() < _gps.ground_speed()*0.8f) {
-        if (hal.scheduler->millis() - _last_consistent_heading > 2000) {
-            // start using the GPS for heading if the compass has been
-            // inconsistent with the GPS for 2 seconds
-            return false;
-        }
-    } else {
-        _last_consistent_heading = hal.scheduler->millis();
-    }
-
-    // use the compass
-    return true;    
+	int32_t error = abs(wrap_180_cd(yaw_sensor - _gps.ground_course_cd()));
+	if (error > 4500 && _wind.length() < _gps.ground_speed()*0.8f) {
+		if (millis() - _last_consistent_heading > 2000) {
+			// start using the GPS for heading if the compass has been
+			// inconsistent with the GPS for 2 seconds
+			return false;
+		}
+	} else {
+		_last_consistent_heading = millis();
+	}
+	
+	// use the compass
+	return true;
 }
 
 // yaw drift correction using the compass or GPS

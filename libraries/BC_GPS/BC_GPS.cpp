@@ -223,8 +223,8 @@ bool BC_GPS::UBLOX_parse_gps(void){
 			break;
 			
 		case MSG_VELNED:
-			GPS_ground_speed = _buffer.velned.speed_2d;				// cm/s
-			GPS_ground_ground_course = (uint16_t)(_buffer.velned.heading_2d / 10000);	// Heading 2D deg * 100000 rescaled to deg * 10
+			_ground_speed = _buffer.velned.speed_2d*0.01f;			// m/s
+			_ground_course_cd = _buffer.velned.heading_2d / 1000;	// Heading 2D deg * 100000 rescaled to deg * 100
 			_new_speed = true;
 			break;
 			
