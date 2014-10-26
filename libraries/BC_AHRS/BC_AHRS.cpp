@@ -577,17 +577,15 @@ BC_AHRS::drift_correction_yaw(void)
 	float yaw_deltat;
 	
 	if (use_compass()) {
-        /*
-          we are using compass for yaw
-         */
-        if (_compass->last_update != _compass_last_update) {
-            yaw_deltat = (_compass->last_update - _compass_last_update) * 1.0e-6f;
-            _compass_last_update = _compass->last_update;
-            // we force an additional compass read()
-            // here. This has the effect of throwing away
-            // the first compass value, which can be bad
-            if (!_flags.have_initial_yaw && _compass->read()) {
-                float heading = _compass->calculate_heading(_dcm_matrix);
+		//we are using compass for yaw
+		if (_compass.last_update() != _compass_last_update) {
+			yaw_deltat = (_compass.last_update() - _compass_last_update) * 1.0e-6f;
+			_compass_last_update = _compass.last_update();
+			// we force an additional compass read()
+			// here. This has the effect of throwing away
+			// the first compass value, which can be bad
+			if (!_flags.have_initial_yaw && _compass.read()) {
+                float heading = _compass.calculate_heading(_dcm_matrix);
                 _dcm_matrix.from_euler(roll, pitch, heading);
                 _omega_yaw_P.zero();
                 _flags.have_initial_yaw = true;

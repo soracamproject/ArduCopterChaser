@@ -279,7 +279,7 @@ static void beacon_sub_run(){
 		
 		case 3:
 		// 磁気センサ取得
-		compass.get_data();
+		compass.read();
 		break;
 		
 		case 4:

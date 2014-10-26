@@ -36,7 +36,7 @@ public:
 		yaw_sensor(0),
         //_vehicle_class(AHRS_VEHICLE_UNKNOWN),
         //_airspeed(NULL),
-        //_compass_last_update(0),
+        _compass_last_update(0),
         //_cos_roll(1.0f),
         //_cos_pitch(1.0f),
         //_cos_yaw(1.0f),
@@ -531,7 +531,7 @@ protected:
 */
 	// flags structure
 	struct ahrs_flags {
-		//uint8_t have_initial_yaw        : 1;    // whether the yaw value has been intialised with a reference
+		uint8_t have_initial_yaw        : 1;    // whether the yaw value has been intialised with a reference
 		//uint8_t fast_ground_gains       : 1;    // should we raise the gain on the accelerometers for faster convergence, used when disarmed for ArduCopter
 		//uint8_t correct_centrifugal     : 1;    // 1 if we should correct for centrifugal forces (allows arducopter to turn this off when motors are disarmed)
 		//uint8_t wind_estimation         : 1;    // 1 if we should do wind estimation
@@ -547,16 +547,11 @@ protected:
 
     // pointer to airspeed object, if available
     AP_Airspeed     * _airspeed;
-
+*/
     // time in microseconds of last compass update
+	// コンパスの前回更新時刻[us]
     uint32_t _compass_last_update;
-
-    // note: we use ref-to-pointer here so that our caller can change the GPS without our noticing
-    //       IMU under us without our noticing.
-    AP_InertialSensor   &_ins;
-    AP_Baro             &_baro;
-    const AP_GPS        &_gps;
-
+/*
     // a vector to capture the difference between the controller and body frames
     AP_Vector3f         _trim;
 
@@ -585,7 +580,7 @@ protected:
 	*/
 	
 	BC_InertialSensor	&_ins;
-	BC_GPS				&_gps;
+	const BC_GPS		&_gps;
 	BC_Compass			&_compass;
 	
 };

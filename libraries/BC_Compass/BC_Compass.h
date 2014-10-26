@@ -28,6 +28,7 @@ public:
 		calibrate_mag(false),
 		calib_OK_M(false),
 		_healthy(false),
+		_last_update(0),
 		_i2c(i2c)
 	{}
 	
@@ -35,10 +36,12 @@ public:
 	int16_t		magADC[3];
 	
 	void		init();
-	bool		get_data();
+	//bool		get_data();
 	void		calib_start();
-	bool		calib_ok() const {return calib_OK_M;}
-	bool		use_for_yaw() const {return _healthy;}	// 健常度を返す
+	bool		calib_ok() const { return calib_OK_M; }
+	bool		use_for_yaw() const { return _healthy; }	// 健常度を返す
+	uint32_t	last_update() const { return _last_update;}
+	bool		read();
 	
 private:
 	int16_t		magZero[3];
@@ -48,6 +51,8 @@ private:
 	int16_t		mag_declination;
 	bool		calib_OK_M;
 	bool		_healthy;
+	uint32_t	_last_update;	// micro_sec
+	
 	
 	void		getADC();
 	void		getADC_via_MPU6050();

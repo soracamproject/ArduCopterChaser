@@ -110,7 +110,7 @@ void BC_Compass::init() {
 }
 
 
-bool BC_Compass::get_data(){ // return true when news values are available, false otherwise
+bool BC_Compass::read(){ // return true when news values are available, false otherwise
 	static uint32_t t,tCal = 0;
 	static int16_t magZeroTempMin[3];
 	static int16_t magZeroTempMax[3];
@@ -119,6 +119,7 @@ bool BC_Compass::get_data(){ // return true when news values are available, fals
 	if(now_us<t){
 		return false; //each read is spaced by 100ms
 	}
+	_last_update = now_us; // record time of update
 	t = now_us + 100000;
 	TWBR = ((F_CPU / 400000L) - 16) / 2; // change the I2C clock rate to 400kHz
 	getADC_via_MPU6050();
