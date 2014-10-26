@@ -30,7 +30,6 @@
 // CHASER制御関連
 // ==============================
 #define CHASER_TARGET_RELAX_NUM      4			// ビーコン位置のなまし数
-#define CHASER_TARGET_VEL_MAX        600.0f		// ターゲットの移動速度の最大値[m/s]
 #define CHASER_YAW_SLEW_RATE         15			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 #define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
 												// なまし数1だとなまさない（当然だけど）
@@ -53,11 +52,15 @@
 #define CHASER_CIRCLE_TIME_MIN       5.0f		// Circle Chaser時の旋回時間min[cm]
 #define CHASER_CIRCLE_TIME_MAX       30.0f		// Circle Chaser時の旋回時間max[cm]
 #define CHASER_POSCON_UPDATE_TIME    0.05f		// Chaserの位置制御の更新周期[sec]
-#define CHASER_VEL_FF_LEASH          100.0f		// 機体の現在位置がchaser_destinationからchaser_track_length方向にこの距離以上離れたら速度のFF項を0にする[cm]
+#define CHASER_VEL_FF_LEASH_FW       50.0f		// 機体の現在位置がchaser_destinationからchaser_track_length方向にこの距離以上離れたら速度のFF項を0にする[cm]
 												// chaser_track_lengthで1、そこからこの距離間で線型に0になる
-#define CHASER_SLOW_START_COUNT      10			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
+#define CHASER_VEL_FF_LEASH_BW       100.f
+#define CHASER_VEL_FF_RATIO_PLUS     0.5f
+#define CHASER_SLOW_START_COUNT      50			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
 #define CHASER_SLOW_START_RATIO      0.2f		// Chaser開始時の加速度割合[-]
-#define CHASER_TARGET_VEL_MAX_SLOW   100.0f		// Chaser開始時の制限速度[cm/s]
+#define CHASER_TARGET_VEL_MAX_SLOW   50.0f		// Chaser開始時の制限速度[cm/s]
+#define CHASER_FF_ACCEL_PLUS         0.0f
+#define CHASER_FF_ACCEL_MIN          0.0f
 
 
 
@@ -66,6 +69,7 @@
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
 
 // Mission Plannerで変更可
+#define CHASER_TARGET_VEL_MAX        1000.0f	// ターゲットの移動速度の最大値[m/s]
 #define CHASER_BEACON_OFFSET_LAT     -250.0f	// ビーコン位置のオフセット値（lat,緯度方向,x方向）（変更可、初期値）[cm]※-250はミササガパークでの実績値
 #define CHASER_BEACON_OFFSET_LON     0.0f		// ビーコン位置のオフセット値（lon,経度方向,x方向）（変更可、初期値）[cm]
 #define CHASER_TARGET_ACCEL          200.0f		// ターゲットの移動速度変化時の加速度限界（変更可、初期値）[cm/s/s]

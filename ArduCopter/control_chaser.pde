@@ -144,7 +144,7 @@ static void chaser_chase_run()
 			chaser_target = chaser_origin + target_distance;
 			
 			// chaser_ff_velを計算
-			Vector2f chaser_ff_vel_next = chaser_ff_vel + chaser_ff_accel * dt;
+			chaser_ff_vel = chaser_ff_vel + chaser_ff_accel * dt;
 			if(chaser_target_vel.x >=0){
 				chaser_ff_vel.x = min(chaser_ff_vel.x, chaser_target_vel.x);
 			} else {
@@ -164,27 +164,35 @@ static void chaser_chase_run()
 			
 			// FF量制限計算
 			const Vector3f& curr_pos = inertial_nav.get_position();
+			float leash_fw = max(CHASER_VEL_FF_LEASH_FW,10.0f);
+			float leash_bw = max(CHASER_VEL_FF_LEASH_BW,10.0f);
 			Vector2f ff_ratio;
 			if(chaser_target_vel.x >= 0){
 				// x(+)方向
-				if(curr_pos.x <= chaser_target.x){
-					// そのままFF
-					ff_ratio.x = 1.0f;
-				} else if(curr_pos.x <= chaser_target.x + 100.0f){
+				if(curr_pos.x <= chaser_target.x - leash_bw){
+					// FF量最大
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
+				} else if(curr_pos.x <= chaser_target.x){
 					// FF量を減らす
-					ff_ratio.x = (chaser_target.x + 100.0f - curr_pos.x)/100.0f;
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (chaser_target.x - curr_pos.x)/leash_bw;
+				} else if(curr_pos.x <= chaser_target.x + leash_fw){
+					// FF量を減らす
+					ff_ratio.x = (chaser_target.x + leash_fw - curr_pos.x)/leash_fw;
 				} else {
 					// FF量0
 					ff_ratio.x = 0.0f;
 				}
 			} else {
 				// x(-)方向
-				if(chaser_target.x <= curr_pos.x){
-					// そのままFF
-					ff_ratio.x = 1.0f;
-				} else if(chaser_target.x - 100.0f <= curr_pos.x){
+				if(chaser_target.x + leash_bw <= curr_pos.x){
+					// FF量最大
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
+				} else if(chaser_target.x <= curr_pos.x){
 					// FF量を減らす
-					ff_ratio.x = (curr_pos.x - chaser_target.x + 100.0f)/100.0f;
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (curr_pos.x - chaser_target.x)/leash_bw;
+				} else if(chaser_target.x - leash_fw <= curr_pos.x){
+					// FF量を減らす
+					ff_ratio.x = (curr_pos.x - chaser_target.x + leash_fw)/leash_fw;
 				} else {
 					// FF量0
 					ff_ratio.x = 0.0f;
@@ -193,30 +201,38 @@ static void chaser_chase_run()
 			
 			if(chaser_target_vel.y >= 0){
 				// y(+)方向
-				if(curr_pos.y <= chaser_target.y){
-					// そのままFF
-					ff_ratio.y = 1.0f;
-				} else if(curr_pos.y <= chaser_target.y + 100.0f){
+				if(curr_pos.y <= chaser_target.y - leash_bw){
+					// FF量最大
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
+				} else if(curr_pos.y <= chaser_target.y){
 					// FF量を減らす
-					ff_ratio.y = (chaser_target.y + 100.0f - curr_pos.y)/100.0f;
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (chaser_target.y - curr_pos.y)/leash_bw;
+				} else if(curr_pos.y <= chaser_target.y + leash_fw){
+					// FF量を減らす
+					ff_ratio.y = (chaser_target.y + leash_fw - curr_pos.y)/leash_fw;
 				} else {
 					// FF量0
 					ff_ratio.y = 0.0f;
 				}
 			} else {
 				// y(-)方向
-				if(chaser_target.y <= curr_pos.y){
-					// そのままFF
-					ff_ratio.y = 1.0f;
-				} else if(chaser_target.y - 100.0f <= curr_pos.y){
+				if(chaser_target.y + leash_bw <= curr_pos.y){
+					// FF量最大
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
+				} else if(chaser_target.y <= curr_pos.y){
 					// FF量を減らす
-					ff_ratio.y = (curr_pos.y - chaser_target.y + 100.0f)/100.0f;
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (curr_pos.y - chaser_target.y)/leash_bw;
+				} else if(chaser_target.y - leash_fw <= curr_pos.y){
+					// FF量を減らす
+					ff_ratio.y = (curr_pos.y - chaser_target.y + leash_fw)/leash_fw;
 				} else {
 					// FF量0
 					ff_ratio.y = 0.0f;
 				}
 			}
 			
+			// 必要であればleashを再計算する
+			pos_control.calc_leash_length_xy();
 			
 			// ターゲット位置、速度更新
 			pos_control.set_xy_target(chaser_target.x,chaser_target.y);
@@ -480,6 +496,17 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	
 	// FF速度の加速度計算
 	chaser_ff_accel = (chaser_target_vel - chaser_ff_vel)/dt;
+	chaser_ff_accel = chaser_ff_accel * (1.0f+CHASER_FF_ACCEL_PLUS);	//増倍
+	if(chaser_ff_accel.x >= 0.0f){
+		chaser_ff_accel.x = max(chaser_ff_accel.x, CHASER_FF_ACCEL_MIN);
+	} else {
+		chaser_ff_accel.x = min(chaser_ff_accel.x, -CHASER_FF_ACCEL_MIN);
+	}
+	if(chaser_ff_accel.y >= 0.0f){
+		chaser_ff_accel.y = max(chaser_ff_accel.y, CHASER_FF_ACCEL_MIN);
+	} else {
+		chaser_ff_accel.y = min(chaser_ff_accel.y, -CHASER_FF_ACCEL_MIN);
+	}
 	
 	// 最大加速度で制限
 	float chaser_ff_accel_abs = chaser_ff_accel.length();
@@ -607,6 +634,10 @@ static bool set_chaser_state(uint8_t state) {
 		case CHASER_CHASE:
 		{
 			pos_control.init_xy_controller_for_chaser();
+			
+			float chaser_speed_cms = 1000.0f;
+			pos_control.set_speed_xy(chaser_speed_cms);
+			pos_control.set_accel_xy(chaser_speed_cms/2.0f);
 			
 			success = true;
 			break;
