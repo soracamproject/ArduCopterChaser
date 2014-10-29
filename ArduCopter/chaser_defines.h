@@ -8,7 +8,7 @@
 // ==============================
 // CHASER_STATE
 #define CHASER_INIT          0
-#define CHASER_READY         1
+#define CHASER_READY         1	// 使っていない
 #define CHASER_TAKEOFF       2
 #define CHASER_STAY          3
 #define CHASER_CHASE         4

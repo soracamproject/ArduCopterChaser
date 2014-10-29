@@ -23,7 +23,7 @@ static void chaser_run() {
 	
 	switch(chaser_state) {
 		case CHASER_INIT:
-		case CHASER_READY:
+		//case CHASER_READY:
 			break;
 		
 		case CHASER_TAKEOFF:
@@ -587,6 +587,7 @@ static bool set_chaser_state(uint8_t state) {
 			break;
 		}
 		
+		/*
 		case CHASER_READY:
 		{
 			// カメラジンバルON
@@ -595,9 +596,14 @@ static bool set_chaser_state(uint8_t state) {
 			success = true;
 			break;
 		}
+		*/
+		
 		case CHASER_TAKEOFF:
 		{
-			// guidedを流用
+			// カメラジンバルON
+			chaser_mount_activate = true;
+			
+			// 以下guidedを流用
 			
 			// initialise wpnav destination
 			Vector3f target_pos = inertial_nav.get_position();
@@ -692,7 +698,7 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 						set_mode(CHASER);
 					}
 					break;
-				case CHASER_READY:
+				//case CHASER_READY:
 				case CHASER_TAKEOFF:
 				case CHASER_STAY:
 				case CHASER_CHASE:
@@ -709,8 +715,8 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 			break;
 		
 		case 3:
-			// CHASERモードかつCHASER_READYステートかつディスアーム時のみアームする
-			if ((control_mode==CHASER && chaser_state==CHASER_READY) && !motors.armed()) {
+			// CHASERモードかつCHASER_INITステートかつディスアーム時のみアームする
+			if ((control_mode==CHASER && chaser_state==CHASER_INIT) && !motors.armed()) {
 				// run pre_arm_checks and arm_checks and display failures
 				pre_arm_checks(true);
 				if(ap.pre_arm_check && arm_checks(true)) {
@@ -738,12 +744,12 @@ static bool chaser_state_change_check(uint8_t state) {
 			if(control_mode == STABILIZE) {return true;}
 			break;
 		
-		case CHASER_READY:
-			if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}
-			break;
+		//case CHASER_READY:
+		//	if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}
+		//	break;
 		
 		case CHASER_TAKEOFF:
-			if(control_mode==CHASER && chaser_state==CHASER_READY) {return true;}
+			if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}
 			break;
 		
 		case CHASER_STAY:
@@ -791,7 +797,7 @@ bool chaser_fs_requires_check(){
 			case CHASER_LAND:
 				return false;
 			
-			case CHASER_READY:
+			//case CHASER_READY:
 			case CHASER_TAKEOFF:
 			case CHASER_STAY:
 			case CHASER_CHASE:

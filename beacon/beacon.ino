@@ -9,8 +9,14 @@
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 #include "../../ArduCopter/chaser_defines.h"
 
-#define BEACON_IBIS
-//#define BEACON_PHEASANT
+// BEACON_IBISとBEACON_PHEASANT切り替えを有効にするためのおまじない（仮）
+#if 1
+__asm volatile ("nop");
+#endif
+
+
+//#define BEACON_IBIS
+#define BEACON_PHEASANT
 
 // ***********************************************************************************
 // シリアルポート
@@ -40,29 +46,31 @@ static uint32_t prev_us = 0;	// 前回時刻格納変数[us]
 static uint32_t prev_ms = 0;	// 前回時刻格納変数[ms]
 static uint32_t prev_et_ms = 0;	// 前回時刻格納変数（毎回実行部 every time）[ms]
 static uint32_t prev_ss_ms = 0;	// 前回時刻格納変数（サブステートコントロール部 sub state）[ms]
-static bool first_time = true;	// ステートに入るのが最初かどうか
-static bool blink_on = false;	// LED点滅フラグ
 static uint8_t state;			// ビーコンステート
-static uint8_t substate;		// サブステート
+static uint8_t step;			// 各ステート内での順序を持った状態
+static uint8_t subtask;			// サブタスク
+
+// ビーコン用フラグ
+static struct {
+	uint8_t blink            : 1;	// 点灯(0),点滅(1)
+	uint8_t ready_to_takeoff : 1;	// TAKEOFF不可(0)、可(1)
+} flags;
 
 // MultiWii移植部、暫定
 uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
 
-// 通信デバッグ用
-#define DEBUG_NUM 10
-static uint8_t debug_count;
-static bool debug_send_flag;
-static uint16_t beacon_id[DEBUG_NUM];
-static uint16_t copter_id[DEBUG_NUM];
-static uint32_t beacon_time_sended[DEBUG_NUM];
-static uint32_t copter_time_received[DEBUG_NUM];
-static uint32_t beacon_time_received[DEBUG_NUM];
-
-
 // ステートに入った際に必ず実行される部分のマクロ
-#define S_INIT       substate=0;prev_ms=now_ms;first_time=false;blink_on=true
+#define S_INIT       step=0;prev_ms=now_ms;flags.blink=true
 // サブステートをひとつ進めるマクロ
-#define SS_INCREMENT substate++;prev_ss_ms=now_ms
+#define SS_INCREMENT step++;prev_ss_ms=now_ms
+
+// サブタスク
+#define SUBTASK_BARO     0
+#define SUBTASK_GPS      1
+#define SUBTASK_INS      2
+#define SUBTASK_COMPASS  3
+#define SUBTASK_MSG      4
+#define SUBTASK_NUM      5
 
 
 
@@ -111,7 +119,6 @@ static bool dummy1;
 	#define LED2   3
 	#define LED3   5
 	#define LED4   6
-
 #endif
 
 #define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
@@ -131,10 +138,18 @@ static bool dummy2;
 
 #if defined(BEACON_PHEASANT)
 	// pheasant用
-	#define BUTTON1   36
-	#define BUTTON2   37
-	Bounce button1 = Bounce();
-	Bounce button2 = Bounce();
+	#define BUTTON1      36
+	#define BUTTON2      37
+	#define BUTTON_UP    33
+	#define BUTTON_DOWN  34
+	#define BUTTON_RIGHT 35
+	#define BUTTON_LEFT  32
+	Bounce button1  = Bounce();
+	Bounce button2  = Bounce();
+	Bounce button_u = Bounce();
+	Bounce button_d = Bounce();
+	Bounce button_r = Bounce();
+	Bounce button_l = Bounce();
 #endif
 
 
@@ -180,12 +195,29 @@ void setup(){
 	button2.attach(BUTTON2);
 	button1.interval(50);			//たぶんチャタ防止間隔5ms
 	button2.interval(50);			//たぶんチャタ防止間隔5ms
-	
+#if defined(BEACON_PHEASANT)
+	pinMode(BUTTON_UP, INPUT);
+	pinMode(BUTTON_DOWN, INPUT);
+	pinMode(BUTTON_RIGHT, INPUT);
+	pinMode(BUTTON_LEFT, INPUT);
+	button_u.attach(BUTTON_UP);
+	button_d.attach(BUTTON_DOWN);
+	button_r.attach(BUTTON_RIGHT);
+	button_l.attach(BUTTON_LEFT);
+	button_u.interval(50);			//たぶんチャタ防止間隔5ms
+	button_d.interval(50);			//たぶんチャタ防止間隔5ms
+	button_r.interval(50);			//たぶんチャタ防止間隔5ms
+	button_l.interval(50);			//たぶんチャタ防止間隔5ms
+#endif
+
 	// LED全消灯
 	control_led(-1,-1,-1,-1);
 	
 	// 初期ステート設定
 	change_state(BEACON_INIT);
+	
+	// サブタスクステップを初期化
+	subtask = 0;
 	
 	// 前回時間の初期化
 	prev_us = micros();
@@ -255,44 +287,40 @@ static void beacon_main_run(){
 // サブ制御関数
 // 順に実行される
 static void beacon_sub_run(){
-	// サブタスクステート
-	static uint8_t subtask_state = 0;
-	
-	switch(subtask_state){
-		case 0:
+	// サブタスク実行
+	switch(subtask){
+		case SUBTASK_BARO:
 		// 気圧センサ更新
 		//baro_update();		// for MS baro: I2C set and get: 220 us  -  presure and temperature computation 160 us
 		//beacon_loc_data.pressure = baro_pressure;
 		break;
 		
-		case 1:
+		case SUBTASK_GPS:
 		// GPS取得
 		gps.get_gps_new_data();  // I2C GPS: 160 us with no new data / 1250us! with new data
 		beacon_loc_data.lat = gps.lat_data;
 		beacon_loc_data.lon = gps.lon_data;
 		break;
 		
-		case 2:
+		case SUBTASK_INS:
 		// ジャイロセンサ、加速度センサ取得
 		ins.get_data();
 		break;
 		
-		case 3:
+		case SUBTASK_COMPASS:
 		// 磁気センサ取得
 		compass.read();
 		break;
 		
-		case 4:
+		case SUBTASK_MSG:
 		// Mavlink メッセージ受信
 		check_input_msg();
 		break;
 	}
 	
-	// サブタスクステートを進める
-	// 注意：サブタスクを増やしたらこちらの数字も増やすこと
-	subtask_state++;
-	if(subtask_state > 4){
-		subtask_state = 0;
+	// サブタスクステップを進める
+	if(++subtask >= SUBTASK_NUM){
+		subtask = 0;
 	}
 }
 
@@ -304,113 +332,95 @@ static bool change_state(uint8_t next_state){
 		return false;
 	}
 	
-	// ステート開始時の関数を呼ぶ
+	// 実在するステートかチェック
 	switch(next_state){
 		case BEACON_INIT:
-		beacon_init_start();
-		break;
-		
 		case BEACON_READY:
-		beacon_ready_start();
-		break;
-		
 		case BEACON_TAKEOFF:
-		beacon_takeoff_start();
-		break;
-		
 		case BEACON_STAY:
-		beacon_stay_start();
-		break;
-		
 		case BEACON_CHASE:
-		beacon_chase_start();
-		break;
-		
 		case BEACON_CIRCLE:
-		beacon_circle_start();
-		break;
-		
 		case BEACON_LAND:
-		beacon_land_start();
-		break;
-		
 		case BEACON_DEBUG:
-		beacon_debug_start();
-		break;
+			break;
 		
 		default:
 			return false;
-		break;
+			break;
+	}
+	
+	// 共通実施
+	step = 0;
+	prev_ms = now_ms;
+	
+	// ステート開始時の関数を呼ぶ
+	switch(next_state){
+		case BEACON_INIT:
+			flags.blink = true;
+			control_led(1,-1,-1,-1);
+			
+			break;
+		
+		case BEACON_READY:
+			flags.blink = true;
+			control_led(-1,-1,-1,-1);
+			
+			flags.ready_to_takeoff = false;
+			
+			break;
+		
+		case BEACON_TAKEOFF:
+			flags.blink = true;
+			control_led(-1,-1,-1,-1);
+			
+			break;
+		
+		case BEACON_STAY:
+			flags.blink = true;
+			control_led(-1,-1,1,-1);
+			
+			break;
+		
+		case BEACON_CHASE:
+			flags.blink = true;
+			control_led(-1,-1,-1,1);
+			
+			break;
+		
+		case BEACON_CIRCLE:
+			flags.blink = true;
+			control_led(-1,1,-1,1);
+			
+			break;
+		
+		case BEACON_LAND:
+			flags.blink = true;
+			control_led(1,1,1,1);
+			
+			break;
+		
+		case BEACON_DEBUG:
+			flags.blink = true;
+			control_led(1,-1,1,-1);
+			
+			// debug_countを0にする
+			debug_init();
+			
+			// GYRO,ACCのキャリブレーションを開始
+			ins.gyro_calib_start();
+			ins.acc_calib_start();
+			compass.calib_start();
+			
+			break;
+		
+		default:
+			return false;
+			break;
 	}
 	
 	// ステートを変更しtrueを返す
 	state = next_state;	
 	return true;
-}
-
-static void beacon_init_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(1,-1,-1,-1);
-}
-
-static void beacon_ready_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(-1,-1,-1,-1);
-}
-
-static void beacon_takeoff_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(-1,-1,-1,-1);
-}
-
-static void beacon_stay_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(-1,-1,1,-1);
-}
-
-static void beacon_chase_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(-1,-1,-1,1);
-}
-
-static void beacon_circle_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(-1,1,-1,1);
-}
-
-static void beacon_land_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(1,1,1,1);
-}
-
-static void beacon_debug_start(){
-	substate = 0;
-	prev_ms = now_ms;
-	blink_on = true;
-	control_led(1,-1,1,-1);
-	
-	// debug_countを0にする
-	debug_count = 0;
-	debug_send_flag = true;
-	
-	// GYRO,ACCのキャリブレーションを開始
-	ins.gyro_calib_start();
-	ins.acc_calib_start();
-	compass.calib_start();
 }
 
 
@@ -429,7 +439,7 @@ static void beacon_init_run(){
 
 static void beacon_ready_run(){
 	// スイッチ１が押されたらBEACON_TAKEOFFに移行
-	if(button1.push_check()){
+	if(button1.push_check() && flags.ready_to_takeoff){
 		if(change_state(BEACON_TAKEOFF)){return;}
 	}
 	
@@ -439,10 +449,10 @@ static void beacon_ready_run(){
 	}
 	
 	// LED点滅
-	if(blink_on){blink_led(0,1,0,0);};
+	if(flags.blink){blink_led(0,1,0,0);};
 	
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// 機体stateをCHASER_INITにする
 		send_change_chaser_state_cmd(CHASER_INIT);
@@ -450,24 +460,28 @@ static void beacon_ready_run(){
 		break;
 		
 		case 1:
-		// 10秒待って機体stateをCHASER_READYにする
+		// 10秒待って機体をアームする
 		if((now_ms - prev_ss_ms) > 10000){
-			send_change_chaser_state_cmd(CHASER_READY);
+			send_arm_cmd_for_chaser();
 			SS_INCREMENT;
 		}
 		break;
 		
 		case 2:
-		// 10秒待って機体をアームする
-		if((now_ms - prev_ss_ms) > 10000){
-			send_arm_cmd_for_chaser();
-			
+		// 5秒待って機体をLED点灯
+		// アームできたかどうかは判定しない
+		if((now_ms - prev_ss_ms) > 5000){
 			// LED(黄)点灯
-			blink_on = false;
+			flags.blink = false;
 			control_led(-1,1,-1,-1);
+			
+			// TAKEOFF OKフラグを立てる
+			flags.ready_to_takeoff = true;
+			
 			SS_INCREMENT;
 		}
 		break;
+
 	}
 }
 
@@ -479,7 +493,7 @@ static void beacon_takeoff_run(){
 	}
 	
 	// スイッチ１が押されたらBEACOM_STAYに移行
-	if(substate ==1 && button1.push_check()){
+	if(step ==1 && button1.push_check()){
 		if(change_state(BEACON_STAY)){return;}
 	}
 	
@@ -489,11 +503,11 @@ static void beacon_takeoff_run(){
 	}
 	
 	// LED点滅
-	if(blink_on){blink_led(0,0,1,0);};
+	if(flags.blink){blink_led(0,0,1,0);};
 	
 	
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// テイクオフする
 		send_change_chaser_state_cmd(CHASER_TAKEOFF);
@@ -520,7 +534,7 @@ static void beacon_stay_run(){
 	}
 	
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// ステイする
 		send_change_chaser_state_cmd(CHASER_STAY);
@@ -546,7 +560,7 @@ static void beacon_chase_run(){
 	}
 	
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// CHASEする
 		send_change_chaser_state_cmd(CHASER_CHASE);
@@ -572,7 +586,7 @@ static void beacon_circle_run(){
 	}
 	
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// CHASEする
 		send_change_chaser_state_cmd(CHASER_CIRCLE);
@@ -584,7 +598,7 @@ static void beacon_circle_run(){
 
 static void beacon_land_run(){
 	// サブステート実行
-	switch(substate){
+	switch(step){
 		case 0:
 		// LANDする
 		send_change_chaser_state_cmd(CHASER_LAND);
@@ -654,107 +668,19 @@ static void control_led(int8_t one, int8_t two, int8_t three, int8_t four){
 // 1にしたLEDのみ点滅する
 static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
 	static uint32_t prev_ms = 0;	// 前回時刻格納変数[us]
-	static bool state = false;
+	static bool status = false;
 	
 	uint32_t now_ms = millis();
 	
 	if ((now_ms - prev_ms) > BLINK_INTVL_MS) {
-		if(state){
+		if(status){
 			control_led(-one,-two,-three,-four);
 		} else {
 			control_led(one,two,three,four);
 		}
-		state = !state;
+		status = !status;
 		prev_ms = now_ms;
 	}
 }
-
-static void debug_check_telem(){
-	if(debug_count > DEBUG_NUM){return;}
-	if(debug_count == DEBUG_NUM){
-		for(int8_t i=0; i<DEBUG_NUM; i++){
-			console.print("beacon_id=");
-			delay(50);
-			console.print(beacon_id[i]);
-			delay(50);
-			console.print(", copter_id=");
-			delay(50);
-			console.print(copter_id[i]);
-			delay(50);
-			console.print(", beacon_time_sended=");
-			delay(50);
-			console.print(beacon_time_sended[i]);
-			delay(50);
-			console.print(", copter_time_received=");
-			delay(50);
-			console.print(copter_time_received[i]);
-			delay(50);
-			console.print(", beacon_time_received=");
-			delay(50);
-			console.println(beacon_time_received[i]);
-			delay(50);
-		}
-		debug_count++;
-	}
-	if(debug_count < DEBUG_NUM){
-		if(debug_send_flag){
-			// 送信フラグがたっていたら、id,timeを記録し機体に送信
-			beacon_id[debug_count] = debug_count;
-			beacon_time_sended[debug_count] = millis();
-			send_debug_cmd_for_chaser(beacon_id[debug_count]);
-			debug_send_flag = false;
-			console.print("message_sended ");
-			console.println(debug_count);
-		}
-	}
-}
-
-static void debug_check_gps(){
-	xbee_serial.print("lat=");
-	delay(100);
-	xbee_serial.print(beacon_loc_data.lat);
-	delay(100);
-	xbee_serial.print(", lon=");
-	delay(100);
-	xbee_serial.println(beacon_loc_data.lon);
-	delay(100);
-}
-
-static void debug_check_gyro_acc_mag(){
-	if(ins.calib_ok() && compass.calib_ok()){
-		Vector3f accel = ins.get_accel();
-		
-		xbee_serial.print("gyro:");				delay(20);
-		xbee_serial.print(ins.gyroADC[0]);		delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.gyroADC[1]);		delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(ins.gyroADC[2]);		delay(20);
-		
-		xbee_serial.print("       acc:");		delay(20);
-		xbee_serial.print(accel.x);				delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(accel.y);				delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(accel.z);				delay(20);
-		
-		xbee_serial.print("       mag:");		delay(20);
-		xbee_serial.print(compass.magADC[0]);	delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.print(compass.magADC[1]);	delay(20);
-		xbee_serial.print(", ");				delay(20);
-		xbee_serial.println(compass.magADC[2]);	delay(20);
-	} else if(ins.calib_ok()) {
-		xbee_serial.println("gyro+acc calibration ok.");
-		delay(20);
-	} else if(compass.calib_ok()) {
-		xbee_serial.println("mag calibration ok.");
-		delay(20);
-	} else {
-		xbee_serial.println("now calibrating or something wrong.");
-		delay(20);
-	}
-}
-
 
 
