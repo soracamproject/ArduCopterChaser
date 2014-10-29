@@ -36,23 +36,40 @@ class Bounce
 {
 
 public:
-  // Create an instance of the bounce library
-  Bounce(); 
-  // Attach to a pin (and also sets initial state)
-  void attach(int pin);
+	// Create an instance of the bounce library
+	Bounce():
+		click_flag(false),
+		push_step(0),
+		interval_millis(10)
+	{
+	}
+	
+	// Attach to a pin (and also sets initial state)
+	void attach(int pin);
+	
 	// Sets the debounce interval
-  void interval(unsigned long interval_millis); 
+	void interval(unsigned long interval_millis); 
+	
 	// Updates the pin
 	// Returns 1 if the state changed
 	// Returns 0 if the state did not change
-  bool update(); 
+	bool update();
+	
 	// Returns the updated pin state
-  uint8_t read();
-  
-  // ボタンが押されたかをチェックする
-  bool push_check();
+	uint8_t read();
+	
+	// ボタンが押されたかをチェックする
+	bool push_check();
+	
+	bool click();
+	
+	uint8_t long_push();
 
-  
+private:
+	bool click_flag;
+	uint32_t last_push;
+	uint8_t push_step;
+
 protected:
   int debounce();
   unsigned long  previous_millis, interval_millis;

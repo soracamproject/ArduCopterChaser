@@ -10,10 +10,9 @@
 
 
 
-Bounce::Bounce() {
-	this->interval_millis = 10;
-	
-}
+
+#define LONG_PUSH_MS 3000
+
 
 void Bounce::attach(int pin) {
  this->pin = pin;
@@ -85,3 +84,57 @@ uint8_t Bounce::read()
 bool Bounce::push_check(){
 	return (update()==1) && (read() == HIGH);
 }
+
+bool Bounce::click(){
+	if(push_step>0){
+		return false;
+	}
+	
+	if(click_flag){
+		if(update() && read() == LOW){
+			click_flag = false;
+			return true;
+		}
+	} else {
+		if(update() && read() == HIGH){
+			click_flag = true;
+		}
+	}
+	
+	return false;
+}
+
+uint8_t Bounce::long_push(){
+	uint32_t now = millis();
+	uint32_t dt = now - last_push;
+	
+	switch(push_step){
+		case 0:
+			if(update() && read()==HIGH){
+				push_step = 1;
+				last_push = now;
+			}
+			break;
+		
+		case 1:
+			if(update() && read()==LOW){
+				push_step = 0;
+				return 1;
+			} else {
+				if(dt > LONG_PUSH_MS){
+					push_step = 2;
+					return 2;
+				}
+			}
+			break;
+		
+		case 2:
+			if(update() && read()==LOW){
+				push_step = 0;
+			}
+			break;
+	}
+	
+	return 0;
+}
+
