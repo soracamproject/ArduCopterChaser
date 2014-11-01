@@ -43,8 +43,6 @@ __asm volatile ("nop");
 	FastSerialPort2(xbee_serial);	// XBee用
 #endif
 
-static bool dummy0;
-
 #if defined(BEACON_PHEASANT)
 	// pheasant用
 	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
@@ -126,8 +124,6 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 	#define LED4   9
 #endif
 
-static bool dummy1;
-
 #if defined(BEACON_PHEASANT)
 	// pheasant用
 	#define LED1   2
@@ -148,8 +144,6 @@ static bool dummy1;
 	Bounce button1 = Bounce();
 	Bounce button2 = Bounce();
 #endif
-
-static bool dummy2;
 
 #if defined(BEACON_PHEASANT)
 	// pheasant用

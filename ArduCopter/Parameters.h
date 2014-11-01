@@ -181,14 +181,13 @@ public:
 		k_param_chaser_descent_rate_min = 120,
 		k_param_chaser_descent_rate_max,
 		k_param_chaser_slope_angle,
-		k_param_chaser_target_accel,
-		k_param_chaser_target_decel,
-		k_param_chaser_target_vel_max,
+		k_param_chaser_ff_accel_max,
+		k_param_chaser_vel_max,
 		k_param_chaser_yaw_slew_rate,
 		k_param_chaser_gimbal_alt,	// 127
 		k_param_chaser_desired_alt_leash,
-		k_param_chaser_beacon_offset_lat,
-		k_param_chaser_beacon_offset_lon,
+		k_param_chaser_beacon_offset_lat_x,
+		k_param_chaser_beacon_offset_lon_y,
 		k_param_chaser_alt_hold,
 		k_param_chaser_circle_radius,
 		k_param_chaser_circle_time,
@@ -381,14 +380,13 @@ public:
 	AP_Int16        chaser_descent_rate_max;	// CHASER時のベース下降速度の最大値[cm/s]
 	AP_Int8         chaser_slope_angle;			// CHASER時のベース下降速度計算用斜度[deg.]、ベース下降速度の基準となるtan値は起動時に1回だけ計算される。
 												// 値を変更したら再起動が必要。
-	AP_Float        chaser_target_accel;		// ターゲットの移動速度変化時の加速度限界[cm/s/s]
-	AP_Float        chaser_target_decel;		// ターゲットの移動速度変化時の減速度限界[cm/s/s]
-	AP_Float        chaser_target_vel_max;		// ターゲットの移動速度の最大値[m/s]
+	AP_Float        chaser_ff_accel_max;		// Chaser時のFF速度変化率限界[cm/s/s]
+	AP_Float        chaser_vel_max;				// Chaser時の速度限界（ビーコン移動速度上限、かつFF速度上限）[cm/s]
 	AP_Float        chaser_yaw_slew_rate;		// YAW回転速度リミット[centi-deg/sec](-18000〜18000)
 	AP_Int16        chaser_gimbal_alt;			// ジンバル角度計算用高度[cm]
 	AP_Float        chaser_desired_alt_leash;	// 高度制御時の目標高度の機体高度との差[cm]
-	AP_Float        chaser_beacon_offset_lat;	// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]
-	AP_Float        chaser_beacon_offset_lon;	// ビーコン位置のオフセット値（lon,経度方向,y方向）[cm]
+	AP_Float        chaser_beacon_offset_lat_x;	// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]
+	AP_Float        chaser_beacon_offset_lon_y;	// ビーコン位置のオフセット値（lon,経度方向,y方向）[cm]
 	AP_Int8         chaser_alt_hold;			// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御（現在値に固定））
 	AP_Float        chaser_circle_radius;		// Circle Chaser時の旋回半径[cm]
 	AP_Float        chaser_circle_time;			// Circle Chaser時の旋回時間[sec]

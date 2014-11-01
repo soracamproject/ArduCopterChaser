@@ -443,26 +443,19 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_slope_angle, "CHR_SLOPE", CHASER_SLOPE_ANGLE),
 	
-	// @Param: CHR_ACCEL
-	// @DisplayName: Chaser Target Accel
-	// @Description: target acceleration [cm/s/s]
+	// @Param: CHR_FF_ACCEL
+	// @DisplayName: Chaser Feed Forward Accel Max
+	// @Description: change rate of feed forward velocity [cm/s/s]
 	// @Range 100 980
 	// @User: Advanced
-	GSCALAR(chaser_target_accel, "CHR_ACCEL", CHASER_TARGET_ACCEL),
-	
-	// @Param: CHR_DECEL
-	// @DisplayName: Chaser Target Decel
-	// @Description: target deceleration [cm/s/s]
-	// @Range 100 980
-	// @User: Advanced
-	GSCALAR(chaser_target_decel, "CHR_DECEL", CHASER_TARGET_DECEL),
+	GSCALAR(chaser_ff_accel_max, "CHR_FF_ACCEL", CHASER_FF_ACCEL_MAX),
 	
 	// @Param: CHR_VEL_MAX
-	// @DisplayName: Chaser Target Vel Max
-	// @Description: target velocity maximum [cm/s]
-	// @Range 100 1200
+	// @DisplayName: Chaser Vel Max
+	// @Description: maximum of chaser velocity [cm/s]
+	// @Range 100 1500
 	// @User: Advanced
-	GSCALAR(chaser_target_vel_max, "CHR_VEL_MAX", CHASER_TARGET_VEL_MAX),
+	GSCALAR(chaser_vel_max, "CHR_VEL_MAX", CHASER_VEL_MAX),
 	
 	// @Param: CHR_YAW_SLEW
 	// @DisplayName: Chaser Yaw Slew Rate
@@ -490,14 +483,14 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @Description: offset distance of beacon location on latitude direction [cm]
 	// @Range -1000 1000
 	// @User: Advanced
-	GSCALAR(chaser_beacon_offset_lat, "CHR_OFST_LAT", CHASER_BEACON_OFFSET_LAT),
+	GSCALAR(chaser_beacon_offset_lat_x, "CHR_OFST_LAT_X", CHASER_BEACON_OFFSET_LAT_X),
 	
 	// @Param: CHR_OFST_LON
 	// @DisplayName: Chaser Beacon Offset Lon
 	// @Description: offset distance of beacon location on longitude direction [cm]
 	// @Range -1000 1000
 	// @User: Advanced
-	GSCALAR(chaser_beacon_offset_lon, "CHR_OFST_LON", CHASER_BEACON_OFFSET_LON),
+	GSCALAR(chaser_beacon_offset_lon_y, "CHR_OFST_LON_Y", CHASER_BEACON_OFFSET_LON_Y),
 
 	// @Param: CHR_ALT_HOLD
 	// @DisplayName: Chaser Altitude Hold

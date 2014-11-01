@@ -40,5 +40,6 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+	gcs_send_message(MSG_CHASER_STATUS);
 }
 #endif

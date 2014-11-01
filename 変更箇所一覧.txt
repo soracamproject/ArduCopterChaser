@@ -3,19 +3,21 @@ ArduCopter.pde
 　#include "chaser_defines.h"を追加
 　"CHASERモード用グローバル変数"の項目を追加
 　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
-flight_mode.pde
-　set_mode関数内にCHASERを追加
-　update_flight_mode関数内にCHASERを追加
-　mode_requires_GPS関数内にCHASERを追加
-　print_flight_mode関数内にCHASERを追加
+APM_Config.h
+　#define USERHOOK_SUPERSLOWLOOPをコメント解除
 chaser_defines.h
 　すべて　新規ファイル
 control_chaser.pde
 　すべて　新規作成ファイル
 defines.h
 　CHASERを追加しNUM_MODESを増やす。番号はCHASERが17とNUM_MODESが18
+flight_mode.pde
+　set_mode関数内にCHASERを追加
+　update_flight_mode関数内にCHASERを追加
+　mode_requires_GPS関数内にCHASERを追加
+　print_flight_mode関数内にCHASERを追加
 GCS_Mavlink.pde
-　send_chaser_cmd関数を新規追加
+　send_chaser_status関数を新規追加
 　GCS_MAVLINK::handleMessageの末尾に以下追加
 　　case MAVLINK_MSG_ID_CHASER_CMD
 　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
@@ -23,24 +25,26 @@ Log.pde
 　static void Log_Write_Control_Tuning()をCHASER用に変更
 motors.pde
 　init_disarm_motors関数内にCHASER用モードリセット機能を追加
+　auto_disarm_check関数内の自動ディスアームするcontrol_modeにCHASERを追加
 Parameters.h
 　enumの120番台にchaser関連の番号を追加
 　変数にchaser関連の変数を追加
 Parameters.pde
 　rc_feel_rpの次にchaser関連の項目を追加
-(config.h
-　#define OPTFLOW          ENABLED　→　DISABLED　容量削減のため
-　#define CLI_ENABLED     ENABLED　→　DISABLED　容量削減のため)
+UserCode.pde
+　userhook_SuperSlowLoop関数にchaser_status送信関数を追加
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml
-　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONを追加。idは200と201
+　末尾にCHASER_CMDとCHASER_BEACON_LOCATIONとCHASER_STATUSを追加。idは200と201と202
 AC_PosControl.h
 　update_xy_controller_for_chaserを追加
+　init_xy_controller_for_chaserを追加
 AC_PosControl.cpp
-　update_xy_controller_for_chaserを作成
+　update_xy_controller_for_chaserを追加
+　init_xy_controller_for_chaserを追加
 GCS.h
-　enum ap_messageにMSG_CHASERを追加
+　enum ap_messageにMSG_CHASER_STATUSを追加
 
 ==以下Beacon関連==
 libraries/FastSerial

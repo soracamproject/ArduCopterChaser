@@ -900,7 +900,8 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { userhook_SlowLoop,    120,    10 },
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    { userhook_SuperSlowLoop,400,   10 },
+    //{ userhook_SuperSlowLoop,400,   10 },
+    { userhook_SuperSlowLoop,400,   150 },	// Chaser用に必要時間変更、gcs_send_heartbeatを流用
 #endif
 };
 #else

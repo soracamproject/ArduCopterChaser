@@ -59,8 +59,7 @@
 #define CHASER_SLOW_START_COUNT      50			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
 #define CHASER_SLOW_START_RATIO      0.2f		// Chaser開始時の加速度割合[-]
 #define CHASER_TARGET_VEL_MAX_SLOW   50.0f		// Chaser開始時の制限速度[cm/s]
-#define CHASER_FF_ACCEL_PLUS         0.0f
-#define CHASER_FF_ACCEL_MIN          0.0f
+#define CHASER_FF_ACCEL_MIN          0.0f		// Chaser時のFF速度の変化率の下限[cm/s/s]
 
 
 
@@ -69,11 +68,10 @@
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
 
 // Mission Plannerで変更可
-#define CHASER_TARGET_VEL_MAX        1000.0f	// ターゲットの移動速度の最大値[m/s]
-#define CHASER_BEACON_OFFSET_LAT     -250.0f	// ビーコン位置のオフセット値（lat,緯度方向,x方向）（変更可、初期値）[cm]※-250はミササガパークでの実績値
-#define CHASER_BEACON_OFFSET_LON     0.0f		// ビーコン位置のオフセット値（lon,経度方向,x方向）（変更可、初期値）[cm]
-#define CHASER_TARGET_ACCEL          200.0f		// ターゲットの移動速度変化時の加速度限界（変更可、初期値）[cm/s/s]
-#define CHASER_TARGET_DECEL          150.0f		// ターゲットの移動速度変化時の減速度限界（変更可、初期値）[cm/s/s]
+#define CHASER_BEACON_OFFSET_LAT_X   0.0f	// ビーコン位置のオフセット値（lat,緯度方向,x方向）（変更可、初期値）[cm]※-250はミササガパークでの実績値
+#define CHASER_BEACON_OFFSET_LON_Y   0.0f		// ビーコン位置のオフセット値（lon,経度方向,x方向）（変更可、初期値）[cm]
+#define CHASER_FF_ACCEL_MAX          400.0f		// Chaser時のフィードフォワード速度変化率の上限[cm/s/s]
+#define CHASER_VEL_MAX               1000.0f	// Chaser時の速度限界（ビーコン移動速度上限、かつFF速度上限）[cm/s]
 #define CHASER_DESCENT_RATE_MIN      50			// ベース下降速度最小値（変更可、初期値）[cm/s]
 #define CHASER_DESCENT_RATE_MAX      150		// ベース下降速度最大値（変更可、初期値）[cm/s]
 #define CHASER_SLOPE_ANGLE           10			// ベース下降速度計算用斜度（変更可、初期値）[deg.]

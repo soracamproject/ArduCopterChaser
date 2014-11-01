@@ -158,8 +158,8 @@ static void chaser_chase_run()
 			
 			// 最大速度で制限
 			float chaser_ff_vel_abs = chaser_ff_vel.length();
-			if(chaser_ff_vel_abs > g.chaser_target_decel){	// TODO: g.chaser_target_decelの名前変更
-				chaser_ff_vel = chaser_ff_vel * g.chaser_target_decel / chaser_ff_vel_abs;
+			if(chaser_ff_vel_abs > g.chaser_vel_max){
+				chaser_ff_vel = chaser_ff_vel * g.chaser_vel_max / chaser_ff_vel_abs;
 			}
 			
 			// FF量制限計算
@@ -334,8 +334,8 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
 		// この段階でオフセット値をのっける
-		beacon_loc[index].x = pos.x + g.chaser_beacon_offset_lat;
-		beacon_loc[index].y = pos.y + g.chaser_beacon_offset_lon;
+		beacon_loc[index].x = pos.x + g.chaser_beacon_offset_lat_x;
+		beacon_loc[index].y = pos.y + g.chaser_beacon_offset_lon_y;
 		index++;
 		if (index == CHASER_TARGET_RELAX_NUM) {
 			index = 0;
@@ -490,13 +490,12 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		}
 		if(++chaser_start_count >= CHASER_SLOW_START_COUNT){ chaser_start_slow = false; }
 	}
-	if(chaser_target_vel_abs > CHASER_TARGET_VEL_MAX){
-		chaser_target_vel = chaser_target_vel * CHASER_TARGET_VEL_MAX / chaser_target_vel_abs;
+	if(chaser_target_vel_abs > g.chaser_vel_max){
+		chaser_target_vel = chaser_target_vel * g.chaser_vel_max / chaser_target_vel_abs;
 	}
 	
 	// FF速度の加速度計算
 	chaser_ff_accel = (chaser_target_vel - chaser_ff_vel)/dt;
-	chaser_ff_accel = chaser_ff_accel * (1.0f+CHASER_FF_ACCEL_PLUS);	//増倍
 	if(chaser_ff_accel.x >= 0.0f){
 		chaser_ff_accel.x = max(chaser_ff_accel.x, CHASER_FF_ACCEL_MIN);
 	} else {
@@ -510,8 +509,8 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	
 	// 最大加速度で制限
 	float chaser_ff_accel_abs = chaser_ff_accel.length();
-	if(chaser_ff_accel_abs > g.chaser_target_accel){	// TODO: g.chaser_target_accelの名前変更
-		chaser_ff_accel = chaser_ff_accel * g.chaser_target_accel / chaser_ff_accel_abs;
+	if(chaser_ff_accel_abs > g.chaser_ff_accel_max){
+		chaser_ff_accel = chaser_ff_accel * g.chaser_ff_accel_max / chaser_ff_accel_abs;
 	}
 	
 	// target_distanceを0にする
@@ -725,13 +724,13 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 			}
 			break;
 		
-		case 4:
+		//case 4:
 			// TODO: 受け取ったら機体のmillisをビーコンに返す
 			// p2の番号もそのまま返すことでいつのメッセージか同定する
-			chaser_debug_id = p2;
-			chaser_debug_millis = millis();
-			gcs_send_message(MSG_CHASER);
-			break;
+			//chaser_debug_id = p2;
+			//chaser_debug_millis = millis();
+			//gcs_send_message(MSG_CHASER);
+			//break;
 			
 		default:
 			break;

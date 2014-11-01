@@ -276,22 +276,7 @@ static void NOINLINE send_location(mavlink_channel_t chan)
 
 static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
 {
-#if CHASER_DEBUG == 1
-	// CHASERデバッグ版
-    mavlink_msg_nav_controller_output_send(
-		chan,
-		inertial_nav.get_position().x,		//float,nav_roll
-		inertial_nav.get_position().y,		//float,nav_pitch
-		0,									//int16_t,nav_bearing
-		chaser_yaw_target,					//int16_t,target_bearing
-		chaser_gimbal_pitch_angle,			//uint16_t,wp_dist
-		chaser_target.x,					//float,alt_error
-		chaser_target.y,					//float,aspd_error
-		0.0f								//float,xtrack_error
-	);
-#else
-	// 通常通信版
-	Vector3f targets;
+    Vector3f targets;
     get_angle_targets_for_reporting(targets);
     mavlink_msg_nav_controller_output_send(
         chan,
@@ -303,8 +288,6 @@ static void NOINLINE send_nav_controller_output(mavlink_channel_t chan)
         pos_control.get_alt_error() / 1.0e2f,
         0,
         0);
-#endif
-
 }
 
 // report simulator state
@@ -414,19 +397,6 @@ static void NOINLINE send_radio_out(mavlink_channel_t chan)
 
 static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
 {
-#if CHASER_DEBUG == 1
-	// CHASERデバッグ版
-	mavlink_msg_vfr_hud_send(
-		chan,
-		chaser_destination.x,			//float,airspeed
-		chaser_destination.y,			//float,groundspeed
-		0,								//int16_t,heading
-		sonar_alt,						//uint16_t,throttle
-		inertial_nav.get_position().z,	//float,alt
-		chaser_sonar_alt				//float,climb
-	);
-#else
-	// 通常通信版
     mavlink_msg_vfr_hud_send(
         chan,
         gps.ground_speed(),
@@ -435,8 +405,6 @@ static void NOINLINE send_vfr_hud(mavlink_channel_t chan)
         g.rc_3.servo_out/10,
         current_loc.alt / 100.0f,
         climb_rate / 100.0f);
-#endif
-
 }
 
 static void NOINLINE send_current_waypoint(mavlink_channel_t chan)
@@ -468,15 +436,27 @@ static void NOINLINE send_statustext(mavlink_channel_t chan)
 }
 
 // CHASER用デバッグコマンド送信
-static void NOINLINE send_chaser_cmd(mavlink_channel_t chan){
-	mavlink_msg_chaser_cmd_send(
+//static void NOINLINE send_chaser_cmd(mavlink_channel_t chan){
+//	mavlink_msg_chaser_cmd_send(
+//		chan,
+//		4,					// uint8_t  command
+//		0,					// uint8_t  p1
+//		chaser_debug_id,	// uint16_t p2
+//		chaser_debug_millis	// uint32_t p3
+//	);
+//}
+
+// Chaser用ステータス送信
+static void NOINLINE send_chaser_status(mavlink_channel_t chan){
+	mavlink_msg_chaser_status_send(
 		chan,
-		4,					// uint8_t  command
-		0,					// uint8_t  p1
-		chaser_debug_id,	// uint16_t p2
-		chaser_debug_millis	// uint32_t p3
+		control_mode,		// uint8_t control mode
+		chaser_state,		// uint8_t chaser state
+		gps.num_sats(0),	// uint8_t gps number of satellite
+		motors.armed()		// uint8_t armed or disarmed flag
 	);
 }
+
 
 // are we still delaying telemetry to try to avoid Xbee bricking?
 static bool telemetry_delayed(mavlink_channel_t chan)
@@ -660,10 +640,9 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         // unused
         break;
 	
-	case MSG_CHASER:
-		CHECK_PAYLOAD_SIZE(CHASER_CMD);
-		send_chaser_cmd(chan);
-		// CHASER用に追加
+	case MSG_CHASER_STATUS:
+		CHECK_PAYLOAD_SIZE(CHASER_STATUS);
+		send_chaser_status(chan);
 		break;
 		
     case MSG_RETRY_DEFERRED:
