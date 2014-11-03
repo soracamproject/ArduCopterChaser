@@ -35,7 +35,7 @@ void BC_LED::on() {
 void BC_LED::off() {
 	_status = LOW;
 	_change = true;
-	_blink =false;
+	_blink = false;
 }
 
 void BC_LED::blink() {

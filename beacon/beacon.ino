@@ -102,8 +102,10 @@ uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
 #define READY_WAIT_ARM          4
 #define READY_WAIT_TAKEOFF      5
 
-// TAKEOFF可能GPS捕捉衛星数
-#define TAKEOFF_OK_NUM_SAT   10
+// その他
+#define TAKEOFF_OK_NUM_SAT   10		// TAKEOFF可能GPS捕捉衛星数
+#define STATUS_UPDATE_NUM     3		// copter_statusがこの回数以上連続で同じ値だったらstatusを変化させる
+
 
 
 // ***********************************************************************************
@@ -135,23 +137,6 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 // ***********************************************************************************
 // LED関連変数および宣言
 // ***********************************************************************************
-/*
-#if defined(BEACON_IBIS)
-	// ibis用
-	#define LED0   2
-	#define LED1   5
-	#define LED2   7
-	#define LED3   9
-#endif
-
-#if defined(BEACON_PHEASANT)
-	// pheasant用
-	#define LED0   2
-	#define LED1   3
-	#define LED2   5
-	#define LED3   6
-#endif
-*/
 #define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
 
 #if defined(BEACON_IBIS)
@@ -204,20 +189,11 @@ static BC_Compass compass(i2c);
 // ***********************************************************************************
 void setup(){
 	// LED初期化と全点灯
-	/*
-	pinMode(LED0, OUTPUT);	// R
-	pinMode(LED1, OUTPUT);	// Y
-	pinMode(LED2, OUTPUT);	// G
-	pinMode(LED3, OUTPUT);	// B
-	*/
 	led0.init();
 	led1.init();
 	led2.init();
 	led3.init();
-	led0.on();
-	led1.on();
-	led2.on();
-	led3.on();
+	led_all_on();
 	update_led();
 	
 	// GPS初期化
@@ -242,10 +218,7 @@ void setup(){
 	button2.attach(BUTTON2);
 
 	// LED全消灯
-	led0.off();
-	led1.off();
-	led2.off();
-	led3.off();
+	led_all_off();
 	update_led();
 	
 	// 初期ステート設定
@@ -397,13 +370,14 @@ static bool change_state(uint8_t next_state){
 	// ステート開始時の関数を呼ぶ
 	switch(next_state){
 		case BEACON_INIT:
+			led_all_off();
 			led0.on();
 			
 			break;
 		
 		case BEACON_READY:
 			led_all_off();
-			led1.on();
+			led0.blink();
 			
 			// 初期化
 			ready_step = 0;
@@ -481,16 +455,24 @@ static void beacon_ready_run(){
 		if(change_state(BEACON_LAND)){return;}
 	}
 	
+	if(button2.read()==BUTTON_LONG_PRESS){
+		if(change_state(BEACON_INIT)){ return; }
+	}
+	
 	switch(ready_step){
 		case READY_WAIT_GPS_OK:
-			if(gps.num_sat() >= TAKEOFF_OK_NUM_SAT && copter_num_sat >=TAKEOFF_OK_NUM_SAT){
+			//if(gps.num_sat() >= TAKEOFF_OK_NUM_SAT && copter_num_sat >=TAKEOFF_OK_NUM_SAT){
+			if(copter_num_sat >=TAKEOFF_OK_NUM_SAT){	// テスト用
 				gps_count++;
 			} else {
 				gps_count = 0;
 			}
 			
 			// 連続カウントでOK判定
-			if(gps_count >= 5){ ready_step = READY_SEND_INIT; }
+			if(gps_count >= 5){
+				ready_step = READY_SEND_INIT;
+				led1.blink();
+			}
 			
 			break;
 			
@@ -510,6 +492,7 @@ static void beacon_ready_run(){
 			} else {
 				if(copter_state == CHASER_INIT){
 					ready_step = READY_SEND_ARM;
+					led2.blink();
 				}
 			}
 			break;
@@ -530,6 +513,8 @@ static void beacon_ready_run(){
 			} else {
 				if(copter_armed){
 					ready_step = READY_WAIT_TAKEOFF;
+					led_all_off();
+					led1.on();
 				}
 			}
 			break;
@@ -714,6 +699,13 @@ static void update_led(){
 	led3.update(blink_update, blink_state);
 }
 
+static void led_all_on(){
+	led0.on();
+	led1.on();
+	led2.on();
+	led3.on();
+}
+
 static void led_all_off(){
 	led0.off();
 	led1.off();
@@ -722,53 +714,4 @@ static void led_all_off(){
 }
 
 
-/*
-// LEDの点灯用関数
-// -1:消灯、0:そのまま、1:点灯
-// （本当はマクロとか組めばいいのだけど書きやすいようにリッチにやってます）
-static void control_led(int8_t one, int8_t two, int8_t three, int8_t four){
-	if (one==-1){
-		digitalWrite(LED1, LOW);
-	} else if(one==1){
-		digitalWrite(LED1, HIGH);
-	}
-	
-	if (two==-1){
-		digitalWrite(LED2, LOW);
-	} else if(two==1) {
-		digitalWrite(LED2, HIGH);
-	}
-	
-	if (three==-1){
-		digitalWrite(LED3, LOW);
-	} else if(three==1){
-		digitalWrite(LED3, HIGH);
-	}
-	
-	if (four==-1){
-		digitalWrite(LED4, LOW);
-	} else if(four==1){
-		digitalWrite(LED4, HIGH);
-	}
-}
-
-// LEDの点滅用関数
-// 1にしたLEDのみ点滅する
-static void blink_led(uint8_t one, uint8_t two, uint8_t three, uint8_t four){
-	static uint32_t prev_ms = 0;	// 前回時刻格納変数[us]
-	static bool status = false;
-	
-	uint32_t now_ms = millis();
-	
-	if ((now_ms - prev_ms) > BLINK_INTVL_MS) {
-		if(status){
-			control_led(-one,-two,-three,-four);
-		} else {
-			control_led(one,two,three,four);
-		}
-		status = !status;
-		prev_ms = now_ms;
-	}
-}
-*/
 

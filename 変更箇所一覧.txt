@@ -4,7 +4,7 @@ ArduCopter.pde
 　"CHASERモード用グローバル変数"の項目を追加
 　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
 APM_Config.h
-　#define USERHOOK_SUPERSLOWLOOPをコメント解除
+　#define USERHOOK_SLOWLOOPをコメント解除
 chaser_defines.h
 　すべて　新規ファイル
 control_chaser.pde
@@ -33,7 +33,7 @@ Parameters.h
 Parameters.pde
 　rc_feel_rpの次にchaser関連の項目を追加
 UserCode.pde
-　userhook_SuperSlowLoop関数にchaser_status送信関数を追加
+　userhook_SlowLoop関数にchaser_status送信関数を追加
 
 ==以下Librariesフォルダ内==
 ardupilotmega.xml
