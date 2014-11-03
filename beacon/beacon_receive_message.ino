@@ -36,19 +36,18 @@ void handleMessage(mavlink_message_t* msg){
 	static uint16_t msg_count = 0;
 	console.print("message_received");
 	console.println(msg->msgid);
+	static uint8_t count_not_chaser = 0;;
 	
 	switch (msg->msgid) {
-		case MAVLINK_MSG_ID_CHASER_CMD:
-			mavlink_chaser_cmd_t packet;
-			mavlink_msg_chaser_cmd_decode(msg, &packet);
+		case MAVLINK_MSG_ID_CHASER_STATUS:
+			mavlink_chaser_status_t packet;
+			mavlink_msg_chaser_status_decode(msg, &packet);
 			
-			if(packet.command == 4){
-				copter_id[debug_count] = packet.p2;
-				copter_time_received[debug_count] = packet.p3;
-				beacon_time_received[debug_count] = millis();
-				debug_count++;
-				debug_send_flag = true;
-			}
+			copter_mode    = packet.control_mode;
+			copter_state   = packet.chaser_state;
+			copter_num_sat = packet.num_sat;
+			copter_armed   = packet.armed;
+			
 			break;
 	}	// msgidのスイッチの中括弧とじ
 }	// handleMessage関数の中括弧とじ

@@ -13,8 +13,8 @@ static uint32_t copter_time_received[DEBUG_NUM];
 static uint32_t beacon_time_received[DEBUG_NUM];
 
 static void debug_init(){
-	debug_count = 0;
-	debug_send_flag = true;
+	//debug_count = 0;
+	//debug_send_flag = true;
 }
 
 static void debug_check_telem(){
@@ -103,5 +103,17 @@ static void debug_check_gyro_acc_mag(){
 		delay(20);
 	}
 }
+
+static void debug_check_control_mode(){
+	/*
+	if(flags.control_mode_chaser){
+		control_led(0,1,0,-1);
+	} else {
+		control_led(0,-1,0,1);
+	}
+	*/
+}
+
+
 
 #endif	// end of BEACON_DEBUG_ACTIVATE

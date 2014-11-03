@@ -435,24 +435,17 @@ static void NOINLINE send_statustext(mavlink_channel_t chan)
         s->text);
 }
 
-// CHASER用デバッグコマンド送信
-//static void NOINLINE send_chaser_cmd(mavlink_channel_t chan){
-//	mavlink_msg_chaser_cmd_send(
-//		chan,
-//		4,					// uint8_t  command
-//		0,					// uint8_t  p1
-//		chaser_debug_id,	// uint16_t p2
-//		chaser_debug_millis	// uint32_t p3
-//	);
-//}
-
 // Chaser用ステータス送信
 static void NOINLINE send_chaser_status(mavlink_channel_t chan){
 	mavlink_msg_chaser_status_send(
 		chan,
 		control_mode,		// uint8_t control mode
 		chaser_state,		// uint8_t chaser state
+	#if CHASER_STATUS_DUMMY == 0
 		gps.num_sats(0),	// uint8_t gps number of satellite
+	#else
+		12,					// uint8_t gps number of satellite
+	#endif
 		motors.armed()		// uint8_t armed or disarmed flag
 	);
 }

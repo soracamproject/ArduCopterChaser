@@ -228,6 +228,11 @@ static void exit_mode(uint8_t old_control_mode, uint8_t new_control_mode)
         camera_mount.set_mode_to_default();
 #endif  // MOUNT == ENABLED
     }
+	
+	// CHASERから抜ける際はchaser_stateをリセット
+	if(old_control_mode == CHASER){
+		chaser_state == CHASER_NONE;
+	}
 
     // smooth throttle transition when switching from manual to automatic flight modes
     if (manual_flight_mode(old_control_mode) && !manual_flight_mode(new_control_mode) && motors.armed() && !ap.land_complete) {

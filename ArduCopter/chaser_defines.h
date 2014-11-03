@@ -7,8 +7,8 @@
 // CHASER_STATE関連
 // ==============================
 // CHASER_STATE
-#define CHASER_INIT          0
-#define CHASER_READY         1	// 使っていない
+#define CHASER_NONE          0
+#define CHASER_INIT          1
 #define CHASER_TAKEOFF       2
 #define CHASER_STAY          3
 #define CHASER_CHASE         4
@@ -143,10 +143,10 @@
 // ==============================
 // デバッグ関連
 // ==============================
-// CHASERデバッグ用通信有効無効フラグ
-// 0は通常通信モード（たぶんこれじゃないとMISSION PLANNERで初期設定できない）
-// 1にすると通信変数を割付し直し必要な分だけ50Hz目標で通信する
-#define CHASER_DEBUG              1
+// STATUS_DUMMYフラグ
+// 0は通常モード
+// 1にするとchaser_statusをダミー信号に変える
+#define CHASER_STATUS_DUMMY         1
 
 
 

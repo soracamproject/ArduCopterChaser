@@ -13,6 +13,7 @@ defines.h
 　CHASERを追加しNUM_MODESを増やす。番号はCHASERが17とNUM_MODESが18
 flight_mode.pde
 　set_mode関数内にCHASERを追加
+　exit_mode関数内にCHASERから抜ける際の記述を追加
 　update_flight_mode関数内にCHASERを追加
 　mode_requires_GPS関数内にCHASERを追加
 　print_flight_mode関数内にCHASERを追加

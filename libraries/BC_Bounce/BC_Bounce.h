@@ -1,4 +1,3 @@
-
 /*
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
@@ -16,12 +15,11 @@
  *      MA 02110-1301, USA.
  */
 
-
-
 /*  * * * * * * * * * * * * * * * * * * * * * * * * * * * 
  Main code by Thomas O Fredericks (tof@t-o-f.info)
  Previous contributions by Eric Lowry, Jim Schimpf and Tom Harkaway
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 
 // Uncomment the following line for "LOCK-OUT" debounce method
 //#define BOUNCE_LOCK-OUT
@@ -29,6 +27,10 @@
 
 #ifndef BC_Bounce_h
 #define BC_Bounce_h
+
+#define BUTTON_NONE         0
+#define BUTTON_CLICK        1
+#define BUTTON_LONG_PRESS   2
 
 #include <inttypes.h>
 
@@ -39,8 +41,9 @@ public:
 	// Create an instance of the bounce library
 	Bounce():
 		click_flag(false),
-		push_step(0),
-		interval_millis(10)
+		press_step(0),
+		interval_millis(50),
+		state(BUTTON_NONE)
 	{
 	}
 	
@@ -53,22 +56,23 @@ public:
 	// Updates the pin
 	// Returns 1 if the state changed
 	// Returns 0 if the state did not change
-	bool update();
+	bool detect_update();
 	
-	// Returns the updated pin state
-	uint8_t read();
+	// 状態(state)を読み取る
+	uint8_t const read(){ return state; }
 	
-	// ボタンが押されたかをチェックする
-	bool push_check();
+	// 状態を更新しstateに以下のいずれかを代入する
+	// クリック時、長押し判定時に1回だけ更新されるのでプログラムのloopのはじめに1回実行し状態はreadする
+	// クリック時: BUTTON CLICK
+	// 長押し時  : BUTTON_LONG_PRESS
+	// 上記以外  : BUTTON_NONE
+	void update();
 	
-	bool click();
-	
-	uint8_t long_push();
-
 private:
-	bool click_flag;
-	uint32_t last_push;
-	uint8_t push_step;
+	bool     click_flag;
+	uint32_t last_press;
+	uint8_t  press_step;
+	uint8_t  state;
 
 protected:
   int debounce();

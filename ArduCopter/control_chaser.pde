@@ -5,13 +5,8 @@
 // ***************************************
 static bool chaser_init(bool ignore_checks)
 {
-	//if (GPS_ok() || ignore_checks) {
-	if (ignore_checks) {
-		set_chaser_state(CHASER_INIT);
-		return true;
-	}else{
-		return false;
-	}
+	set_chaser_state(CHASER_INIT);
+	return true;
 }
 
 static void chaser_run() {
@@ -586,17 +581,6 @@ static bool set_chaser_state(uint8_t state) {
 			break;
 		}
 		
-		/*
-		case CHASER_READY:
-		{
-			// カメラジンバルON
-			chaser_mount_activate = true;
-			
-			success = true;
-			break;
-		}
-		*/
-		
 		case CHASER_TAKEOFF:
 		{
 			// カメラジンバルON
@@ -693,22 +677,18 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 		case 1:
 			switch(p1) {
 				case CHASER_INIT:
-					if (chaser_state_change_check(p1)) {
+					if (check_chaser_state_change(p1)) {
 						set_mode(CHASER);
 					}
 					break;
-				//case CHASER_READY:
 				case CHASER_TAKEOFF:
 				case CHASER_STAY:
 				case CHASER_CHASE:
 				case CHASER_CIRCLE:
 				case CHASER_LAND:
-					if (chaser_state_change_check(p1)) {
+					if (check_chaser_state_change(p1)) {
 						set_chaser_state(p1);
 					}
-					break;
-				
-				default:
 					break;
 			}
 			break;
@@ -737,15 +717,11 @@ void handle_chaser_cmd(uint8_t command, uint8_t p1, uint16_t p2, uint32_t p3) {
 	}
 }
 
-static bool chaser_state_change_check(uint8_t state) {
+static bool check_chaser_state_change(uint8_t state) {
 	switch(state) {
 		case CHASER_INIT:
-			if(control_mode == STABILIZE) {return true;}
+			if(control_mode == STABILIZE && !motors.armed()) {return true;}
 			break;
-		
-		//case CHASER_READY:
-		//	if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}
-		//	break;
 		
 		case CHASER_TAKEOFF:
 			if(control_mode==CHASER && chaser_state==CHASER_INIT) {return true;}

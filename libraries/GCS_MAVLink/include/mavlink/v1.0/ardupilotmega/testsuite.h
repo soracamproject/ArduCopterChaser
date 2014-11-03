@@ -1619,7 +1619,7 @@ static void mavlink_test_chaser_status(uint8_t system_id, uint8_t component_id, 
         memset(&packet1, 0, sizeof(packet1));
         	packet1.control_mode = packet_in.control_mode;
         	packet1.chaser_state = packet_in.chaser_state;
-        	packet1.gps_num_sat = packet_in.gps_num_sat;
+        	packet1.num_sat = packet_in.num_sat;
         	packet1.armed = packet_in.armed;
         
         
@@ -1630,12 +1630,12 @@ static void mavlink_test_chaser_status(uint8_t system_id, uint8_t component_id, 
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_status_pack(system_id, component_id, &msg , packet1.control_mode , packet1.chaser_state , packet1.gps_num_sat , packet1.armed );
+	mavlink_msg_chaser_status_pack(system_id, component_id, &msg , packet1.control_mode , packet1.chaser_state , packet1.num_sat , packet1.armed );
 	mavlink_msg_chaser_status_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_status_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.control_mode , packet1.chaser_state , packet1.gps_num_sat , packet1.armed );
+	mavlink_msg_chaser_status_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.control_mode , packet1.chaser_state , packet1.num_sat , packet1.armed );
 	mavlink_msg_chaser_status_decode(&msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 
@@ -1648,7 +1648,7 @@ static void mavlink_test_chaser_status(uint8_t system_id, uint8_t component_id, 
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
         
         memset(&packet2, 0, sizeof(packet2));
-	mavlink_msg_chaser_status_send(MAVLINK_COMM_1 , packet1.control_mode , packet1.chaser_state , packet1.gps_num_sat , packet1.armed );
+	mavlink_msg_chaser_status_send(MAVLINK_COMM_1 , packet1.control_mode , packet1.chaser_state , packet1.num_sat , packet1.armed );
 	mavlink_msg_chaser_status_decode(last_msg, &packet2);
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 }

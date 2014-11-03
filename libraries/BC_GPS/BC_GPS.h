@@ -28,6 +28,7 @@ public:
 	GPS_Status status() const { return GPS_status; }
 	float ground_speed() const { return _ground_speed;}
 	int32_t ground_course_cd() const { return _ground_course_cd; }
+	uint8_t num_sat() const { return GPS_numSats; }
 	
 	
 private:

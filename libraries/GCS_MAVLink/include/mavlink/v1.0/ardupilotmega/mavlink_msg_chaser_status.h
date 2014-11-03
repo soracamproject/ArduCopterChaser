@@ -6,15 +6,15 @@ typedef struct __mavlink_chaser_status_t
 {
  uint8_t control_mode; ///< control mode
  uint8_t chaser_state; ///< chaser state
- uint8_t gps_num_sat; ///< GPS number of satellite
+ uint8_t num_sat; ///< GPS number of satellite
  uint8_t armed; ///< armed or disarmed flag
 } mavlink_chaser_status_t;
 
 #define MAVLINK_MSG_ID_CHASER_STATUS_LEN 4
 #define MAVLINK_MSG_ID_202_LEN 4
 
-#define MAVLINK_MSG_ID_CHASER_STATUS_CRC 233
-#define MAVLINK_MSG_ID_202_CRC 233
+#define MAVLINK_MSG_ID_CHASER_STATUS_CRC 180
+#define MAVLINK_MSG_ID_202_CRC 180
 
 
 
@@ -23,7 +23,7 @@ typedef struct __mavlink_chaser_status_t
 	4, \
 	{  { "control_mode", NULL, MAVLINK_TYPE_UINT8_T, 0, 0, offsetof(mavlink_chaser_status_t, control_mode) }, \
          { "chaser_state", NULL, MAVLINK_TYPE_UINT8_T, 0, 1, offsetof(mavlink_chaser_status_t, chaser_state) }, \
-         { "gps_num_sat", NULL, MAVLINK_TYPE_UINT8_T, 0, 2, offsetof(mavlink_chaser_status_t, gps_num_sat) }, \
+         { "num_sat", NULL, MAVLINK_TYPE_UINT8_T, 0, 2, offsetof(mavlink_chaser_status_t, num_sat) }, \
          { "armed", NULL, MAVLINK_TYPE_UINT8_T, 0, 3, offsetof(mavlink_chaser_status_t, armed) }, \
          } \
 }
@@ -37,18 +37,18 @@ typedef struct __mavlink_chaser_status_t
  *
  * @param control_mode control mode
  * @param chaser_state chaser state
- * @param gps_num_sat GPS number of satellite
+ * @param num_sat GPS number of satellite
  * @param armed armed or disarmed flag
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_status_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       uint8_t control_mode, uint8_t chaser_state, uint8_t gps_num_sat, uint8_t armed)
+						       uint8_t control_mode, uint8_t chaser_state, uint8_t num_sat, uint8_t armed)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_STATUS_LEN];
 	_mav_put_uint8_t(buf, 0, control_mode);
 	_mav_put_uint8_t(buf, 1, chaser_state);
-	_mav_put_uint8_t(buf, 2, gps_num_sat);
+	_mav_put_uint8_t(buf, 2, num_sat);
 	_mav_put_uint8_t(buf, 3, armed);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_STATUS_LEN);
@@ -56,7 +56,7 @@ static inline uint16_t mavlink_msg_chaser_status_pack(uint8_t system_id, uint8_t
 	mavlink_chaser_status_t packet;
 	packet.control_mode = control_mode;
 	packet.chaser_state = chaser_state;
-	packet.gps_num_sat = gps_num_sat;
+	packet.num_sat = num_sat;
 	packet.armed = armed;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_STATUS_LEN);
@@ -78,19 +78,19 @@ static inline uint16_t mavlink_msg_chaser_status_pack(uint8_t system_id, uint8_t
  * @param msg The MAVLink message to compress the data into
  * @param control_mode control mode
  * @param chaser_state chaser state
- * @param gps_num_sat GPS number of satellite
+ * @param num_sat GPS number of satellite
  * @param armed armed or disarmed flag
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_status_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           uint8_t control_mode,uint8_t chaser_state,uint8_t gps_num_sat,uint8_t armed)
+						           uint8_t control_mode,uint8_t chaser_state,uint8_t num_sat,uint8_t armed)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_STATUS_LEN];
 	_mav_put_uint8_t(buf, 0, control_mode);
 	_mav_put_uint8_t(buf, 1, chaser_state);
-	_mav_put_uint8_t(buf, 2, gps_num_sat);
+	_mav_put_uint8_t(buf, 2, num_sat);
 	_mav_put_uint8_t(buf, 3, armed);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_STATUS_LEN);
@@ -98,7 +98,7 @@ static inline uint16_t mavlink_msg_chaser_status_pack_chan(uint8_t system_id, ui
 	mavlink_chaser_status_t packet;
 	packet.control_mode = control_mode;
 	packet.chaser_state = chaser_state;
-	packet.gps_num_sat = gps_num_sat;
+	packet.num_sat = num_sat;
 	packet.armed = armed;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_STATUS_LEN);
@@ -122,7 +122,7 @@ static inline uint16_t mavlink_msg_chaser_status_pack_chan(uint8_t system_id, ui
  */
 static inline uint16_t mavlink_msg_chaser_status_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_chaser_status_t* chaser_status)
 {
-	return mavlink_msg_chaser_status_pack(system_id, component_id, msg, chaser_status->control_mode, chaser_status->chaser_state, chaser_status->gps_num_sat, chaser_status->armed);
+	return mavlink_msg_chaser_status_pack(system_id, component_id, msg, chaser_status->control_mode, chaser_status->chaser_state, chaser_status->num_sat, chaser_status->armed);
 }
 
 /**
@@ -136,7 +136,7 @@ static inline uint16_t mavlink_msg_chaser_status_encode(uint8_t system_id, uint8
  */
 static inline uint16_t mavlink_msg_chaser_status_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_chaser_status_t* chaser_status)
 {
-	return mavlink_msg_chaser_status_pack_chan(system_id, component_id, chan, msg, chaser_status->control_mode, chaser_status->chaser_state, chaser_status->gps_num_sat, chaser_status->armed);
+	return mavlink_msg_chaser_status_pack_chan(system_id, component_id, chan, msg, chaser_status->control_mode, chaser_status->chaser_state, chaser_status->num_sat, chaser_status->armed);
 }
 
 /**
@@ -145,18 +145,18 @@ static inline uint16_t mavlink_msg_chaser_status_encode_chan(uint8_t system_id, 
  *
  * @param control_mode control mode
  * @param chaser_state chaser state
- * @param gps_num_sat GPS number of satellite
+ * @param num_sat GPS number of satellite
  * @param armed armed or disarmed flag
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_status_send(mavlink_channel_t chan, uint8_t control_mode, uint8_t chaser_state, uint8_t gps_num_sat, uint8_t armed)
+static inline void mavlink_msg_chaser_status_send(mavlink_channel_t chan, uint8_t control_mode, uint8_t chaser_state, uint8_t num_sat, uint8_t armed)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_STATUS_LEN];
 	_mav_put_uint8_t(buf, 0, control_mode);
 	_mav_put_uint8_t(buf, 1, chaser_state);
-	_mav_put_uint8_t(buf, 2, gps_num_sat);
+	_mav_put_uint8_t(buf, 2, num_sat);
 	_mav_put_uint8_t(buf, 3, armed);
 
 #if MAVLINK_CRC_EXTRA
@@ -168,7 +168,7 @@ static inline void mavlink_msg_chaser_status_send(mavlink_channel_t chan, uint8_
 	mavlink_chaser_status_t packet;
 	packet.control_mode = control_mode;
 	packet.chaser_state = chaser_state;
-	packet.gps_num_sat = gps_num_sat;
+	packet.num_sat = num_sat;
 	packet.armed = armed;
 
 #if MAVLINK_CRC_EXTRA
@@ -187,13 +187,13 @@ static inline void mavlink_msg_chaser_status_send(mavlink_channel_t chan, uint8_
   is usually the receive buffer for the channel, and allows a reply to an
   incoming message with minimum stack space usage.
  */
-static inline void mavlink_msg_chaser_status_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t control_mode, uint8_t chaser_state, uint8_t gps_num_sat, uint8_t armed)
+static inline void mavlink_msg_chaser_status_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t control_mode, uint8_t chaser_state, uint8_t num_sat, uint8_t armed)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char *buf = (char *)msgbuf;
 	_mav_put_uint8_t(buf, 0, control_mode);
 	_mav_put_uint8_t(buf, 1, chaser_state);
-	_mav_put_uint8_t(buf, 2, gps_num_sat);
+	_mav_put_uint8_t(buf, 2, num_sat);
 	_mav_put_uint8_t(buf, 3, armed);
 
 #if MAVLINK_CRC_EXTRA
@@ -205,7 +205,7 @@ static inline void mavlink_msg_chaser_status_send_buf(mavlink_message_t *msgbuf,
 	mavlink_chaser_status_t *packet = (mavlink_chaser_status_t *)msgbuf;
 	packet->control_mode = control_mode;
 	packet->chaser_state = chaser_state;
-	packet->gps_num_sat = gps_num_sat;
+	packet->num_sat = num_sat;
 	packet->armed = armed;
 
 #if MAVLINK_CRC_EXTRA
@@ -243,11 +243,11 @@ static inline uint8_t mavlink_msg_chaser_status_get_chaser_state(const mavlink_m
 }
 
 /**
- * @brief Get field gps_num_sat from chaser_status message
+ * @brief Get field num_sat from chaser_status message
  *
  * @return GPS number of satellite
  */
-static inline uint8_t mavlink_msg_chaser_status_get_gps_num_sat(const mavlink_message_t* msg)
+static inline uint8_t mavlink_msg_chaser_status_get_num_sat(const mavlink_message_t* msg)
 {
 	return _MAV_RETURN_uint8_t(msg,  2);
 }
@@ -273,7 +273,7 @@ static inline void mavlink_msg_chaser_status_decode(const mavlink_message_t* msg
 #if MAVLINK_NEED_BYTE_SWAP
 	chaser_status->control_mode = mavlink_msg_chaser_status_get_control_mode(msg);
 	chaser_status->chaser_state = mavlink_msg_chaser_status_get_chaser_state(msg);
-	chaser_status->gps_num_sat = mavlink_msg_chaser_status_get_gps_num_sat(msg);
+	chaser_status->num_sat = mavlink_msg_chaser_status_get_num_sat(msg);
 	chaser_status->armed = mavlink_msg_chaser_status_get_armed(msg);
 #else
 	memcpy(chaser_status, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_CHASER_STATUS_LEN);

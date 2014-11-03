@@ -463,7 +463,7 @@
         <description>Send chaser status from copter to beacon. </description>
         <field type="uint8_t" name="control_mode">control mode</field>
         <field type="uint8_t" name="chaser_state">chaser state</field>
-		<field type="uint8_t" name="gps_num_sat">GPS number of satellite</field>
+		<field type="uint8_t" name="num_sat">GPS number of satellite</field>
 		<field type="uint8_t" name="armed">armed or disarmed flag</field>
 	</message>
 

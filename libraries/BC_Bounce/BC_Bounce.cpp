@@ -8,13 +8,11 @@
 #endif
 #include "BC_Bounce.h"
 
+// 長押し判定時間
+#define LONG_PRESS_MS 2000
 
-
-
-#define LONG_PUSH_MS 3000
-
-
-void Bounce::attach(int pin) {
+void Bounce::attach(int pin)
+{
  this->pin = pin;
  debouncedState = unstableState = digitalRead(pin);
  #ifdef BOUNCE_LOCK-OUT
@@ -24,18 +22,14 @@ void Bounce::attach(int pin) {
  #endif
 }
 
-
-
 void Bounce::interval(unsigned long interval_millis)
 {
   this->interval_millis = interval_millis;
   
 }
 
-
-bool Bounce::update()
+bool Bounce::detect_update()
 {
-
 #ifdef BOUNCE_LOCK-OUT
     stateChanged = false;
 	// Ignore everything if we are locked out
@@ -48,7 +42,6 @@ bool Bounce::update()
 		}
 	}
 	return stateChanged;
-
 #else
 	// Lire l'etat de l'interrupteur dans une variable temporaire.
 	uint8_t currentState = digitalRead(pin);
@@ -73,68 +66,41 @@ bool Bounce::update()
 	unstableState = currentState;
 	return stateChanged;
 #endif
-
 }
 
-uint8_t Bounce::read()
-{
-	return debouncedState;
-}
-
-bool Bounce::push_check(){
-	return (update()==1) && (read() == HIGH);
-}
-
-bool Bounce::click(){
-	if(push_step>0){
-		return false;
-	}
-	
-	if(click_flag){
-		if(update() && read() == LOW){
-			click_flag = false;
-			return true;
-		}
-	} else {
-		if(update() && read() == HIGH){
-			click_flag = true;
-		}
-	}
-	
-	return false;
-}
-
-uint8_t Bounce::long_push(){
+void Bounce::update(){
 	uint32_t now = millis();
-	uint32_t dt = now - last_push;
+	uint32_t dt = now - last_press;
 	
-	switch(push_step){
+	switch(press_step){
 		case 0:
-			if(update() && read()==HIGH){
-				push_step = 1;
-				last_push = now;
+			if(detect_update() && debouncedState==HIGH){
+				press_step = 1;
+				last_press = now;
 			}
+			state = BUTTON_NONE;
 			break;
 		
 		case 1:
-			if(update() && read()==LOW){
-				push_step = 0;
-				return 1;
+			if(detect_update() && debouncedState==LOW){
+				press_step = 0;
+				state = BUTTON_CLICK;
 			} else {
-				if(dt > LONG_PUSH_MS){
-					push_step = 2;
-					return 2;
+				if(dt > LONG_PRESS_MS){
+					press_step = 2;
+					state = BUTTON_LONG_PRESS;
+					break;
 				}
+				state = BUTTON_NONE;
 			}
 			break;
 		
 		case 2:
-			if(update() && read()==LOW){
-				push_step = 0;
+			if(detect_update() && debouncedState==LOW){
+				press_step = 0;
 			}
+			state = BUTTON_NONE;
 			break;
 	}
-	
-	return 0;
 }
 
