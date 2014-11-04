@@ -27,12 +27,14 @@ void BC_LED::init() {
 }
 
 void BC_LED::on() {
+	if(_status == HIGH && _blink == false){return;}
 	_status = HIGH;
 	_change = true;
 	_blink = false;
 }
 
 void BC_LED::off() {
+	if(_status == LOW && _blink == false){return;}
 	_status = LOW;
 	_change = true;
 	_blink = false;

@@ -17,6 +17,7 @@
 #include <BC_Math.h>
 #include <BC_Bounce.h>
 #include <BC_LED.h>
+#include <BC_Status.h>
 #include <FastSerial.h>
 #include <BC_GPS.h>
 #include <BC_I2C.h>
@@ -67,10 +68,6 @@ static uint32_t prev_ms = 0;	// 前回時刻格納変数[ms]
 static uint32_t prev_et_ms = 0;	// 前回時刻格納変数（毎回実行部 every time）[ms]
 static uint8_t state;			// ビーコンステート
 static uint8_t subtask;			// サブタスク
-static uint8_t copter_mode;		// 機体のcontrol_mode
-static uint8_t copter_state;	// 機体のchaser_state
-static uint8_t copter_num_sat;	// 機体のGPS捕捉衛星数
-static bool copter_armed;		// 機体のアーム状態
 static uint8_t ready_step;		// BEACON_READYステートでのstep
 
 // ビーコン用フラグ
@@ -83,8 +80,17 @@ static struct {
 // MultiWii移植部、暫定
 uint16_t calibratingB = 0;  // baro calibration = get new ground pressure value
 
-// サブステートをひとつ進めるマクロ
-//#define SS_INCREMENT step++;prev_ss_ms=now_ms
+// 機体ステータス
+#define DEFAULT_UPDATE_NUM 3
+static BC_Status_UInt8 copter_mode(DEFAULT_UPDATE_NUM);
+static BC_Status_UInt8 copter_state(DEFAULT_UPDATE_NUM);
+static BC_Status_UInt8 copter_num_sat(DEFAULT_UPDATE_NUM);
+static BC_Status_UInt8 copter_armed(DEFAULT_UPDATE_NUM);
+static BC_Status_Float copter_pos_x(1);
+static BC_Status_Float copter_pos_y(1);
+static BC_Status_Int32 copter_home_lat(1);
+static BC_Status_Int32 copter_home_lon(1);
+static BC_Status_Float copter_scaleLongDown(1);
 
 // サブタスク
 #define SUBTASK_BARO     0
@@ -137,22 +143,23 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 // ***********************************************************************************
 // LED関連変数および宣言
 // ***********************************************************************************
+// C言語的には番号は0,1,2,3だがよく間違えるので1,2,3,4とする
 #define BLINK_INTVL_MS  700	//LED点滅間隔[ms]
 
 #if defined(BEACON_IBIS)
 	// ibis用
-	static BC_LED led0(2);	// Red
-	static BC_LED led1(5);	// Yellow
-	static BC_LED led2(7);	// Green
-	static BC_LED led3(9);	// Blue
+	static BC_LED led1(2);	// Red
+	static BC_LED led2(5);	// Yellow
+	static BC_LED led3(7);	// Green
+	static BC_LED led4(9);	// Blue
 #endif
 
 #if defined(BEACON_PHEASANT)
 	// pheasant用
-	static BC_LED led0(2);
-	static BC_LED led1(3);
-	static BC_LED led2(5);
-	static BC_LED led3(6);
+	static BC_LED led1(2);
+	static BC_LED led2(3);
+	static BC_LED led3(5);
+	static BC_LED led4(6);
 #endif
 
 // ***********************************************************************************
@@ -189,10 +196,10 @@ static BC_Compass compass(i2c);
 // ***********************************************************************************
 void setup(){
 	// LED初期化と全点灯
-	led0.init();
 	led1.init();
 	led2.init();
 	led3.init();
+	led4.init();
 	led_all_on();
 	update_led();
 	
@@ -371,13 +378,13 @@ static bool change_state(uint8_t next_state){
 	switch(next_state){
 		case BEACON_INIT:
 			led_all_off();
-			led0.on();
+			//led1.on();
 			
 			break;
 		
 		case BEACON_READY:
 			led_all_off();
-			led0.blink();
+			led1.blink();
 			
 			// 初期化
 			ready_step = 0;
@@ -406,9 +413,9 @@ static bool change_state(uint8_t next_state){
 			break;
 		
 		case BEACON_DEBUG:
-			led0.blink();
-			led2.blink();
-			led3.on();
+			led1.blink();
+			led3.blink();
+			led4.on();
 			
 			// debug_countを0にする
 			//debug_init();
@@ -443,10 +450,28 @@ static void beacon_init_run(){
 	if(button2.read()==BUTTON_LONG_PRESS){
 		if(change_state(BEACON_DEBUG)){return;}
 	}
+	
+	uint8_t num_sat = gps.num_sat();
+	if(num_sat <= 0){
+		led_all_off();
+	} else if(num_sat <= 3){
+		led1.on();led2.off();led3.off();led4.off();
+	} else if(num_sat <= 6){
+		led1.on();led2.on();led3.off();led4.off();
+	} else if(num_sat <= 9){
+		led1.on();led2.on();led3.on();led4.off();
+	} else {
+		led_all_on();
+	}
+	if((now_ms - prev_et_ms) > 250){
+		// GPSチェック
+		debug_check_gps();
+		
+		prev_et_ms = now_ms;
+	}
 }
 
 static void beacon_ready_run(){
-	static uint8_t gps_count = 0;
 	static uint16_t init_count = 0;
 	static uint16_t arm_count = 0;
 	
@@ -462,22 +487,15 @@ static void beacon_ready_run(){
 	switch(ready_step){
 		case READY_WAIT_GPS_OK:
 			//if(gps.num_sat() >= TAKEOFF_OK_NUM_SAT && copter_num_sat >=TAKEOFF_OK_NUM_SAT){
-			if(copter_num_sat >=TAKEOFF_OK_NUM_SAT){	// テスト用
-				gps_count++;
-			} else {
-				gps_count = 0;
-			}
-			
-			// 連続カウントでOK判定
-			if(gps_count >= 5){
+			if(copter_num_sat.read() >=TAKEOFF_OK_NUM_SAT){	// テスト用
 				ready_step = READY_SEND_INIT;
-				led1.blink();
+				led2.blink();
 			}
 			
 			break;
 			
 		case READY_SEND_INIT:
-			if(copter_state == CHASER_NONE){
+			if(copter_state.read() == CHASER_NONE){
 				send_change_chaser_state_cmd(CHASER_INIT);
 				init_count = 0;
 				ready_step = READY_WAIT_INIT;
@@ -487,18 +505,18 @@ static void beacon_ready_run(){
 			break;
 		
 		case READY_WAIT_INIT:
-			if(++init_count > 500){
+			if(++init_count > 500){		// 約10sec待つ
 				if(change_state(BEACON_INIT)){ return; }
 			} else {
-				if(copter_state == CHASER_INIT){
+				if(copter_state.read() == CHASER_INIT){
 					ready_step = READY_SEND_ARM;
-					led2.blink();
+					led3.blink();
 				}
 			}
 			break;
 		
 		case READY_SEND_ARM:
-			if(!copter_armed){
+			if(!copter_armed.read()){
 				send_arm_cmd_for_chaser();
 				arm_count = 0;
 				ready_step = READY_WAIT_ARM;
@@ -511,10 +529,10 @@ static void beacon_ready_run(){
 			if(++arm_count > 500){
 				if(change_state(BEACON_INIT)){ return; }
 			} else {
-				if(copter_armed){
+				if(copter_armed.read()){
 					ready_step = READY_WAIT_TAKEOFF;
 					led_all_off();
-					led1.on();
+					led2.on();
 				}
 			}
 			break;
@@ -693,25 +711,28 @@ static void update_led(){
 		prev_ms = now_ms;
 	}
 	
-	led0.update(blink_update, blink_state);
 	led1.update(blink_update, blink_state);
 	led2.update(blink_update, blink_state);
 	led3.update(blink_update, blink_state);
+	led4.update(blink_update, blink_state);
 }
 
 static void led_all_on(){
-	led0.on();
 	led1.on();
 	led2.on();
 	led3.on();
+	led4.on();
 }
 
 static void led_all_off(){
-	led0.off();
 	led1.off();
 	led2.off();
 	led3.off();
+	led4.off();
 }
 
-
+Vector2f pv_location_to_vector(int32_t& lat, int32_t& lon, int32_t home_lat, int32_t home_lon){
+	Vector2f tmp((lat-home_lat) * LATLON_TO_CM, (lon-home_lon) * LATLON_TO_CM * copter_scaleLongDown.read());
+	return tmp;
+}
 

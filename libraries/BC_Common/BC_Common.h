@@ -15,5 +15,4 @@
 #define LAT    0
 #define LON    1
 
-
 #endif	// __BC_COMMON_H__

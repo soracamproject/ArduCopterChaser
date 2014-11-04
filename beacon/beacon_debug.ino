@@ -58,14 +58,15 @@ static void debug_check_telem(){
 }
 
 static void debug_check_gps(){
-	xbee_serial.print("lat=");
-	delay(100);
-	xbee_serial.print(beacon_loc_data.lat);
-	delay(100);
-	xbee_serial.print(", lon=");
-	delay(100);
-	xbee_serial.println(beacon_loc_data.lon);
-	delay(100);
+	xbee_serial.print(millis());					delay(20);
+	xbee_serial.print(",");							delay(20);
+	xbee_serial.print(beacon_loc_data.lat);			delay(20);
+	xbee_serial.print(",");							delay(20);
+	xbee_serial.print(beacon_loc_data.lon);			delay(20);
+	xbee_serial.print(",");							delay(20);
+	xbee_serial.print(gps.num_sat());				delay(20);
+	xbee_serial.print(",");							delay(20);
+	xbee_serial.println(gps.hdop());				delay(20);
 }
 
 static void debug_check_gyro_acc_mag(){
