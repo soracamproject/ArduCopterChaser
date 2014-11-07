@@ -234,6 +234,9 @@ void setup(){
 	// サブタスクステップを初期化
 	subtask = 0;
 	
+	// 機体ステータスをとりあえずダミー値で初期化（主に機体無しでデバッグする用）
+	copter_num_sat.write(12);
+	
 	// 前回時間の初期化
 	prev_us = micros();
 	prev_ms = millis();
@@ -451,7 +454,10 @@ static void beacon_init_run(){
 		if(change_state(BEACON_DEBUG)){return;}
 	}
 	
-	uint8_t num_sat = gps.num_sat();
+	// 補足衛星数に応じてLEDの点灯状態を変える
+	// 補足衛星数は機体とビーコンの少ない方
+	// 0：点灯無し、1〜3：赤、4〜6：赤黃、7〜9：赤黃緑、10〜12：赤黃緑青
+	uint8_t num_sat = min(gps.num_sat(),copter_num_sat.read());
 	if(num_sat <= 0){
 		led_all_off();
 	} else if(num_sat <= 3){
@@ -462,12 +468,6 @@ static void beacon_init_run(){
 		led1.on();led2.on();led3.on();led4.off();
 	} else {
 		led_all_on();
-	}
-	if((now_ms - prev_et_ms) > 250){
-		// GPSチェック
-		debug_check_gps();
-		
-		prev_et_ms = now_ms;
 	}
 }
 

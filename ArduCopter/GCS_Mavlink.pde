@@ -441,11 +441,7 @@ static void NOINLINE send_chaser_status(mavlink_channel_t chan){
 		chan,
 		control_mode,		// uint8_t control mode
 		chaser_state,		// uint8_t chaser state
-	#if CHASER_STATUS_DUMMY == 0
 		gps.num_sats(0),	// uint8_t gps number of satellite
-	#else
-		12,					// uint8_t gps number of satellite
-	#endif
 		motors.armed()		// uint8_t armed or disarmed flag
 	);
 }
@@ -1446,9 +1442,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
 		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
 			update_chaser_beacon_location(&tell_command);
-			chaser_count_beacon_pos_err = 0;
-		}else{
-			chaser_count_beacon_pos_err++;
 		}
 		break;
 	}

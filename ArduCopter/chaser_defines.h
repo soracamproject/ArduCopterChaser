@@ -34,10 +34,6 @@
 #define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
 												// なまし数1だとなまさない（当然だけど）
 #define CHASER_YAW_DEST_THRES        0.0f		// YAW制御するターゲット移動速度の閾値[cm/s]
-#define CHASER_OVERRUN_SEC           0.05f		// targetがdestinationを超えたと判定し目標速度を0にする閾値を決める時間[sec]
-												// target_dest_vel*CHASER_OVERRUN_SECで計算
-#define CHASER_BEACON_MOVE_DB        0.0f		// CHASER時の不感帯半径[cm]※ビーコンがこの範囲にある場合は動かない（以前は150.0f、現在機能停止中）
-#define CHASER_BEACON_MOVE_DB_COUNT_THRES   5	// CHASER時の不感帯判定回数しきい値[-]※この回数以上ビーコンが動かなければ静止していると判定する
 #define CHASER_SONAR_ALT_TARGET      250.0f		// ベース高度[cm]（この高度の時にベース下降速度となる）
 #define CHASER_SONAR_ALT_KP          1.0f		// P項（ベース高度との偏差×この値）でかかる
 #define CHASER_SONAR_CLIMB_RATE_MAX  300		// ソナーによる補正分の最大値[cm/s]
@@ -45,7 +41,6 @@
 #define CHASER_GIMBAL_ANGLE_MIN      15			// CHASER時のジンバルの角度最小値[deg.]
 #define CHASER_GIMBAL_ANGLE_MAX      40			// CHASER時のジンバルの角度最大値[deg.]
 #define CHASER_FS_THRES_COM          1000		// フェールセーフ（通信不良）判定閾値[ms]
-#define CHASER_FS_THRES_BEACON_POS_ERR  5		// フェールセーフ（ビーコン位置異常）判定閾値[回]
 #define CHASER_SONAR_ALT_FC          1.0f		// sonar_altのLPFのカットオフ周波数[hz]
 #define CHASER_CIRCLE_RADIUS_MIN     100.0f		// Circle Chaser時の旋回半径min[cm]
 #define CHASER_CIRCLE_RADIUS_MAX     300.0f		// Circle Chaser時の旋回半径max[cm]
@@ -81,8 +76,6 @@
 #define CHASER_CIRCLE_RADIUS         200.0f		// Circle Chaser時の旋回半径[cm]
 #define CHASER_CIRCLE_TIME           10.0f		// Circle Chaser時の旋回時間[sec]
 #define CHASER_TAKEOFF_ALT           400.0f		// テイクオフ時の高さ[cm]
-
-
 
 
 
@@ -143,10 +136,6 @@
 // ==============================
 // デバッグ関連
 // ==============================
-// STATUS_DUMMYフラグ
-// 0は通常モード
-// 1にするとchaser_statusをダミー信号に変える
-#define CHASER_STATUS_DUMMY         1
 
 
 

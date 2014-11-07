@@ -486,8 +486,8 @@ static void Log_Write_Attitude()
         roll            : (int16_t)ahrs.roll_sensor,
         control_pitch   : (int16_t)targets.y,
 		//control_pitch   : (int16_t)(chaser_last_update_dest_dt*1000.0f),	// CHASER用、destinationの更新周期[ms]
-        //pitch           : (int16_t)ahrs.pitch_sensor,
-		pitch			: (int16_t)chaser_yaw_target,	// CHASER用、yawの目標値[centi-deg.]
+        pitch           : (int16_t)ahrs.pitch_sensor,
+		//pitch			: (int16_t)chaser_yaw_target,	// CHASER用、yawの目標値[centi-deg.]
         control_yaw     : (uint16_t)targets.z,
         yaw             : (uint16_t)ahrs.yaw_sensor
     };

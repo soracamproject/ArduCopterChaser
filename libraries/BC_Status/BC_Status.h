@@ -45,6 +45,9 @@ public:
 	// 更新に必要な回数を設定する（1回以上）
 	void set_update_num(uint8_t update_num) { _update_num = max(1,update_num); }
 	
+	// 値の強制書き込み（更新回数を無視して書き込む）
+	void write(T next_status) { _status = next_status; }
+	
 private:
 	T        _status;
 	T        _last;

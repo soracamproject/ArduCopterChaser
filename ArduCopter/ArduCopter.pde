@@ -765,7 +765,6 @@ static struct {
 ////////////////////////////////////////////////////////////////////////////////
 static Vector2f beacon_loc[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]
 static Vector2f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]
-static Vector2f beacon_loc_relaxed_latch;					// ビーコン位置なましのラッチ値[cm]不感帯に入っているかの基準とする
 
 static Vector2f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
 static Vector2f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
@@ -774,10 +773,8 @@ static float chaser_target_z;				// ターゲットのz位置
 
 static Vector2f chaser_track_length;		// chaser_originからchaser_destinationまでの距離[cm]
 static Vector2f target_distance;			// chaser_originからchaser_targetまでの距離[cm]
-//static Vector2f chaser_overrun_thres;		// fabsf(chaser_track_length + chaser_dest_vel * CHASER_OVERRUN_SEC)で計算される[cm,abs]
 
 static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減速度で制限される）[cm/s]
-//static Vector2f chaser_dest_vel;			// ターゲットの目標移動速度（目的地更新時に計算される）[cm/s]
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
@@ -800,15 +797,10 @@ static uint8_t chaser_gimbal_pitch_angle;	// CHASER用ジンバルピッチ角�
 
 static bool chaser_fs_com_firsttime;		// 通信途絶FS初回フラグ（trueは初回）
 static uint32_t chaser_prev_ms_msg_receive;	// ビーコンからのメッセージを受け取った時間（前回値）[ms]
-static uint8_t chaser_count_beacon_pos_err;	// ビーコン位置情報がフェンスを連続して外れた回数[-]
-
-static uint16_t chaser_debug_id;			// ビーコンから届くデバッグID。この番号と時間で通信速度を推定する。※予定
-static uint32_t chaser_debug_millis;		// ビーコンに返すmillis。通信速度推定用。※予定
 
 static float chaser_cc_radius;				// Circle Chaserの現在の旋回半径[cm]
 static float chaser_cc_angle;				// Circle Chaserの現在の旋回角度[rad]
 
-//static Vector2f chaser_accel;				// chaser_targetの加速度[cm/s^2]
 static uint32_t chaser_last_update_dest;	// destinationの前回更新時刻[ms]
 static float chaser_last_update_dest_dt;	// destinationの前回更新周期[s]
 
