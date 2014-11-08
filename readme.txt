@@ -9,7 +9,7 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 
 ■■■■■　利用したい方へのメッセージ　■■■■■
 ①　現在、CHASERモードが"一部"ちゃんと動きません。
-　　YAWコントロールとGIMBALコントロール以外はCHASERできます。
+　　GIMBALコントロール以外はCHASERできます。
 　　ですが、Mavlinkで所定のコマンドを送信する必要があるため
 　　利用するためにはbeacon側のコードを読み解く必要があります。
 ②　本家のほうで、Android＋DroidPlannerを使ったFollowMe機能の開発がガンガン進んでおります。
@@ -37,8 +37,10 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 http://dev.ardupilot.com/wiki/building-px4-with-make/
 
 ４．uploadする
-省略
+・make後「make px4-v2-upload」と打ちEnter
+・make前の場合はmakeが始まります
 
 
 ■■■■■　その他　■■■■■
 プロジェクトHP：http://soracamproject.com
+Youtube：https://www.youtube.com/watch?v=R6rmXm6TPVY

@@ -101,7 +101,7 @@ static BC_Status_Float copter_scaleLongDown(1);
 #define SUBTASK_NUM      5
 
 // BEACON_READYでのステップ
-#define READY_WAIT_GPS_OK       0
+#define READY_WAIT_GPS_OK       0	// 素通り
 #define READY_SEND_INIT         1
 #define READY_WAIT_INIT         2
 #define READY_SEND_ARM          3
@@ -109,7 +109,7 @@ static BC_Status_Float copter_scaleLongDown(1);
 #define READY_WAIT_TAKEOFF      5
 
 // その他
-#define TAKEOFF_OK_NUM_SAT   10		// TAKEOFF可能GPS捕捉衛星数
+#define TAKEOFF_OK_NUM_SAT    7		// TAKEOFF可能GPS捕捉衛星数
 #define STATUS_UPDATE_NUM     3		// copter_statusがこの回数以上連続で同じ値だったらstatusを変化させる
 
 
@@ -381,7 +381,6 @@ static bool change_state(uint8_t next_state){
 	switch(next_state){
 		case BEACON_INIT:
 			led_all_off();
-			//led1.on();
 			
 			break;
 		
@@ -391,7 +390,6 @@ static bool change_state(uint8_t next_state){
 			
 			// 初期化
 			ready_step = 0;
-			flags.blink = true;
 			
 			break;
 		
@@ -444,14 +442,20 @@ static bool change_state(uint8_t next_state){
 
 
 static void beacon_init_run(){
+	static bool gps_ok;
 	// ボタン1クリックで次のステートへ
-	if(button1.read()==BUTTON_CLICK){
+	if(gps_ok && button1.read()==BUTTON_CLICK){
 		if(change_state(BEACON_READY)){return;}
 	}
 	
 	// ボタン2長押しでDEBUGモードへ
 	if(button2.read()==BUTTON_LONG_PRESS){
 		if(change_state(BEACON_DEBUG)){return;}
+	}
+	
+	// ボタン2クリックでLANDモードへ
+	if(button2.read()==BUTTON_CLICK){
+		if(change_state(BEACON_LAND)){return;}
 	}
 	
 	// 補足衛星数に応じてLEDの点灯状態を変える
@@ -468,6 +472,19 @@ static void beacon_init_run(){
 		led1.on();led2.on();led3.on();led4.off();
 	} else {
 		led_all_on();
+	}
+	
+	// GPSが問題無いかのフラグ
+	// Readyステート移行可否判断に利用
+	// 現状は衛星補足数7個以上でOK。LED緑まで点灯。
+	if(!gps_ok){
+		if(num_sat >= TAKEOFF_OK_NUM_SAT){
+			gps_ok = true;
+		}
+	} else {
+		if(num_sat < TAKEOFF_OK_NUM_SAT){
+			gps_ok = false;
+		}
 	}
 }
 
@@ -486,11 +503,8 @@ static void beacon_ready_run(){
 	
 	switch(ready_step){
 		case READY_WAIT_GPS_OK:
-			//if(gps.num_sat() >= TAKEOFF_OK_NUM_SAT && copter_num_sat >=TAKEOFF_OK_NUM_SAT){
-			if(copter_num_sat.read() >=TAKEOFF_OK_NUM_SAT){	// テスト用
-				ready_step = READY_SEND_INIT;
-				led2.blink();
-			}
+			// 素通り
+			ready_step = READY_SEND_INIT;
 			
 			break;
 			
@@ -510,7 +524,7 @@ static void beacon_ready_run(){
 			} else {
 				if(copter_state.read() == CHASER_INIT){
 					ready_step = READY_SEND_ARM;
-					led3.blink();
+					led2.blink();
 				}
 			}
 			break;
@@ -532,15 +546,20 @@ static void beacon_ready_run(){
 				if(copter_armed.read()){
 					ready_step = READY_WAIT_TAKEOFF;
 					led_all_off();
-					led2.on();
+					led4.on();
 				}
 			}
 			break;
 		
 		case READY_WAIT_TAKEOFF:
-			// スイッチ１が押されたらBEACON_TAKEOFFに移行
-			if(button1.read()==BUTTON_CLICK){
-				if(change_state(BEACON_TAKEOFF)){return;}
+			// もしARM解除されたらもう一回最初から
+			if(!copter_armed.read()){
+				ready_step = READY_WAIT_GPS_OK;
+			} else {
+				// スイッチ１が押されたらBEACON_TAKEOFFに移行
+				if(button1.read()==BUTTON_CLICK){
+					if(change_state(BEACON_TAKEOFF)){return;}
+				}
 			}
 			break;
 	}
