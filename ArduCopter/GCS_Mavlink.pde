@@ -435,14 +435,36 @@ static void NOINLINE send_statustext(mavlink_channel_t chan)
         s->text);
 }
 
-// Chaser用ステータス送信
-static void NOINLINE send_chaser_status(mavlink_channel_t chan){
-	mavlink_msg_chaser_status_send(
+// 機体ステータスを送信
+static void NOINLINE send_chaser_copter_status(mavlink_channel_t chan){
+	mavlink_msg_chaser_copter_status_send(
 		chan,
-		control_mode,		// uint8_t control mode
-		chaser_state,		// uint8_t chaser state
-		gps.num_sats(0),	// uint8_t gps number of satellite
-		motors.armed()		// uint8_t armed or disarmed flag
+		control_mode,						// uint8_t control mode
+		chaser_state,						// uint8_t chaser state
+		gps.num_sats(0),					// uint8_t gps number of satellite
+		motors.armed(),						// uint8_t armed or disarmed flag
+		wp_nav.reached_wp_destination(),	// uint8_t waypoint reached flag (for takeoff)
+		0									// uint8_t landed flag (for land)
+	);
+}
+
+// 機体とビーコンの距離を送信
+static void NOINLINE send_chaser_distance(mavlink_channel_t chan){
+	Vector2f copter_pos(inertial_nav.get_position().x,inertial_nav.get_position().y);
+	float distance = get_distance_vector2f(copter_pos,beacon_pos_relaxed);
+	
+	mavlink_msg_chaser_distance_send(
+		chan,
+		distance			// float distance between copter and beacon
+	);
+}
+
+// オフセット再計算メッセージを送信（完了時にackとして返す）
+static void NOINLINE send_chaser_recalc_offset(mavlink_channel_t chan){
+	mavlink_msg_chaser_recalc_offset_send(
+		chan,
+		g.chaser_beacon_offset_x,	// float copter beacon position offset x
+		g.chaser_beacon_offset_y	// float copter beacon position offset y
 	);
 }
 
@@ -629,9 +651,14 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         // unused
         break;
 	
-	case MSG_CHASER_STATUS:
-		CHECK_PAYLOAD_SIZE(CHASER_STATUS);
-		send_chaser_status(chan);
+	case MSG_CHASER_COPTER_STATUS:
+		CHECK_PAYLOAD_SIZE(CHASER_COPTER_STATUS);
+		send_chaser_copter_status(chan);
+		break;
+	
+	case MSG_CHASER_DISTANCE:
+		CHECK_PAYLOAD_SIZE(CHASER_DISTANCE);
+		send_chaser_distance(chan);
 		break;
 		
     case MSG_RETRY_DEFERRED:
@@ -1430,7 +1457,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION: {
 		chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻更新
 		struct Location tell_command = {};
-
+		
 		mavlink_chaser_beacon_location_t packet;
 		mavlink_msg_chaser_beacon_location_decode(msg, &packet);
 		
@@ -1441,11 +1468,17 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		//受け取った値が上下限に収まっていたらビーコン位置情報を更新する
 		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
 		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
-			update_chaser_beacon_location(&tell_command);
+			update_chaser_beacon_position(&tell_command);
 		}
 		break;
 	}
-
+	
+	case MAVLINK_MSG_ID_CHASER_RECALC_OFFSET: {
+		chaser_recalc_offset = true;
+		
+		break;
+	}
+	
     }     // end switch
 } // end handle mavlink
 

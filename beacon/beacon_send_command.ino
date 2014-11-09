@@ -48,6 +48,20 @@ static void send_beacon_loc(int32_t lat, int32_t lon, int32_t pressure){
 	xbee_serial.write(buf, len);
 }
 
+// オフセット再計算指令送信
+static void send_recalc_offset(){
+	uint8_t system_id = 20;			// 実績値20
+	uint8_t component_id = 200;		// 実績値200
+	
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+	uint16_t len;
+	
+	mavlink_msg_chaser_recalc_offset_pack(system_id, component_id, &msg, 0.f, 0.f);
+	len = mavlink_msg_to_send_buffer(buf, &msg);
+	
+	xbee_serial.write(buf, len);
+}
 
 
 

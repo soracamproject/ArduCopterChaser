@@ -5,8 +5,6 @@ static void check_input_msg(void)
 	mavlink_status_t status;
 	status.packet_rx_drop_count = 0;
 	
-	static uint8_t flag_led_debug = 0;
-	
 	// 受信可能バイトを取得
 	int16_t nbytes = (int16_t)xbee_serial.available();
 	if (nbytes == -1){
@@ -18,14 +16,8 @@ static void check_input_msg(void)
 		// データ読み込み
 		uint8_t c = (uint8_t)xbee_serial.read();
 		
-		// 新しいメッセージかどうかを判断する
+		// 新しいメッセージかどうかを判断し、メッセージであれば処理する
 		if (mavlink_parse_char(0, c, &msg, &status)) {
-			// とりあえずコメントアウト
-			// // we exclude radio packets to make it possible to use the
-			// // CLI over the radio
-			//if (msg.msgid != MAVLINK_MSG_ID_RADIO && msg.msgid != MAVLINK_MSG_ID_RADIO_STATUS) {
-			//    mavlink_active |= (1U<<chan);
-			//}
 			handleMessage(&msg);
 		}
 	}
@@ -39,16 +31,41 @@ void handleMessage(mavlink_message_t* msg){
 	static uint8_t count_not_chaser = 0;;
 	
 	switch (msg->msgid) {
-		case MAVLINK_MSG_ID_CHASER_STATUS:
-			mavlink_chaser_status_t packet;
-			mavlink_msg_chaser_status_decode(msg, &packet);
+		case MAVLINK_MSG_ID_CHASER_COPTER_STATUS:
+		{
+			mavlink_chaser_copter_status_t packet;
+			mavlink_msg_chaser_copter_status_decode(msg, &packet);
 			
 			copter_mode.update(packet.control_mode);
 			copter_state.update(packet.chaser_state);
 			copter_num_sat.update(packet.num_sat);
 			copter_armed.update(packet.armed);
 			
-			break;
+		break;
+		}
+		
+		case MAVLINK_MSG_ID_CHASER_DISTANCE:
+		{
+			mavlink_chaser_distance_t packet;
+			mavlink_msg_chaser_distance_decode(msg, &packet);
+			
+			copter_distance.update(packet.distance);
+			
+		break;
+		}
+		
+		case MAVLINK_MSG_ID_CHASER_RECALC_OFFSET:
+		{
+			mavlink_chaser_recalc_offset_t packet;
+			mavlink_msg_chaser_recalc_offset_decode(msg, &packet);
+			
+			copter_recalc_offset_done = true;
+			copter_offset_x.update(packet.offset_x);
+			copter_offset_y.update(packet.offset_y);
+			
+		break;
+		}
+
 	}	// msgidのスイッチの中括弧とじ
 }	// handleMessage関数の中括弧とじ
 

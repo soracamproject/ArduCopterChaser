@@ -459,12 +459,25 @@
         <field type="int32_t" name="pressure">pressure (*100 mbar = Pa)</field>
 	</message>
 
-	<message id="202" name="CHASER_STATUS">
-        <description>Send chaser status from copter to beacon. </description>
+	<message id="202" name="CHASER_COPTER_STATUS">
+        <description>Send copter status from copter to beacon. </description>
         <field type="uint8_t" name="control_mode">control mode</field>
         <field type="uint8_t" name="chaser_state">chaser state</field>
 		<field type="uint8_t" name="num_sat">GPS number of satellite</field>
 		<field type="uint8_t" name="armed">armed or disarmed flag</field>
+		<field type="uint8_t" name="wp_reached">waypoint reached flag (for takeoff)</field>
+		<field type="uint8_t" name="landed">landed flag (for land)</field>
+	</message>
+
+	<message id="203" name="CHASER_DISTANCE">
+        <description>Send distance between copter and beacon from copter to beacon. </description>
+        <field type="float" name="distance">distance between copter and beacon</field>
+	</message>
+
+	<message id="204" name="CHASER_RECALC_OFFSET">
+        <description>Send recalc offset message. (start : beacon2copter, done : copter2beacon)</description>
+        <field type="float" name="offset_x">copter beacon position offset x</field>
+		<field type="float" name="offset_y">copter beacon position offset y</field>
 	</message>
 
      </messages>

@@ -478,19 +478,19 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_desired_alt_leash, "CHR_ALT_LEASH", CHASER_DESIRED_ALT_LEASH),
 	
-	// @Param: CHR_OFST_LAT
-	// @DisplayName: Chaser Beacon Offset Lat
-	// @Description: offset distance of beacon location on latitude direction [cm]
+	// @Param: CHR_OFST_X
+	// @DisplayName: Chaser Beacon Offset X
+	// @Description: offset distance of beacon posision on x direction [cm]
 	// @Range -1000 1000
 	// @User: Advanced
-	GSCALAR(chaser_beacon_offset_lat_x, "CHR_OFST_LAT_X", CHASER_BEACON_OFFSET_LAT_X),
+	GSCALAR(chaser_beacon_offset_x, "CHR_OFST_X", CHASER_BEACON_OFFSET_X),
 	
-	// @Param: CHR_OFST_LON
-	// @DisplayName: Chaser Beacon Offset Lon
-	// @Description: offset distance of beacon location on longitude direction [cm]
+	// @Param: CHR_OFST_Y
+	// @DisplayName: Chaser Beacon Offset Y
+	// @Description: offset distance of beacon position on y direction [cm]
 	// @Range -1000 1000
 	// @User: Advanced
-	GSCALAR(chaser_beacon_offset_lon_y, "CHR_OFST_LON_Y", CHASER_BEACON_OFFSET_LON_Y),
+	GSCALAR(chaser_beacon_offset_y, "CHR_OFST_Y", CHASER_BEACON_OFFSET_Y),
 
 	// @Param: CHR_ALT_HOLD
 	// @DisplayName: Chaser Altitude Hold

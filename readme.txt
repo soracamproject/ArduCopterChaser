@@ -40,6 +40,9 @@ http://dev.ardupilot.com/wiki/building-px4-with-make/
 ・make後「make px4-v2-upload」と打ちEnter
 ・make前の場合はmakeが始まります
 
+■■■■■　変数名の思想　■■■■■
+positionはhomeを起点とした位置。単位は[cm]。lat方向(南北)がx、lon方向(東西)がy。
+locationは緯度経度。緯度がlat、経度がlon。
 
 ■■■■■　その他　■■■■■
 プロジェクトHP：http://soracamproject.com

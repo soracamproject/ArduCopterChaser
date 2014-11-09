@@ -763,8 +763,9 @@ static struct {
 //
 // StaticなVector2f,3fはここに置かないとエラーはく
 ////////////////////////////////////////////////////////////////////////////////
-static Vector2f beacon_loc[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]
-static Vector2f beacon_loc_relaxed_last;					// ビーコン位置なましの前回値[cm]
+static Vector2f beacon_pos[CHASER_TARGET_RELAX_NUM];		// ビーコンの位置配列(home基準)[cm]
+static Vector2f beacon_pos_relaxed;							// ビーコン位置なまし後[cm]
+static Vector2f beacon_pos_relaxed_last;					// ビーコン位置なましの前回値[cm]
 
 static Vector2f chaser_destination;			// 目的地：ビーコン位置が更新される度に更新される
 static Vector2f chaser_origin;				// 起点：ビーコン位置が更新された際のchaser_target
@@ -778,8 +779,8 @@ static Vector2f chaser_target_vel;			// ターゲットの移動速度（加減�
 
 static uint8_t chaser_state;				// CHASERステート（定義はchaser_defines.h参照）
 
-static bool chaser_beacon_loc_reset;		// ビーコン位置情報をリセットするフラグ
-static bool chaser_beacon_loc_ok;			// ビーコン位置情報が埋まっている状態
+static bool chaser_beacon_pos_reset;		// ビーコン位置情報をリセットするフラグ
+static bool chaser_beacon_pos_ok;			// ビーコン位置情報が埋まっている状態
 static bool chaser_started;					// CHASER開始フラグ
 
 static int32_t chaser_yaw_target;					// YAWの目標角度（0〜36000）[centi-degrees]
@@ -812,6 +813,8 @@ static bool chaser_start_slow;				// Chaser開始時の加速度抑制フラグ
 static Vector2f chaser_ff_vel;				// Chaser時フィードフォワード用速度[cm/s]
 static Vector2f chaser_ff_accel;			// Chaser時フィードフォワード用加速度[cm/s^2]
 											// この加速度で速度を変化させる
+
+static bool chaser_recalc_offset;			// オフセット再計算フラグ
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -889,11 +892,10 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { userhook_MediumLoop,  40,     10 },
 #endif
 #ifdef USERHOOK_SLOWLOOP
-    { userhook_SlowLoop,    120,    10 },
+    { userhook_SlowLoop,    120,    950 },	// Chaser用に必要時間変更(10→950)、gcs_data_stream_sendを流用、暫定値
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    //{ userhook_SuperSlowLoop,400,   10 },
-    { userhook_SuperSlowLoop,400,   150 },	// Chaser用に必要時間変更、gcs_send_heartbeatを流用
+    { userhook_SuperSlowLoop,400,   10 },
 #endif
 };
 #else

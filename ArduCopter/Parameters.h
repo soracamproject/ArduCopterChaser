@@ -186,8 +186,8 @@ public:
 		k_param_chaser_yaw_slew_rate,
 		k_param_chaser_gimbal_alt,	// 127
 		k_param_chaser_desired_alt_leash,
-		k_param_chaser_beacon_offset_lat_x,
-		k_param_chaser_beacon_offset_lon_y,
+		k_param_chaser_beacon_offset_x,
+		k_param_chaser_beacon_offset_y,
 		k_param_chaser_alt_hold,
 		k_param_chaser_circle_radius,
 		k_param_chaser_circle_time,
@@ -385,8 +385,8 @@ public:
 	AP_Float        chaser_yaw_slew_rate;		// YAW回転速度リミット[centi-deg/sec](-18000〜18000)
 	AP_Int16        chaser_gimbal_alt;			// ジンバル角度計算用高度[cm]
 	AP_Float        chaser_desired_alt_leash;	// 高度制御時の目標高度の機体高度との差[cm]
-	AP_Float        chaser_beacon_offset_lat_x;	// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]
-	AP_Float        chaser_beacon_offset_lon_y;	// ビーコン位置のオフセット値（lon,経度方向,y方向）[cm]
+	AP_Float        chaser_beacon_offset_x;		// ビーコン位置のオフセット値（lat,緯度方向,x方向）[cm]
+	AP_Float        chaser_beacon_offset_y;		// ビーコン位置のオフセット値（lon,経度方向,y方向）[cm]
 	AP_Int8         chaser_alt_hold;			// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御（現在値に固定））
 	AP_Float        chaser_circle_radius;		// Circle Chaser時の旋回半径[cm]
 	AP_Float        chaser_circle_time;			// Circle Chaser時の旋回時間[sec]

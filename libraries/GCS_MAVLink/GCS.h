@@ -49,7 +49,9 @@ enum ap_message {
     MSG_RANGEFINDER,
     MSG_TERRAIN,
     MSG_BATTERY2,
-	MSG_CHASER_STATUS,	// CHASER用に追加
+	MSG_CHASER_COPTER_STATUS,			// Chaser用
+	MSG_CHASER_DISTANCE,				// Chaser用
+	MSG_CHASER_RECALC_OFFSET,			// Chaser用
     MSG_RETRY_DEFERRED // this must be last
 };
 

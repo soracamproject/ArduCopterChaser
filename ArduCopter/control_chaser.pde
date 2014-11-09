@@ -18,7 +18,6 @@ static void chaser_run() {
 	
 	switch(chaser_state) {
 		case CHASER_INIT:
-		//case CHASER_READY:
 			break;
 		
 		case CHASER_TAKEOFF:
@@ -286,7 +285,7 @@ static void calc_chaser_pos_z(float dt)
 }
 
 
-static void update_chaser_beacon_location(const struct Location *cmd)
+static void update_chaser_beacon_position(const struct Location *cmd)
 {
 	static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
 	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
@@ -295,15 +294,16 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 	static uint32_t last = 0;								// 前回update関数呼び出し時刻[ms]
 	
 	// リセットフラグが立っている場合はビーコン位置配列をクリアする
-	if (chaser_beacon_loc_reset) {
-		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_loc[i](0,0);}
-		beacon_loc_relaxed_last(0,0);
+	if (chaser_beacon_pos_reset) {
+		for (uint8_t i=0;i<CHASER_TARGET_RELAX_NUM;i++) {beacon_pos[i](0,0);}
+		beacon_pos_relaxed_last(0,0);
 		
 		index = 0;
 		relax_stored_num = 0;
-		chaser_beacon_loc_ok = false;
+		chaser_beacon_pos_ok = false;
 		
-		chaser_beacon_loc_reset = false;
+		// フラグリセット
+		chaser_beacon_pos_reset = false;
 	}
 	
 	// 前回からの経過時間を計算する
@@ -321,8 +321,8 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		
 		// ビーコン位置配列に格納し、次の格納番号と格納総数を増やす
 		// この段階でオフセット値をのっける
-		beacon_loc[index].x = pos.x + g.chaser_beacon_offset_lat_x;
-		beacon_loc[index].y = pos.y + g.chaser_beacon_offset_lon_y;
+		beacon_pos[index].x = pos.x + g.chaser_beacon_offset_x;
+		beacon_pos[index].y = pos.y + g.chaser_beacon_offset_y;
 		index++;
 		if (index == CHASER_TARGET_RELAX_NUM) {
 			index = 0;
@@ -335,15 +335,26 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 		// 配列が全て埋まっている場合のみchaser_origin,chaser_destinationを更新する
 		if (relax_stored_num == CHASER_TARGET_RELAX_NUM) {
 			// x,y方向のなまし値を計算する
-			Vector2f beacon_loc_sum;
-			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {beacon_loc_sum += beacon_loc[i];};
-			Vector2f beacon_loc_relaxed = beacon_loc_sum / CHASER_TARGET_RELAX_NUM;
+			Vector2f beacon_pos_sum(0.f,0.f);
+			for (uint8_t i=0; i<CHASER_TARGET_RELAX_NUM; i++) {beacon_pos_sum += beacon_pos[i];};
+			beacon_pos_relaxed = beacon_pos_sum / CHASER_TARGET_RELAX_NUM;
 			
-			if (!chaser_beacon_loc_ok) {
+			// オフセット再計算フラグの確認
+			if(chaser_recalc_offset){
+				// オフセット再計算
+				if(recalc_beacon_offset(beacon_pos_relaxed)){
+					gcs_send_message(MSG_CHASER_RECALC_OFFSET);
+				}
+				
+				// 1回再計算したら結果に依らずフラグオフ
+				chaser_recalc_offset = false;
+			}
+			
+			if(!chaser_beacon_pos_ok) {
 				// 予測不可時（呼び出し1回目）の処置
 				// ビーコン位置配列なまし値前回値を更新し、予測OKとする
-				beacon_loc_relaxed_last = beacon_loc_relaxed;
-				chaser_beacon_loc_ok = true;
+				beacon_pos_relaxed_last = beacon_pos_relaxed;
+				chaser_beacon_pos_ok = true;
 			} else {
 				// 予測可能時の処置
 				
@@ -364,12 +375,12 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 					}
 					
 					// ジンバルの角度を更新する
-					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(curr_pos,beacon_loc_relaxed))),
+					chaser_gimbal_pitch_angle = constrain_int16((uint8_t)degrees(atan2f(g.chaser_gimbal_alt , get_distance_vector2f(curr_pos,beacon_pos_relaxed))),
 												CHASER_GIMBAL_ANGLE_MIN, CHASER_GIMBAL_ANGLE_MAX); 
 					change_mount_control_pitch_angle(chaser_gimbal_pitch_angle);
 					
 					// chaser_origin,chaser_destinationを更新する
-					update_chaser_origin_destination(beacon_loc_relaxed, beacon_loc_relaxed_last, dt);
+					update_chaser_origin_destination(beacon_pos_relaxed, beacon_pos_relaxed_last, dt);
 					last = now;
 					
 					// update関数呼び出し時刻に関するグローバル変数更新
@@ -378,7 +389,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 				}
 				
 				// ビーコン位置配列なまし前回値を更新する
-				beacon_loc_relaxed_last = beacon_loc_relaxed;
+				beacon_pos_relaxed_last = beacon_pos_relaxed;
 			}
 		} else {
 			// 無し
@@ -387,7 +398,7 @@ static void update_chaser_beacon_location(const struct Location *cmd)
 }
 
 
-static void update_chaser_origin_destination(const Vector2f beacon_loc, const Vector2f beacon_loc_last, float dt) {
+static void update_chaser_origin_destination(const Vector2f& beacon_pos, const Vector2f& beacon_pos_last, float dt) {
 	static uint8_t yaw_relax_count = 0;
 	
 	// フェールセーフ（原理上入らないはず）
@@ -397,11 +408,11 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 	chaser_origin = chaser_target;
 	
 	// beaconの到達予測位置を直線補間で推定する
-	Vector2f beacon_loc_next = beacon_loc * 2.0f - beacon_loc_last;
+	Vector2f beacon_pos_next = beacon_pos * 2.0f - beacon_pos_last;
 	
 	if(chaser_state == CHASER_CHASE){	// Chaserの場合
 		// 目的地はビーコン到達予測位置
-		chaser_destination = beacon_loc_next;
+		chaser_destination = beacon_pos_next;
 		
 	} else {	// Circle Chaserの場合
 		// 角速度定義(rad/s)
@@ -409,7 +420,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		float angular_vel = 2.0f * M_PI_F / cc_time;
 		
 		// 並進移動ベクトル
-		Vector2f trans_vector = beacon_loc_next - beacon_loc;
+		Vector2f trans_vector = beacon_pos_next - beacon_pos;
 		
 		// 角度を増分
 		chaser_cc_angle += angular_vel*constrain_float(dt,0.0f,0.2f);	// 適当な値でdtに制限をかける
@@ -425,7 +436,7 @@ static void update_chaser_origin_destination(const Vector2f beacon_loc, const Ve
 		Vector2f rot_dest = rotate_vector2f(rot_dest_base, chaser_cc_angle);
 		
 		// 目標位置計算
-		chaser_destination = beacon_loc_next + rot_dest;
+		chaser_destination = beacon_pos_next + rot_dest;
 	}
 	
 	// track関連の計算
@@ -520,9 +531,10 @@ static bool set_chaser_state(uint8_t state) {
 		case CHASER_INIT:
 		{
 			// フラグ類の初期値設定
-			chaser_beacon_loc_reset = false;
-			chaser_beacon_loc_ok = false;
+			chaser_beacon_pos_reset = false;
+			chaser_beacon_pos_ok = false;
 			chaser_mount_activate = false;
+			chaser_recalc_offset = false;
 			
 			// ベース下降速度計算用斜度tan値の計算
 			chaser_slope_angle_tan = tan(radians(g.chaser_slope_angle));
@@ -559,7 +571,7 @@ static bool set_chaser_state(uint8_t state) {
 			set_auto_armed(true);
 			
 			// 一旦ビーコン位置初期化フラグを立てる
-			chaser_beacon_loc_reset = true;
+			chaser_beacon_pos_reset = true;
 			
 			success = true;
 			break;
@@ -694,6 +706,22 @@ static bool check_chaser_state_change(uint8_t state) {
 	}
 	
 	return false;
+}
+
+static bool recalc_beacon_offset(const Vector2f& beacon_pos){
+	const Vector3f& copter_pos = inertial_nav.get_position();
+	
+	Vector2f next_offset(g.chaser_beacon_offset_x + copter_pos.x - beacon_pos.x , g.chaser_beacon_offset_y + copter_pos.y - beacon_pos.y);
+	
+	// 明らかに大きい値の場合更新せずにfalseを返す
+	if(next_offset.length() > CHASER_BEACON_OFFSET_LMT){
+		return false;
+	} else {
+		g.chaser_beacon_offset_x = next_offset.x;
+		g.chaser_beacon_offset_y = next_offset.y;
+		
+		return true;
+	}
 }
 
 // chaser用フェールセーフを実施する

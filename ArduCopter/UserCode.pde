@@ -33,7 +33,14 @@ void userhook_MediumLoop()
 void userhook_SlowLoop()
 {
     // put your 3.3Hz code here
-	gcs_send_message(MSG_CHASER_STATUS);
+	
+	// 常に機体ステータスを送信
+	gcs_send_message(MSG_CHASER_COPTER_STATUS);
+	
+	// Chaser_Stay時のみ機体位置を送信する
+	if(chaser_state == CHASER_STAY){
+		gcs_send_message(MSG_CHASER_DISTANCE);
+	}
 }
 #endif
 

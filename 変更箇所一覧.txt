@@ -3,6 +3,7 @@ ArduCopter.pde
 　#include "chaser_defines.h"を追加
 　"CHASERモード用グローバル変数"の項目を追加
 　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
+　userhook_SlowLoopの継続時間を変更(10→150)
 APM_Config.h
 　#define USERHOOK_SLOWLOOPをコメント解除
 chaser_defines.h
