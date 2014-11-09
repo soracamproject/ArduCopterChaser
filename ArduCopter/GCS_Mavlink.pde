@@ -444,7 +444,7 @@ static void NOINLINE send_chaser_copter_status(mavlink_channel_t chan){
 		gps.num_sats(0),					// uint8_t gps number of satellite
 		motors.armed(),						// uint8_t armed or disarmed flag
 		wp_nav.reached_wp_destination(),	// uint8_t waypoint reached flag (for takeoff)
-		0									// uint8_t landed flag (for land)
+		ap.land_complete					// uint8_t landed flag (for land)
 	);
 }
 
