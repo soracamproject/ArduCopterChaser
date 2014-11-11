@@ -287,7 +287,7 @@ static void calc_chaser_pos_z(float dt)
 
 static void update_chaser_beacon_position(const struct Location *cmd)
 {
-	static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
+	//static bool chaser_est_ok = false;						// 位置予測できるかのフラグ（位置配列が埋まって1回後）
 	static uint8_t index = 0;								// ビーコン位置配列の次の格納番号
 	static uint8_t relax_stored_num = 0;					// ビーコン位置配列に格納されている位置数
 	static uint32_t last_store = 0;							// 前回格納時刻[ms]

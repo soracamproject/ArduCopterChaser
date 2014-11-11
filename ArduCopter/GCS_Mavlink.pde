@@ -656,6 +656,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
 		send_chaser_copter_status(chan);
 		break;
 	
+	case MSG_CHASER_RECALC_OFFSET:
+		CHECK_PAYLOAD_SIZE(CHASER_RECALC_OFFSET);
+		send_chaser_recalc_offset(chan);
+		break;
+	
 	case MSG_CHASER_DISTANCE:
 		CHECK_PAYLOAD_SIZE(CHASER_DISTANCE);
 		send_chaser_distance(chan);

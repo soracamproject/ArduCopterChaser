@@ -40,6 +40,21 @@ __asm volatile ("nop");
 
 
 // ***********************************************************************************
+// シリアルポート（この位置だといけるけど、下に動かすといけない）
+// ***********************************************************************************
+#if defined(BEACON_IBIS)
+	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
+	FastSerialPort1(gps_serial);	// GPS用
+	FastSerialPort2(xbee_serial);	// XBee用
+#endif
+#if defined(BEACON_PHEASANT)
+	FastSerialPort0(console);
+	FastSerialPort2(xbee_serial);
+	FastSerialPort3(gps_serial);
+#endif
+
+
+// ***********************************************************************************
 // グローバル変数
 // ***********************************************************************************
 static uint32_t now_us = 0;				// 今回時刻格納変数[us]
@@ -112,7 +127,9 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 
 // BEACON_STAYでのステップ
 #define STAY_INIT                       0
-#define STAY_READY_CHASE                1
+#define STAY_SEND_STAY                  1
+#define STAY_WAIT_STAY_DONE             2
+#define STAY_RUN                        3
 #define STAY_SEND_RECALC_OFFSET        10
 #define STAY_WAIT_RECALC_OFFSET        11
 #define STAY_RECALC_OFFSET_DONE        12
@@ -136,19 +153,6 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 #define LAND_LAND_DONE        4
 
 
-// ***********************************************************************************
-// シリアルポート
-// ***********************************************************************************
-#if defined(BEACON_IBIS)
-	FastSerialPort0(console);		// console(デバッグ用)、USB通信用
-	FastSerialPort1(gps_serial);	// GPS用
-	FastSerialPort2(xbee_serial);	// XBee用
-#endif
-#if defined(BEACON_PHEASANT)
-	FastSerialPort0(console);
-	FastSerialPort2(xbee_serial);
-	FastSerialPort3(gps_serial);
-#endif
 
 
 // ***********************************************************************************
@@ -244,7 +248,7 @@ void setup(){
 	subtask = 0;
 	
 	// 機体ステータスをとりあえずダミー値で初期化（主に機体無しでデバッグする用）
-	copter_num_sat.write(12);
+	//copter_num_sat.write(12);
 	
 	// 前回時間の初期化
 	prev_us = micros();
@@ -564,13 +568,13 @@ static void beacon_takeoff_run(){
 		case TAKEOFF_WAIT_TAKEOFF_DONE:
 			if(++takeoff_count > 750){
 				// 約15sec待ってもtakeoff完了しなかったら強制的にLANDする
-				change_state(BEACON_LAND);
-				return;
-			} else {
-				if(copter_wp_reached.read()){
+			//	change_state(BEACON_LAND);
+			//	return;
+			//} else {
+			//	if(copter_wp_reached.read()){
 					change_state(BEACON_STAY);
 					return;
-				}
+			//	}
 			}
 			break;
 	}
@@ -579,6 +583,7 @@ static void beacon_takeoff_run(){
 static void beacon_stay_run(){
 	static uint16_t _recalc_offset_count = 0;		// オフセット再計算カウンタ
 	static bool _enable_led_recalc_offset;			// オフセット再計算時のLED
+	static uint16_t _stay_count = 0;
 	
 	// beacon位置情報を定期的に送信
 	if((now_ms - prev_et_ms) > 200){
@@ -611,13 +616,36 @@ static void beacon_stay_run(){
 	// サブステート実行
 	switch(state_step){
 		case STAY_INIT:
-			_enable_led_recalc_offset = false;
+			_enable_led_recalc_offset = true;//とりあえず
 			led_all_off();
-			state_step = STAY_READY_CHASE;
+			state_step = STAY_SEND_STAY;
 			
 			break;
+		
+		case STAY_SEND_STAY:
+			// 必ずここにいるはずだけどF/S的なチェック
+			if(copter_state.read() == CHASER_TAKEOFF){
+				send_change_chaser_state_cmd(CHASER_STAY);
+				_stay_count = 0;
+				led1.blink();
+			}
+			state_step = STAY_WAIT_STAY_DONE;
+			break;
+		
+		case STAY_WAIT_STAY_DONE:
+			if(++_stay_count > 250){
+				// 約5sec待ってもtakeoff開始しなかったらBEACON_INITへ戻る
+				change_state(BEACON_INIT);
+				return;
+			} else {
+				if(copter_state.read()==CHASER_STAY){
+					state_step = STAY_RUN;
+					_enable_led_recalc_offset = false;
+				}
+			}
+			break;
 			
-		case STAY_READY_CHASE:
+		case STAY_RUN:
 			// ボタン1が押されたらCHASE開始
 			if(button1.read()==BUTTON_CLICK){
 				if(change_state(BEACON_CHASE)){return;}
