@@ -224,6 +224,12 @@ static void chaser_chase_run()
 				}
 			}
 			
+			// FF量制限その2
+			// ターゲット移動速度所定速度以内でFF量を線型で減らす
+			if(chaser_state==CHASER_CHASE && chaser_target_vel.length()<CHASER_FF_REDUCE_VEL_THRES){
+				ff_ratio = ff_ratio * chaser_target_vel.length() / CHASER_FF_REDUCE_VEL_THRES;
+			}
+			
 			// 必要であればleashを再計算する
 			pos_control.calc_leash_length_xy();
 			
@@ -717,8 +723,8 @@ static bool recalc_beacon_offset(const Vector2f& beacon_pos){
 	if(next_offset.length() > CHASER_BEACON_OFFSET_LMT){
 		return false;
 	} else {
-		g.chaser_beacon_offset_x = next_offset.x;
-		g.chaser_beacon_offset_y = next_offset.y;
+		g.chaser_beacon_offset_x.set_and_save(next_offset.x);
+		g.chaser_beacon_offset_y.set_and_save(next_offset.y);
 		
 		return true;
 	}

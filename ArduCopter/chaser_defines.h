@@ -55,6 +55,7 @@
 #define CHASER_TARGET_VEL_MAX_SLOW   50.0f		// Chaser開始時の制限速度[cm/s]
 #define CHASER_FF_ACCEL_MIN          0.0f		// Chaser時のFF速度の変化率の下限[cm/s/s]
 #define CHASER_BEACON_OFFSET_LMT     1500.0f	// ビーコン位置のオフセット値の上限。この値以上ではオフセットを変更しない。
+#define CHASER_FF_REDUCE_VEL_THRES   150.f		// chaser_target_velがこの速度以内の時FF量を線型で減らす（dev版）[cm/s] ※0にしないこと
 
 
 // APMデフォルト機能に対する変更
