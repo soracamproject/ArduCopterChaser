@@ -501,7 +501,7 @@ static void beacon_ready_run(){
 			} else {
 				if(copter_armed.read()){
 					state_step = READY_WAIT_TAKEOFF;
-					led1.on();led2.on();led3.on();led4.off();
+					led1.off();led2.off();led3.off();led4.on();
 				}
 			}
 			break;
@@ -582,7 +582,7 @@ static void beacon_takeoff_run(){
 
 static void beacon_stay_run(){
 	static uint16_t _recalc_offset_count = 0;		// オフセット再計算カウンタ
-	static bool _enable_led_recalc_offset;			// オフセット再計算時のLED
+	static bool _enable_distance_led;				// 機体ビーコン間距離のLED表示ON
 	static uint16_t _stay_count = 0;
 	
 	// beacon位置情報を定期的に送信
@@ -601,13 +601,13 @@ static void beacon_stay_run(){
 	// 機体ビーコン間距離に応じてLEDの点灯状態を変える
 	// 0〜100：赤黃緑青,  100〜300：赤黃緑,  300〜600：赤黃,  600〜：赤
 	float distance = copter_distance.read();
-	if(!_enable_led_recalc_offset){
+	if(_enable_distance_led){
 		if(distance <= 100.f){
-			led_all_on();
+			led1.off();led2.off();led3.off();led4.on();
 		} else if(distance <= 300.f){
-			led1.on();led2.on();led3.on();led4.off();
+			led1.off();led2.off();led3.on();led4.off();
 		} else if(distance <= 600.f){
-			led1.on();led2.on();led3.off();led4.off();
+			led1.off();led2.on();led3.off();led4.off();
 		} else {
 			led1.on();led2.off();led3.off();led4.off();
 		}
@@ -616,7 +616,7 @@ static void beacon_stay_run(){
 	// サブステート実行
 	switch(state_step){
 		case STAY_INIT:
-			_enable_led_recalc_offset = true;//とりあえず
+			_enable_distance_led = false;//とりあえず
 			led_all_off();
 			state_step = STAY_SEND_STAY;
 			
@@ -627,8 +627,8 @@ static void beacon_stay_run(){
 			if(copter_state.read() == CHASER_TAKEOFF){
 				send_change_chaser_state_cmd(CHASER_STAY);
 				_stay_count = 0;
-				led1.blink();
 			}
+			led1.blink();
 			state_step = STAY_WAIT_STAY_DONE;
 			break;
 		
@@ -640,7 +640,7 @@ static void beacon_stay_run(){
 			} else {
 				if(copter_state.read()==CHASER_STAY){
 					state_step = STAY_RUN;
-					_enable_led_recalc_offset = false;
+					_enable_distance_led = true;
 				}
 			}
 			break;
@@ -666,7 +666,7 @@ static void beacon_stay_run(){
 			
 			// カウントリセット、LEDを再計算状態表示に変更
 			_recalc_offset_count = 0;
-			_enable_led_recalc_offset = true;
+			_enable_distance_led = false;
 			led1.blink();led2.blink();led3.blink();led4.blink();
 			
 			// stepを進める
@@ -678,12 +678,12 @@ static void beacon_stay_run(){
 			if(++_recalc_offset_count > 500){
 				// 約10sec待ってもtakeoff完了しなかったら強制的にLANDする
 				state_step = STAY_RECALC_OFFSET_TIMEOUT;
-				led1.on();led2.off();led3.off();led4.off();
+				led1.on();led2.on();led3.off();led4.off();
 				_recalc_offset_count = 0;
 			} else {
 				if(copter_recalc_offset_done){
 					state_step = STAY_RECALC_OFFSET_DONE;
-					led1.off();led2.off();led3.off();led4.on();
+					led1.off();led2.off();led3.on();led4.on();
 					_recalc_offset_count = 0;
 					return;
 				}
@@ -691,15 +691,15 @@ static void beacon_stay_run(){
 			break;
 		
 		case STAY_RECALC_OFFSET_DONE:
-			// 2秒間LED点灯
-			if(++_recalc_offset_count > 100){
+			// 3秒間LED点灯
+			if(++_recalc_offset_count > 150){
 				state_step = STAY_INIT;
 			}
 			break;
 		
 		case STAY_RECALC_OFFSET_TIMEOUT:
-			// 2秒間LED点灯
-			if(++_recalc_offset_count > 100){
+			// 3秒間LED点灯
+			if(++_recalc_offset_count > 150){
 				state_step = STAY_INIT;
 			}
 			break;
