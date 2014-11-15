@@ -541,6 +541,7 @@ static void beacon_takeoff_run(){
 		case TAKEOFF_INIT:
 			led_all_off();
 			led1.blink();
+			takeoff_count = 0;
 			state_step = TAKEOFF_SEND_TAKEOFF;
 			break;
 		
@@ -618,13 +619,14 @@ static void beacon_stay_run(){
 		case STAY_INIT:
 			_enable_distance_led = false;//とりあえず
 			led_all_off();
+			_stay_count = 0;
 			state_step = STAY_SEND_STAY;
 			
 			break;
 		
 		case STAY_SEND_STAY:
 			// 必ずここにいるはずだけどF/S的なチェック
-			if(copter_state.read() == CHASER_TAKEOFF){
+			if(copter_state.read() == CHASER_TAKEOFF || copter_state.read() == CHASER_CHASE || copter_state.read() == CHASER_CIRCLE){
 				send_change_chaser_state_cmd(CHASER_STAY);
 				_stay_count = 0;
 			}

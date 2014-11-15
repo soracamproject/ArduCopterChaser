@@ -49,7 +49,7 @@
 #define CHASER_VEL_FF_LEASH_FW       50.0f		// 機体の現在位置がchaser_targetからchaser_track_length方向にこの距離以上離れたら速度のFF項を0にする[cm]
 												// chaser_track_lengthで1、そこからこの距離間で線型に0になる
 #define CHASER_VEL_FF_LEASH_BW       100.f		// 機体の現在位置がchaser_targetからchaser_track_lengthと逆方向にこの距離以上離れたら速度のFF項の増分を最大にする[cm]
-#define CHASER_VEL_FF_RATIO_PLUS     0.5f		// 速度のFF項の増分の最大値[-]s
+#define CHASER_VEL_FF_RATIO_PLUS     0.0f		// 速度のFF項の増分の最大値[-]s
 #define CHASER_SLOW_START_COUNT      50			// Chaserが始まってからこの回数分destinationが更新されるまで加速度を所定割合減らす
 #define CHASER_TARGET_VEL_MAX_SLOW   50.0f		// Chaser開始時の制限速度[cm/s]
 #define CHASER_FF_ACCEL_MIN          0.0f		// Chaser時のFF速度の変化率の下限[cm/s/s]
