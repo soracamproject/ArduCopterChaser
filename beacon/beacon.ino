@@ -468,6 +468,7 @@ static void beacon_ready_run(){
 		case READY_SEND_INIT:
 			if(copter_state.read() == CHASER_NONE){
 				send_change_chaser_state_cmd(CHASER_INIT);
+				led2.blink();
 			}
 			init_count = 0;
 			state_step = READY_WAIT_INIT;
@@ -479,7 +480,7 @@ static void beacon_ready_run(){
 			} else {
 				if(copter_state.read() == CHASER_INIT){
 					state_step = READY_SEND_ARM;
-					led2.blink();
+					led3.blink();
 				}
 			}
 			break;
@@ -560,6 +561,7 @@ static void beacon_takeoff_run(){
 			} else {
 				if(copter_state.read()==CHASER_TAKEOFF){
 					state_step = TAKEOFF_WAIT_TAKEOFF_DONE;
+					copter_wp_reached.write(0);
 					_takeoff_count = 0;
 				}
 			}

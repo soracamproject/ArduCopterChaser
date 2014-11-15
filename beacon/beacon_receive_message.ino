@@ -39,6 +39,7 @@ void handleMessage(mavlink_message_t* msg){
 			copter_mode.update(packet.control_mode);
 			copter_state.update(packet.chaser_state);
 			copter_num_sat.update(packet.num_sat);
+			copter_wp_reached.update(packet.wp_reached);
 			copter_armed.update(packet.armed);
 			copter_landed.update(packet.landed);
 		break;
