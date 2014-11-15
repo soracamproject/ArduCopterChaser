@@ -6,21 +6,23 @@ typedef struct __mavlink_chaser_recalc_offset_t
 {
  float offset_x; ///< copter beacon position offset x
  float offset_y; ///< copter beacon position offset y
+ uint8_t result; ///< recalc_offset result (0: range over, 1: far, 2: near)
 } mavlink_chaser_recalc_offset_t;
 
-#define MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN 8
-#define MAVLINK_MSG_ID_204_LEN 8
+#define MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN 9
+#define MAVLINK_MSG_ID_204_LEN 9
 
-#define MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC 56
-#define MAVLINK_MSG_ID_204_CRC 56
+#define MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC 40
+#define MAVLINK_MSG_ID_204_CRC 40
 
 
 
 #define MAVLINK_MESSAGE_INFO_CHASER_RECALC_OFFSET { \
 	"CHASER_RECALC_OFFSET", \
-	2, \
+	3, \
 	{  { "offset_x", NULL, MAVLINK_TYPE_FLOAT, 0, 0, offsetof(mavlink_chaser_recalc_offset_t, offset_x) }, \
          { "offset_y", NULL, MAVLINK_TYPE_FLOAT, 0, 4, offsetof(mavlink_chaser_recalc_offset_t, offset_y) }, \
+         { "result", NULL, MAVLINK_TYPE_UINT8_T, 0, 8, offsetof(mavlink_chaser_recalc_offset_t, result) }, \
          } \
 }
 
@@ -31,23 +33,26 @@ typedef struct __mavlink_chaser_recalc_offset_t
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
+ * @param result recalc_offset result (0: range over, 1: far, 2: near)
  * @param offset_x copter beacon position offset x
  * @param offset_y copter beacon position offset y
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_recalc_offset_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-						       float offset_x, float offset_y)
+						       uint8_t result, float offset_x, float offset_y)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN];
 	_mav_put_float(buf, 0, offset_x);
 	_mav_put_float(buf, 4, offset_y);
+	_mav_put_uint8_t(buf, 8, result);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN);
 #else
 	mavlink_chaser_recalc_offset_t packet;
 	packet.offset_x = offset_x;
 	packet.offset_y = offset_y;
+	packet.result = result;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN);
 #endif
@@ -66,24 +71,27 @@ static inline uint16_t mavlink_msg_chaser_recalc_offset_pack(uint8_t system_id, 
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message will be sent over
  * @param msg The MAVLink message to compress the data into
+ * @param result recalc_offset result (0: range over, 1: far, 2: near)
  * @param offset_x copter beacon position offset x
  * @param offset_y copter beacon position offset y
  * @return length of the message in bytes (excluding serial stream start sign)
  */
 static inline uint16_t mavlink_msg_chaser_recalc_offset_pack_chan(uint8_t system_id, uint8_t component_id, uint8_t chan,
 							   mavlink_message_t* msg,
-						           float offset_x,float offset_y)
+						           uint8_t result,float offset_x,float offset_y)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN];
 	_mav_put_float(buf, 0, offset_x);
 	_mav_put_float(buf, 4, offset_y);
+	_mav_put_uint8_t(buf, 8, result);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN);
 #else
 	mavlink_chaser_recalc_offset_t packet;
 	packet.offset_x = offset_x;
 	packet.offset_y = offset_y;
+	packet.result = result;
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN);
 #endif
@@ -106,7 +114,7 @@ static inline uint16_t mavlink_msg_chaser_recalc_offset_pack_chan(uint8_t system
  */
 static inline uint16_t mavlink_msg_chaser_recalc_offset_encode(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, const mavlink_chaser_recalc_offset_t* chaser_recalc_offset)
 {
-	return mavlink_msg_chaser_recalc_offset_pack(system_id, component_id, msg, chaser_recalc_offset->offset_x, chaser_recalc_offset->offset_y);
+	return mavlink_msg_chaser_recalc_offset_pack(system_id, component_id, msg, chaser_recalc_offset->result, chaser_recalc_offset->offset_x, chaser_recalc_offset->offset_y);
 }
 
 /**
@@ -120,24 +128,26 @@ static inline uint16_t mavlink_msg_chaser_recalc_offset_encode(uint8_t system_id
  */
 static inline uint16_t mavlink_msg_chaser_recalc_offset_encode_chan(uint8_t system_id, uint8_t component_id, uint8_t chan, mavlink_message_t* msg, const mavlink_chaser_recalc_offset_t* chaser_recalc_offset)
 {
-	return mavlink_msg_chaser_recalc_offset_pack_chan(system_id, component_id, chan, msg, chaser_recalc_offset->offset_x, chaser_recalc_offset->offset_y);
+	return mavlink_msg_chaser_recalc_offset_pack_chan(system_id, component_id, chan, msg, chaser_recalc_offset->result, chaser_recalc_offset->offset_x, chaser_recalc_offset->offset_y);
 }
 
 /**
  * @brief Send a chaser_recalc_offset message
  * @param chan MAVLink channel to send the message
  *
+ * @param result recalc_offset result (0: range over, 1: far, 2: near)
  * @param offset_x copter beacon position offset x
  * @param offset_y copter beacon position offset y
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
-static inline void mavlink_msg_chaser_recalc_offset_send(mavlink_channel_t chan, float offset_x, float offset_y)
+static inline void mavlink_msg_chaser_recalc_offset_send(mavlink_channel_t chan, uint8_t result, float offset_x, float offset_y)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char buf[MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN];
 	_mav_put_float(buf, 0, offset_x);
 	_mav_put_float(buf, 4, offset_y);
+	_mav_put_uint8_t(buf, 8, result);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET, buf, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC);
@@ -148,6 +158,7 @@ static inline void mavlink_msg_chaser_recalc_offset_send(mavlink_channel_t chan,
 	mavlink_chaser_recalc_offset_t packet;
 	packet.offset_x = offset_x;
 	packet.offset_y = offset_y;
+	packet.result = result;
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET, (const char *)&packet, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC);
@@ -165,12 +176,13 @@ static inline void mavlink_msg_chaser_recalc_offset_send(mavlink_channel_t chan,
   is usually the receive buffer for the channel, and allows a reply to an
   incoming message with minimum stack space usage.
  */
-static inline void mavlink_msg_chaser_recalc_offset_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  float offset_x, float offset_y)
+static inline void mavlink_msg_chaser_recalc_offset_send_buf(mavlink_message_t *msgbuf, mavlink_channel_t chan,  uint8_t result, float offset_x, float offset_y)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
 	char *buf = (char *)msgbuf;
 	_mav_put_float(buf, 0, offset_x);
 	_mav_put_float(buf, 4, offset_y);
+	_mav_put_uint8_t(buf, 8, result);
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET, buf, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC);
@@ -181,6 +193,7 @@ static inline void mavlink_msg_chaser_recalc_offset_send_buf(mavlink_message_t *
 	mavlink_chaser_recalc_offset_t *packet = (mavlink_chaser_recalc_offset_t *)msgbuf;
 	packet->offset_x = offset_x;
 	packet->offset_y = offset_y;
+	packet->result = result;
 
 #if MAVLINK_CRC_EXTRA
     _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET, (const char *)packet, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN, MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_CRC);
@@ -195,6 +208,16 @@ static inline void mavlink_msg_chaser_recalc_offset_send_buf(mavlink_message_t *
 
 // MESSAGE CHASER_RECALC_OFFSET UNPACKING
 
+
+/**
+ * @brief Get field result from chaser_recalc_offset message
+ *
+ * @return recalc_offset result (0: range over, 1: far, 2: near)
+ */
+static inline uint8_t mavlink_msg_chaser_recalc_offset_get_result(const mavlink_message_t* msg)
+{
+	return _MAV_RETURN_uint8_t(msg,  8);
+}
 
 /**
  * @brief Get field offset_x from chaser_recalc_offset message
@@ -227,6 +250,7 @@ static inline void mavlink_msg_chaser_recalc_offset_decode(const mavlink_message
 #if MAVLINK_NEED_BYTE_SWAP
 	chaser_recalc_offset->offset_x = mavlink_msg_chaser_recalc_offset_get_offset_x(msg);
 	chaser_recalc_offset->offset_y = mavlink_msg_chaser_recalc_offset_get_offset_y(msg);
+	chaser_recalc_offset->result = mavlink_msg_chaser_recalc_offset_get_result(msg);
 #else
 	memcpy(chaser_recalc_offset, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_CHASER_RECALC_OFFSET_LEN);
 #endif

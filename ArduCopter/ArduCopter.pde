@@ -813,8 +813,11 @@ static bool chaser_start_slow;				// Chaser開始時の加速度抑制フラグ
 static Vector2f chaser_ff_vel;				// Chaser時フィードフォワード用速度[cm/s]
 static Vector2f chaser_ff_accel;			// Chaser時フィードフォワード用加速度[cm/s^2]
 											// この加速度で速度を変化させる
+static float chaser_ff_leash_fw;			// この距離以上離れたらFF項を0にする
+static float chaser_ff_leash_bw;			// この距離以上逆向きに離れたらFF項増分を最大にする
 
 static bool chaser_recalc_offset;			// オフセット再計算フラグ
+static uint8_t chaser_recalc_offset_result;	// オフセット再計算結果(0: レンジオーバー、1:遠いため補正、2:近いOK）
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -892,10 +895,10 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { userhook_MediumLoop,  40,     10 },
 #endif
 #ifdef USERHOOK_SLOWLOOP
-    { userhook_SlowLoop,    120,    950 },	// Chaser用に必要時間変更(10→950)、gcs_data_stream_sendを流用、暫定値
+    { userhook_SlowLoop,    120,    150 },	// Chaser用に必要時間変更(10→150)、暫定値
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    { userhook_SuperSlowLoop,400,   10 },
+    { userhook_SuperSlowLoop,400,   150 },	// Chaser用に必要時間変更(10→150)、暫定値
 #endif
 };
 #else

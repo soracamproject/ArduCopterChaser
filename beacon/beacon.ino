@@ -78,6 +78,7 @@ static BC_Status_UInt8 copter_landed(DEFAULT_UPDATE_NUM);		// 機体のland完�
 static BC_Status_Float copter_distance(1);						// 機体とビーコンの距離[cm]
 static BC_Status_Float copter_offset_x(1);						// 機体とビーコンのオフセット(x)[cm]
 static BC_Status_Float copter_offset_y(1);						// 機体とビーコンのオフセット(y)[cm]
+static BC_Status_UInt8 copter_recalc_offset_result(1);			// オフセット再計算結果
 
 // ビーコン姿勢
 static int16_t beacon_roll;		// ロール角、角度x10、0.1deg=1
@@ -133,7 +134,7 @@ int16_t baro_temp;			// センサ温度（何も手を入れていない）
 #define STAY_SEND_RECALC_OFFSET        10
 #define STAY_WAIT_RECALC_OFFSET        11
 #define STAY_RECALC_OFFSET_DONE        12
-#define STAY_RECALC_OFFSET_TIMEOUT     13
+#define STAY_RECALC_OFFSET_END         13
 
 // BEACON_CHASEでのステップ
 #define CHASE_INIT         0
@@ -467,11 +468,9 @@ static void beacon_ready_run(){
 		case READY_SEND_INIT:
 			if(copter_state.read() == CHASER_NONE){
 				send_change_chaser_state_cmd(CHASER_INIT);
-				init_count = 0;
-				state_step = READY_WAIT_INIT;
-			} else {
-				state_step = READY_WAIT_INIT;
 			}
+			init_count = 0;
+			state_step = READY_WAIT_INIT;
 			break;
 		
 		case READY_WAIT_INIT:
@@ -521,7 +520,7 @@ static void beacon_ready_run(){
 }
 
 static void beacon_takeoff_run(){
-	static uint16_t takeoff_count = 0;
+	static uint16_t _takeoff_count = 0;
 	
 	// beacon位置情報を定期的に送信
 	if((now_ms - prev_et_ms) > 200){
@@ -541,7 +540,6 @@ static void beacon_takeoff_run(){
 		case TAKEOFF_INIT:
 			led_all_off();
 			led1.blink();
-			takeoff_count = 0;
 			state_step = TAKEOFF_SEND_TAKEOFF;
 			break;
 		
@@ -549,33 +547,34 @@ static void beacon_takeoff_run(){
 			// 必ずここにいるはずだけどF/S的なチェック
 			if(copter_state.read() == CHASER_INIT && copter_armed.read()){
 				send_change_chaser_state_cmd(CHASER_TAKEOFF);
-				takeoff_count = 0;
 			}
+			_takeoff_count = 0;
 			state_step = TAKEOFF_WAIT_TAKEOFF_START;
 			break;
 		
 		case TAKEOFF_WAIT_TAKEOFF_START:
-			if(++takeoff_count > 250){
+			if(++_takeoff_count > 250){
 				// 約5sec待ってもtakeoff開始しなかったらBEACON_INITへ戻る
 				change_state(BEACON_INIT);
 				return;
 			} else {
 				if(copter_state.read()==CHASER_TAKEOFF){
 					state_step = TAKEOFF_WAIT_TAKEOFF_DONE;
+					_takeoff_count = 0;
 				}
 			}
 			break;
 		
 		case TAKEOFF_WAIT_TAKEOFF_DONE:
-			if(++takeoff_count > 750){
-				// 約15sec待ってもtakeoff完了しなかったら強制的にLANDする
-			//	change_state(BEACON_LAND);
-			//	return;
-			//} else {
-			//	if(copter_wp_reached.read()){
+			if(++_takeoff_count > 1500){
+				// 約30sec待ってもtakeoff完了しなかったら強制的にLANDする
+				change_state(BEACON_LAND);
+				return;
+			} else {
+				if(copter_wp_reached.read()){
 					change_state(BEACON_STAY);
 					return;
-			//	}
+				}
 			}
 			break;
 	}
@@ -628,16 +627,16 @@ static void beacon_stay_run(){
 			// 必ずここにいるはずだけどF/S的なチェック
 			if(copter_state.read() == CHASER_TAKEOFF || copter_state.read() == CHASER_CHASE || copter_state.read() == CHASER_CIRCLE){
 				send_change_chaser_state_cmd(CHASER_STAY);
-				_stay_count = 0;
 			}
 			led1.blink();
+			_stay_count = 0;
 			state_step = STAY_WAIT_STAY_DONE;
 			break;
 		
 		case STAY_WAIT_STAY_DONE:
 			if(++_stay_count > 250){
-				// 約5sec待ってもtakeoff開始しなかったらBEACON_INITへ戻る
-				change_state(BEACON_INIT);
+				// 約5sec待ってもstay開始しなかったらLANDする
+				change_state(BEACON_LAND);
 				return;
 			} else {
 				if(copter_state.read()==CHASER_STAY){
@@ -678,14 +677,24 @@ static void beacon_stay_run(){
 		
 		case STAY_WAIT_RECALC_OFFSET:
 			if(++_recalc_offset_count > 500){
-				// 約10sec待ってもtakeoff完了しなかったら強制的にLANDする
-				state_step = STAY_RECALC_OFFSET_TIMEOUT;
-				led1.on();led2.on();led3.off();led4.off();
+				// 約10sec待っても再計算が終了しなかったら強制的にLANDする
+				state_step = STAY_RECALC_OFFSET_DONE;
+				led1.on();led2.off();led3.off();led4.off();
 				_recalc_offset_count = 0;
 			} else {
 				if(copter_recalc_offset_done){
+					switch(copter_recalc_offset_result.read()){
+						case 0:
+							led1.off();led2.on();led3.off();led4.off();
+							break;
+						case 1:
+							led1.off();led2.off();led3.on();led4.off();
+							break;
+						case 2:
+							led1.off();led2.off();led3.off();led4.on();
+							break;
+					}
 					state_step = STAY_RECALC_OFFSET_DONE;
-					led1.off();led2.off();led3.on();led4.on();
 					_recalc_offset_count = 0;
 					return;
 				}
@@ -695,13 +704,14 @@ static void beacon_stay_run(){
 		case STAY_RECALC_OFFSET_DONE:
 			// 3秒間LED点灯
 			if(++_recalc_offset_count > 150){
-				state_step = STAY_INIT;
+				state_step = STAY_RECALC_OFFSET_END;
+				_recalc_offset_count = 0;
 			}
 			break;
 		
-		case STAY_RECALC_OFFSET_TIMEOUT:
-			// 3秒間LED点灯
-			if(++_recalc_offset_count > 150){
+		case STAY_RECALC_OFFSET_END:
+			// 2秒間LED消灯
+			if(++_recalc_offset_count > 100){
 				state_step = STAY_INIT;
 			}
 			break;

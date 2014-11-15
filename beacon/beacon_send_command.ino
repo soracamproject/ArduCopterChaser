@@ -57,7 +57,7 @@ static void send_recalc_offset(){
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint16_t len;
 	
-	mavlink_msg_chaser_recalc_offset_pack(system_id, component_id, &msg, 0.f, 0.f);
+	mavlink_msg_chaser_recalc_offset_pack(system_id, component_id, &msg, 0, 0.f, 0.f);
 	len = mavlink_msg_to_send_buffer(buf, &msg);
 	
 	xbee_serial.write(buf, len);

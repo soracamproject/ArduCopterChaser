@@ -437,10 +437,13 @@ static void NOINLINE send_statustext(mavlink_channel_t chan)
 
 // 機体ステータスを送信
 static void NOINLINE send_chaser_copter_status(mavlink_channel_t chan){
+	uint8_t tmp = chaser_state;
+	if(control_mode != CHASER){ tmp = CHASER_NONE; }
+	
 	mavlink_msg_chaser_copter_status_send(
 		chan,
 		control_mode,						// uint8_t control mode
-		chaser_state,						// uint8_t chaser state
+		tmp,								// uint8_t chaser state
 		gps.num_sats(0),					// uint8_t gps number of satellite
 		motors.armed(),						// uint8_t armed or disarmed flag
 		wp_nav.reached_wp_destination(),	// uint8_t waypoint reached flag (for takeoff)
@@ -463,8 +466,9 @@ static void NOINLINE send_chaser_distance(mavlink_channel_t chan){
 static void NOINLINE send_chaser_recalc_offset(mavlink_channel_t chan){
 	mavlink_msg_chaser_recalc_offset_send(
 		chan,
-		g.chaser_beacon_offset_x,	// float copter beacon position offset x
-		g.chaser_beacon_offset_y	// float copter beacon position offset y
+		chaser_recalc_offset_result,
+		g.chaser_beacon_offset_x,		// float copter beacon position offset x
+		g.chaser_beacon_offset_y		// float copter beacon position offset y
 	);
 }
 

@@ -476,6 +476,7 @@
 
 	<message id="204" name="CHASER_RECALC_OFFSET">
         <description>Send recalc offset message. (start : beacon2copter, done : copter2beacon)</description>
+		<field type="uint8_t" name="result">recalc_offset result (0: range over, 1: far, 2: near)</field>
         <field type="float" name="offset_x">copter beacon position offset x</field>
 		<field type="float" name="offset_y">copter beacon position offset y</field>
 	</message>

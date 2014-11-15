@@ -60,9 +60,9 @@ void handleMessage(mavlink_message_t* msg){
 			mavlink_msg_chaser_recalc_offset_decode(msg, &packet);
 			
 			copter_recalc_offset_done = true;
+			copter_recalc_offset_result.update(packet.result);
 			copter_offset_x.update(packet.offset_x);
 			copter_offset_y.update(packet.offset_y);
-			
 		break;
 		}
 

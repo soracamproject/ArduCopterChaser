@@ -36,11 +36,6 @@ void userhook_SlowLoop()
 	
 	// 常に機体ステータスを送信
 	gcs_send_message(MSG_CHASER_COPTER_STATUS);
-	
-	// Chaser_Stay時のみ機体位置を送信する
-	if(chaser_state == CHASER_STAY){
-		gcs_send_message(MSG_CHASER_DISTANCE);
-	}
 }
 #endif
 
@@ -48,5 +43,10 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+	
+	// Chaser_Stay時のみ機体位置を送信する
+	if(chaser_state == CHASER_STAY){
+		gcs_send_message(MSG_CHASER_DISTANCE);
+	}
 }
 #endif

@@ -157,35 +157,33 @@ static void chaser_chase_run()
 			
 			// FF量制限計算
 			const Vector3f& curr_pos = inertial_nav.get_position();
-			float leash_fw = max(CHASER_VEL_FF_LEASH_FW,10.0f);
-			float leash_bw = max(CHASER_VEL_FF_LEASH_BW,10.0f);
 			Vector2f ff_ratio;
 			if(chaser_target_vel.x >= 0){
 				// x(+)方向
-				if(curr_pos.x <= chaser_target.x - leash_bw){
+				if(curr_pos.x <= chaser_target.x - chaser_ff_leash_bw){
 					// FF量最大
 					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
 				} else if(curr_pos.x <= chaser_target.x){
 					// FF量を減らす
-					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (chaser_target.x - curr_pos.x)/leash_bw;
-				} else if(curr_pos.x <= chaser_target.x + leash_fw){
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * sq((chaser_target.x - curr_pos.x)/chaser_ff_leash_bw);
+				} else if(curr_pos.x <= chaser_target.x + chaser_ff_leash_fw){
 					// FF量を減らす
-					ff_ratio.x = (chaser_target.x + leash_fw - curr_pos.x)/leash_fw;
+					ff_ratio.x = sq((chaser_target.x + chaser_ff_leash_fw - curr_pos.x)/chaser_ff_leash_fw);
 				} else {
 					// FF量0
 					ff_ratio.x = 0.0f;
 				}
 			} else {
 				// x(-)方向
-				if(chaser_target.x + leash_bw <= curr_pos.x){
+				if(chaser_target.x + chaser_ff_leash_bw <= curr_pos.x){
 					// FF量最大
 					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
 				} else if(chaser_target.x <= curr_pos.x){
 					// FF量を減らす
-					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (curr_pos.x - chaser_target.x)/leash_bw;
-				} else if(chaser_target.x - leash_fw <= curr_pos.x){
+					ff_ratio.x = 1.0f + CHASER_VEL_FF_RATIO_PLUS * sq((curr_pos.x - chaser_target.x)/chaser_ff_leash_bw);
+				} else if(chaser_target.x - chaser_ff_leash_fw <= curr_pos.x){
 					// FF量を減らす
-					ff_ratio.x = (curr_pos.x - chaser_target.x + leash_fw)/leash_fw;
+					ff_ratio.x = sq((curr_pos.x - chaser_target.x + chaser_ff_leash_fw)/chaser_ff_leash_fw);
 				} else {
 					// FF量0
 					ff_ratio.x = 0.0f;
@@ -194,30 +192,30 @@ static void chaser_chase_run()
 			
 			if(chaser_target_vel.y >= 0){
 				// y(+)方向
-				if(curr_pos.y <= chaser_target.y - leash_bw){
+				if(curr_pos.y <= chaser_target.y - chaser_ff_leash_bw){
 					// FF量最大
 					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
 				} else if(curr_pos.y <= chaser_target.y){
 					// FF量を減らす
-					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (chaser_target.y - curr_pos.y)/leash_bw;
-				} else if(curr_pos.y <= chaser_target.y + leash_fw){
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * sq((chaser_target.y - curr_pos.y)/chaser_ff_leash_bw);
+				} else if(curr_pos.y <= chaser_target.y + chaser_ff_leash_fw){
 					// FF量を減らす
-					ff_ratio.y = (chaser_target.y + leash_fw - curr_pos.y)/leash_fw;
+					ff_ratio.y = sq((chaser_target.y + chaser_ff_leash_fw - curr_pos.y)/chaser_ff_leash_fw);
 				} else {
 					// FF量0
 					ff_ratio.y = 0.0f;
 				}
 			} else {
 				// y(-)方向
-				if(chaser_target.y + leash_bw <= curr_pos.y){
+				if(chaser_target.y + chaser_ff_leash_bw <= curr_pos.y){
 					// FF量最大
 					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS;
 				} else if(chaser_target.y <= curr_pos.y){
 					// FF量を減らす
-					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * (curr_pos.y - chaser_target.y)/leash_bw;
-				} else if(chaser_target.y - leash_fw <= curr_pos.y){
+					ff_ratio.y = 1.0f + CHASER_VEL_FF_RATIO_PLUS * sq((curr_pos.y - chaser_target.y)/chaser_ff_leash_bw);
+				} else if(chaser_target.y - chaser_ff_leash_fw <= curr_pos.y){
 					// FF量を減らす
-					ff_ratio.y = (curr_pos.y - chaser_target.y + leash_fw)/leash_fw;
+					ff_ratio.y = sq((curr_pos.y - chaser_target.y + chaser_ff_leash_fw)/chaser_ff_leash_fw);
 				} else {
 					// FF量0
 					ff_ratio.y = 0.0f;
@@ -348,9 +346,10 @@ static void update_chaser_beacon_position(const struct Location *cmd)
 			// オフセット再計算フラグの確認
 			if(chaser_recalc_offset){
 				// オフセット再計算
-				if(recalc_beacon_offset(beacon_pos_relaxed)){
-					gcs_send_message(MSG_CHASER_RECALC_OFFSET);
-				}
+				chaser_recalc_offset_result = recalc_beacon_offset(beacon_pos_relaxed);
+				
+				// 結果を機体に送信
+				gcs_send_message(MSG_CHASER_RECALC_OFFSET);
 				
 				// 1回再計算したら結果に依らずフラグオフ
 				chaser_recalc_offset = false;
@@ -595,6 +594,9 @@ static bool set_chaser_state(uint8_t state) {
 		
 		case CHASER_CHASE:
 		{
+			chaser_ff_leash_fw = max(CHASER_VEL_FF_LEASH_FW,10.0f);
+			chaser_ff_leash_bw = max(CHASER_VEL_FF_LEASH_BW,10.0f);
+			
 			pos_control.init_xy_controller_for_chaser();
 			
 			pos_control.set_speed_xy(g.chaser_vel_max);
@@ -714,19 +716,29 @@ static bool check_chaser_state_change(uint8_t state) {
 	return false;
 }
 
-static bool recalc_beacon_offset(const Vector2f& beacon_pos){
+static uint8_t recalc_beacon_offset(const Vector2f& beacon_pos){
 	const Vector3f& copter_pos = inertial_nav.get_position();
 	
 	Vector2f next_offset(g.chaser_beacon_offset_x + copter_pos.x - beacon_pos.x , g.chaser_beacon_offset_y + copter_pos.y - beacon_pos.y);
+	float next_offset_length = next_offset.length();
 	
-	// 明らかに大きい値の場合更新せずにfalseを返す
-	if(next_offset.length() > CHASER_BEACON_OFFSET_LMT){
-		return false;
-	} else {
+	// 距離に応じて処理と返り値を変更する
+	if(next_offset_length <= CHASER_BEACON_OFFSET_LMT){
 		g.chaser_beacon_offset_x.set_and_save(next_offset.x);
 		g.chaser_beacon_offset_y.set_and_save(next_offset.y);
 		
-		return true;
+		return 2;
+	} else if(next_offset_length <= CHASER_BEACON_OFFSET_THRES) {
+		next_offset = next_offset * (CHASER_BEACON_OFFSET_LMT / next_offset_length);
+		g.chaser_beacon_offset_x.set_and_save(next_offset.x);
+		g.chaser_beacon_offset_y.set_and_save(next_offset.y);
+		
+		return 1;
+	} else {
+		g.chaser_beacon_offset_x.set_and_save(0.0f);
+		g.chaser_beacon_offset_y.set_and_save(0.0f);
+		
+		return 0;
 	}
 }
 

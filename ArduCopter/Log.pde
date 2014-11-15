@@ -383,8 +383,7 @@ static void Log_Write_Compass()
         offset_z        : (int16_t)mag_offsets.z,
         motor_offset_x  : (int16_t)mag_motor_offsets.x,
         motor_offset_y  : (int16_t)mag_motor_offsets.y,
-        //motor_offset_z  : (int16_t)mag_motor_offsets.z
-		motor_offset_z  : (int16_t)wp_nav.reached_wp_destination()
+        motor_offset_z  : (int16_t)mag_motor_offsets.z
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 #if COMPASS_MAX_INSTANCES > 1
