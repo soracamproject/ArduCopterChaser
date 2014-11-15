@@ -30,7 +30,6 @@
 // CHASER制御関連
 // ==============================
 #define CHASER_TARGET_RELAX_NUM      4			// ビーコン位置のなまし数
-#define CHASER_YAW_SLEW_RATE         15			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 #define CHASER_YAW_DEST_RELAX_NUM    2			// YAW制御タイミングなまし数（ビーコン位置のなましとは考え方は違う）
 												// なまし数1だとなまさない（当然だけど）
 #define CHASER_YAW_DEST_THRES        0.0f		// YAW制御するターゲット移動速度の閾値[cm/s]
@@ -76,6 +75,7 @@
 #define CHASER_CIRCLE_RADIUS         200.0f		// Circle Chaser時の旋回半径[cm]
 #define CHASER_CIRCLE_TIME           10.0f		// Circle Chaser時の旋回時間[sec]
 #define CHASER_TAKEOFF_ALT           400.0f		// テイクオフ時の高さ[cm]
+#define CHASER_YAW_SLEW_RATE         30			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 
 
 

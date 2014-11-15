@@ -330,11 +330,11 @@ static void Log_Write_Control_Tuning()
         LOG_PACKET_HEADER_INIT(LOG_CONTROL_TUNING_MSG),
         time_ms             : hal.scheduler->millis(),
         //throttle_in         : g.rc_3.control_in,
-        //throttle_in         : (int16_t)(chaser_target.x*10),
-        throttle_in         : (int16_t)(beacon_pos_relaxed.x*10),
+        throttle_in         : (int16_t)(chaser_target.x*10),
+        //throttle_in         : (int16_t)(beacon_pos_relaxed.x*10),
         //angle_boost         : attitude_control.angle_boost(),
-        //angle_boost         : (int16_t)(chaser_target.y*10),
-        angle_boost         : (int16_t)(beacon_pos_relaxed.y*10),
+        angle_boost         : (int16_t)(chaser_target.y*10),
+        //angle_boost         : (int16_t)(beacon_pos_relaxed.y*10),
         //throttle_out        : g.rc_3.servo_out,
         throttle_out        : (int16_t)(chaser_destination.x*10),
 		//desired_alt         : pos_control.get_alt_target() / 100.0f,
@@ -383,7 +383,8 @@ static void Log_Write_Compass()
         offset_z        : (int16_t)mag_offsets.z,
         motor_offset_x  : (int16_t)mag_motor_offsets.x,
         motor_offset_y  : (int16_t)mag_motor_offsets.y,
-        motor_offset_z  : (int16_t)mag_motor_offsets.z
+        //motor_offset_z  : (int16_t)mag_motor_offsets.z
+		motor_offset_z  : (int16_t)wp_nav.reached_wp_destination()
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 #if COMPASS_MAX_INSTANCES > 1
