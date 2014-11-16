@@ -1458,13 +1458,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		mavlink_chaser_cmd_t packet;
 		mavlink_msg_chaser_cmd_decode(msg, &packet);
 		
-		handle_chaser_cmd(packet.command, packet.p1, packet.p2, packet.p3);
+		chaser_handle_chaser_cmd(packet.command, packet.p1, packet.p2, packet.p3);
 		
 		break;
 	}
 	
 	case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION: {
-		chaser_prev_ms_msg_receive = hal.scheduler->millis();	// 通信途絶判定用時刻更新
 		struct Location tell_command = {};
 		
 		mavlink_chaser_beacon_location_t packet;
@@ -1474,11 +1473,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		tell_command.lng = packet.lon;
 		tell_command.alt = 0;;
 		
-		//受け取った値が上下限に収まっていたらビーコン位置情報を更新する
-		if (tell_command.lat > CHASER_LAT_MIN && tell_command.lat < CHASER_LAT_MAX
-		 && tell_command.lng > CHASER_LON_MIN && tell_command.lng < CHASER_LON_MAX ) {
-			update_chaser_beacon_position(&tell_command);
-		}
+		// ビーコン位置更新関数を呼ぶ（全ての親玉）
+		chaser_update_beacon_position(&tell_command);
+		
+		// 通信途絶F/S判定用時刻更新
+		chaser_fs_comm_last = hal.scheduler->millis();
+		
 		break;
 	}
 	

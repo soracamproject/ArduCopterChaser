@@ -381,9 +381,12 @@ static void Log_Write_Compass()
         offset_x        : (int16_t)mag_offsets.x,
         offset_y        : (int16_t)mag_offsets.y,
         offset_z        : (int16_t)mag_offsets.z,
-        motor_offset_x  : (int16_t)mag_motor_offsets.x,
+        //motor_offset_x  : (int16_t)mag_motor_offsets.x,
+        motor_offset_x  : (int16_t)chaser_yaw_target,	// CHASER用、yawの目標値[centi-deg.],
+        //motor_offset_y  : (int16_t)mag_motor_offsets.y,
         motor_offset_y  : (int16_t)mag_motor_offsets.y,
-        motor_offset_z  : (int16_t)mag_motor_offsets.z
+        //motor_offset_z  : (int16_t)mag_motor_offsets.z
+		motor_offset_z  : (int16_t)mag_motor_offsets.z
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 #if COMPASS_MAX_INSTANCES > 1
@@ -487,9 +490,7 @@ static void Log_Write_Attitude()
         control_roll    : (int16_t)targets.x,
         roll            : (int16_t)ahrs.roll_sensor,
         control_pitch   : (int16_t)targets.y,
-		//control_pitch   : (int16_t)(chaser_last_update_dest_dt*1000.0f),	// CHASER用、destinationの更新周期[ms]
         pitch           : (int16_t)ahrs.pitch_sensor,
-		//pitch			: (int16_t)chaser_yaw_target,	// CHASER用、yawの目標値[centi-deg.]
         control_yaw     : (uint16_t)targets.z,
         yaw             : (uint16_t)ahrs.yaw_sensor
     };

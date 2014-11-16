@@ -36,6 +36,9 @@ void userhook_SlowLoop()
 	
 	// 常に機体ステータスを送信
 	gcs_send_message(MSG_CHASER_COPTER_STATUS);
+	
+	// フェールセーフ
+	chaser_fs_all();
 }
 #endif
 
