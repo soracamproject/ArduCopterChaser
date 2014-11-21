@@ -1,6 +1,6 @@
 ■■■■■　概要　■■■■■
 ArduCopterを改造しChaserモードという自動追尾モードを追加したソフトウェアです。
-改造箇所は「変更箇所一覧.txt」を参照のこと
+改造箇所は「変更箇所一覧.txt」を参照ください
 
 ベースソフトウェア
 ・ArduCopter 3.2 rc5
@@ -8,11 +8,18 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 ・PX4NuttX　3.2 rc4相当 　←本家では無くsoracamprojectのgithubから最新リリースをDL願います
 
 ■■■■■　利用したい方へのメッセージ　■■■■■
-①　現在、CHASERモードが"一部"ちゃんと動きません。
-　　GIMBALコントロール以外はCHASERできます。
-　　ですが、Mavlinkで所定のコマンドを送信する必要があるため
+①　現在のCHASERモードは下記のような状態です。
+　　・Chaser機能は使用できます。Yaw制御は改善が必要なものの対象を追尾することが可能です。
+　　　Gimbal制御も使用可能です。tarot 2D gimbalを取り付けることで動作はします。ただし正しく映るような制御はできておらず要改善です。
+　　・あまり速い速度は出せませんが、自動追尾しながらターゲットの周りを周回するCircle Chaserという機能が使えます。
+　　　CHASER_CHASEもしくはCHASER_STAYステートにいる際にCHASER_CIRCLEステートに入れてください。
+　　　ただしYaw制御が完成しておりません。要改善点です。
+　　・Stay中もターゲットを自動追尾します。（コプターがその場静止して空撮するモード）
+
+②　Chaserを利用する場合、Mavlinkで所定のコマンドを送信する必要があるため
 　　利用するためにはbeacon側のコードを読み解く必要があります。
-②　本家のほうで、Android＋DroidPlannerを使ったFollowMe機能の開発がガンガン進んでおります。
+
+③　本家のほうで、Android＋DroidPlannerを使ったFollowMe機能の開発がガンガン進んでおります。
 　　Chaserは一応本家FollowMeとはなんら関係無く開発しておりますが、
 　　本家のほうが高機能になる可能性はかなり高いです。
 　　本家でなんとかできると判断したらこちらの開発は終了するかもしれません。
@@ -46,4 +53,5 @@ locationは緯度経度。緯度がlat、経度がlon。
 
 ■■■■■　その他　■■■■■
 プロジェクトHP：http://soracamproject.com
+プロジェクトFacebookページ：　https://www.facebook.com/soracamproject
 Youtube：https://www.youtube.com/watch?v=R6rmXm6TPVY

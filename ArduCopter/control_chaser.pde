@@ -87,15 +87,19 @@ static void chaser_stay_run(){
 	wp_nav.update_loiter();
 	
 	// call attitude controller
-	attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
+	// ===yaw方向===
+	// YAWコントローラを呼ぶ
+	if(chaser_yaw_update){
+		chaser_yaw_target_slew = ahrs.yaw_sensor;
+		chaser_yaw_update = false;
+	}
+	chaser_yaw_target_slew = wrap_360_cd(chaser_yaw_target_slew
+							+ constrain_int32(wrap_180_cd(chaser_yaw_target - chaser_yaw_target_slew)
+							,(int32_t)(-g.chaser_yaw_slew_rate), (int32_t)(g.chaser_yaw_slew_rate)));
+	attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), (float)chaser_yaw_target_slew, false);
+	//attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
 	
 	// body-frame rate controller is run directly from 100hz loop
-	
-	// run altitude controller
-	//if (sonar_alt_health >= SONAR_ALT_HEALTH_MAX) {
-	//	// if sonar is ok, use surface tracking
-	//	target_climb_rate = get_throttle_surface_tracking(target_climb_rate, pos_control.get_alt_target(), G_Dt);
-	//}
 	
 	// update altitude target and call position controller
 	pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
