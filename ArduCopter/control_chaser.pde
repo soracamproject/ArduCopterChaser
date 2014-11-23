@@ -97,10 +97,8 @@ static void chaser_stay_run(){
 							+ constrain_int32(wrap_180_cd(chaser_yaw_target - chaser_yaw_target_slew)
 							,(int32_t)(-g.chaser_yaw_slew_rate), (int32_t)(g.chaser_yaw_slew_rate)));
 	attitude_control.angle_ef_roll_pitch_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), (float)chaser_yaw_target_slew, false);
-	//attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
 	
 	// body-frame rate controller is run directly from 100hz loop
-	
 	// update altitude target and call position controller
 	pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
 	pos_control.update_z_controller();
@@ -492,6 +490,7 @@ static bool chaser_set_chaser_state(uint8_t state) {
 			chaser_fs_comm_started = false;		// 通信途絶FS
 			
 			// ジンバルをSTABで指定した角度にする
+			chaser_mount_activate = true;
 			change_mount_stab_pitch();
 			change_mount_control_pitch_angle(CHASER_GIMBAL_ANGLE_MIN); //degree  -45<pitch_angle<45
 			
@@ -502,7 +501,7 @@ static bool chaser_set_chaser_state(uint8_t state) {
 		case CHASER_TAKEOFF:
 		{
 			// カメラジンバルON
-			chaser_mount_activate = true;
+			//chaser_mount_activate = true;
 			
 			// 以下guidedを流用
 			
@@ -680,38 +679,6 @@ static void chaser_calc_beacon_pos_est(const Vector2f& beacon_pos, const Vector2
 // YAW目標値計算
 static void chaser_calc_yaw_target(const Vector2f& cp_pos, const Vector2f& bc_pos, const Vector2f& bc_vel)
 {
-	/*
-	static uint8_t yaw_relax_count = 0;
-	static float vel_x_sum = 0;
-	static float vel_y_sum = 0;
-	
-	if(yaw_relax_count < CHASER_YAW_RELAX_NUM-1) {
-		vel_x_sum += bc_vel.x;
-		vel_y_sum += bc_vel.y;
-		
-		yaw_relax_count++;
-	} else {
-		float vel_x = vel_x_sum / (float)CHASER_YAW_RELAX_NUM;
-		float vel_y = vel_y_sum / (float)CHASER_YAW_RELAX_NUM;
-		
-		float vel_abs = pythagorous2(vel_x, vel_y);
-		if (vel_abs > CHASER_YAW_VEL_THRES) {
-			// 目標速度が閾値より大の場合、その方向にyawを向ける（＝閾値以下の場合はラッチ）
-			// 引数は順に(経度方向:lng、緯度方向:lat)
-			// fast_atan2はfast_atan2(y,x)でx軸からの角度(rad.)を出す
-			chaser_yaw_target = (int32_t)RadiansToCentiDegrees(fast_atan2(vel_y, vel_x));
-			if(chaser_yaw_target < 0){ chaser_yaw_target += 36000; }
-			
-			// yaw_targetの更新フラグを立てる
-			chaser_yaw_update = true;
-		}
-		
-		// リセット
-		yaw_relax_count = 0;
-		vel_x_sum = 0.f;
-		vel_y_sum = 0.f;
-	}
-	*/
 	float vel_abs = bc_vel.length();
 	
 	if(chaser_state == CHASER_STAY || chaser_state == CHASER_CHASE){

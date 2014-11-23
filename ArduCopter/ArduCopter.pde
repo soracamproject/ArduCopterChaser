@@ -784,8 +784,8 @@ static bool chaser_started;					// CHASER開始フラグ
 static float chaser_target_z;				// ターゲットのz位置
 
 static int32_t chaser_yaw_target;					// YAWの目標角度（0〜36000）[centi-degrees]
-static Vector2f chaser_target_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
-static Vector2f chaser_target_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
+//static Vector2f chaser_target_vel_sum_for_yaw;		// YAW制御用ターゲット目標移動速度積算
+//static Vector2f chaser_target_vel_relaxed_for_yaw;	// YAW制御用ターゲット目標移動速度なまし値[cm/s]
 
 static float chaser_sonar_alt;				// CHASER用ソナー高度（LPFをかけたもの）
 static uint8_t chaser_sonar_alt_health;		// CHASER用ソナー高度健常判断値（chaser_sonar_altで同じことをやっている）
@@ -1126,7 +1126,9 @@ static void update_mount()
 {
 #if MOUNT == ENABLED
     // update camera mount's position
-    camera_mount.update_mount_position();
+	if(chaser_mount_activate){
+	    camera_mount.update_mount_position();
+	}
 #endif
 
 #if MOUNT2 == ENABLED
