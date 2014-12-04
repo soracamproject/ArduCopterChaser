@@ -378,15 +378,17 @@ static void Log_Write_Compass()
         mag_x           : (int16_t)mag.x,
         mag_y           : (int16_t)mag.y,
         mag_z           : (int16_t)mag.z,
-        offset_x        : (int16_t)mag_offsets.x,
-        offset_y        : (int16_t)mag_offsets.y,
+        //offset_x        : (int16_t)mag_offsets.x,
+        offset_x        : control_mode,
+        //offset_y        : (int16_t)mag_offsets.y,
+        offset_y        : chaser_state,
         offset_z        : (int16_t)mag_offsets.z,
         //motor_offset_x  : (int16_t)mag_motor_offsets.x,
         motor_offset_x  : (int16_t)chaser_yaw_target,	// CHASER用、yawの目標値[centi-deg.],
         //motor_offset_y  : (int16_t)mag_motor_offsets.y,
-        motor_offset_y  : (int16_t)mag_motor_offsets.y,
+        motor_offset_y  : (int16_t)beacon_pos_relaxed.x*10,
         //motor_offset_z  : (int16_t)mag_motor_offsets.z
-		motor_offset_z  : (int16_t)mag_motor_offsets.z
+		motor_offset_z  : (int16_t)beacon_pos_relaxed.y*10
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 #if COMPASS_MAX_INSTANCES > 1

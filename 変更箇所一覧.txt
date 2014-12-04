@@ -4,6 +4,7 @@ ArduCopter.pde
 　"CHASERモード用グローバル変数"の項目を追加
 　update_altitude関数内にchaser_sonar_altを計算する項目を追加（LPF）
 　userhook_SlowLoopの継続時間を変更(10→150)
+　ten_hz_logging_loop内のNTUNのログをGPS不要なモードでも書き出すように修正
 APM_Config.h
 　#define USERHOOK_SLOWLOOPをコメント解除
 chaser_defines.h
@@ -24,7 +25,7 @@ GCS_Mavlink.pde
 　　case MAVLINK_MSG_ID_CHASER_CMD
 　　case MAVLINK_MSG_ID_CHASER_BEACON_LOCATION
 Log.pde
-　static void Log_Write_Control_Tuning()をCHASER用に変更
+　Log_Write_Control_Tuning()、Log_Write_Compass()をCHASER用に変更
 motors.pde
 　init_disarm_motors関数内にCHASER用モードリセット機能を追加
 　auto_disarm_check関数内の自動ディスアームするcontrol_modeにCHASERを追加

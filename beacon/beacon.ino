@@ -410,7 +410,13 @@ static void beacon_init_run(){
 	if(button2.read()==BUTTON_CLICK){if(change_state(BEACON_LAND)){return;}}
 	
 	// ボタン2長押しでDEBUGモードへ
-	if(button2.read()==BUTTON_LONG_PRESS){if(change_state(BEACON_DEBUG)){return;}}
+	if(button2.read()==BUTTON_LONG_PRESS){
+		if(change_state(BEACON_DEBUG)){
+			led1.blink();
+			led3.blink();
+			return;
+		}
+	}
 	
 	
 	// 補足衛星数に応じてLEDの点灯状態を変える
@@ -861,7 +867,7 @@ static void beacon_debug_run(){
 		//debug_check_telem();
 		
 		// GPSチェック
-		//debug_check_gps();
+		debug_check_gps();
 		
 		// センサチェック
 		//debug_check_gyro_acc_mag();
