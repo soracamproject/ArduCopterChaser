@@ -5,6 +5,8 @@
 #define AUTO_TRIM_DELAY         100 // called at 10hz so 10 seconds
 #define AUTO_DISARMING_DELAY    15  // called at 1hz so 15 seconds
 
+static uint8_t auto_disarming_counter;
+
 // arm_motors_check - checks for pilot input to arm or disarm the copter
 // called at 10hz
 static void arm_motors_check()
@@ -57,7 +59,11 @@ static void arm_motors_check()
             // run pre-arm-checks and display failures
             pre_arm_checks(true);
             if(ap.pre_arm_check && arm_checks(true)) {
-                init_arm_motors();
+                if (!init_arm_motors()) {
+                    // reset arming counter if arming fail
+                    arming_counter = 0;
+                    AP_Notify::flags.arming_failed = true;
+                }
             }else{
                 // reset arming counter if pre-arm checks fail
                 arming_counter = 0;
@@ -68,6 +74,8 @@ static void arm_motors_check()
         // arm the motors and configure for flight
         if (arming_counter == AUTO_TRIM_DELAY && motors.armed() && control_mode == STABILIZE) {
             auto_trim_counter = 250;
+            // ensure auto-disarm doesn't trigger immediately
+            auto_disarming_counter = 0;
         }
 
     // full left
@@ -94,8 +102,6 @@ static void arm_motors_check()
 // called at 1hz
 static void auto_disarm_check()
 {
-    static uint8_t auto_disarming_counter;
-
     // exit immediately if we are already disarmed or throttle is not zero
     if (!motors.armed() || g.rc_3.control_in > 0) {
         auto_disarming_counter = 0;
@@ -118,7 +124,8 @@ static void auto_disarm_check()
 }
 
 // init_arm_motors - performs arming process including initialisation of barometer and gyros
-static void init_arm_motors()
+//  returns false in the unlikely case that arming fails (because of a gyro calibration failure)
+static bool init_arm_motors()
 {
 	// arming marker
     // Flag used to track if we have armed the motors the first time.
@@ -131,6 +138,9 @@ static void init_arm_motors()
 
     // disable inertial nav errors temporarily
     inertial_nav.ignore_next_error();
+
+    // reset battery failsafe
+    set_failsafe_battery(false);
 
     // notify that arming will occur (we do this early to give plenty of warning)
     AP_Notify::flags.armed = true;
@@ -162,8 +172,15 @@ static void init_arm_motors()
     }
 
     if(did_ground_start == false) {
-        did_ground_start = true;
         startup_ground(true);
+        // final check that gyros calibrated successfully
+        if (((g.arming_check == ARMING_CHECK_ALL) || (g.arming_check & ARMING_CHECK_INS)) && !ins.gyro_calibrated_ok_all()) {
+            gcs_send_text_P(SEVERITY_HIGH,PSTR("Arm: Gyro cal failed"));
+            AP_Notify::flags.armed = false;
+            failsafe_enable();
+            return false;
+        }
+        did_ground_start = true;
     }
 
     // fast baro calibration to reset ground pressure
@@ -188,14 +205,16 @@ static void init_arm_motors()
         motors.output_min();
         failsafe_enable();
         AP_Notify::flags.armed = false;
-        AP_Notify::flags.arming_failed = false;
-        return;
+        return false;
     }
 
 #if SPRAYER == ENABLED
     // turn off sprayer's test if on
     sprayer.test_pump(false);
 #endif
+
+    // short delay to allow reading of rc inputs
+    delay(30);
 
     // enable output to motors
     output_min();
@@ -211,6 +230,9 @@ static void init_arm_motors()
 
     // reenable failsafe
     failsafe_enable();
+
+    // return success
+    return true;
 }
 
 // perform pre-arm checks and set ap.pre_arm_check flag
@@ -247,7 +269,7 @@ static void pre_arm_checks(bool display_failure)
             return;
         }
         // check Baro & inav alt are within 1m
-        if(fabs(inertial_nav.get_altitude() - baro_alt) > 100) {
+        if(fabs(inertial_nav.get_altitude() - baro_alt) > PREARM_MAX_ALT_DISPARITY_CM) {
             if (display_failure) {
                 gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Alt disparity"));
             }
@@ -266,7 +288,7 @@ static void pre_arm_checks(bool display_failure)
         }
 
         // check compass learning is on or offsets have been set
-        if(!compass.learn_offsets_enabled() && !compass.configured()) {
+        if(!compass.configured()) {
             if (display_failure) {
                 gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Compass not calibrated"));
             }
@@ -290,6 +312,27 @@ static void pre_arm_checks(bool display_failure)
             }
             return;
         }
+
+#if COMPASS_MAX_INSTANCES > 1
+        // check all compasses point in roughly same direction
+        if (compass.get_count() > 1) {
+            Vector3f prime_mag_vec = compass.get_field();
+            prime_mag_vec.normalize();
+            for(uint8_t i=0; i<compass.get_count(); i++) {
+                // get next compass
+                Vector3f mag_vec = compass.get_field(i);
+                mag_vec.normalize();
+                Vector3f vec_diff = mag_vec - prime_mag_vec;
+                if (vec_diff.length() > COMPASS_ACCEPTABLE_VECTOR_DIFF) {
+                    if (display_failure) {
+                        gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: compasses inconsistent"));
+                    }
+                    return;
+                }
+            }
+        }
+#endif
+
     }
 
     // check GPS
@@ -317,13 +360,63 @@ static void pre_arm_checks(bool display_failure)
             return;
         }
 
-        // check accels and gyros are healthy
-        if(!ins.healthy()) {
+        // check accels are healthy
+        if(!ins.get_accel_health_all()) {
             if (display_failure) {
-                gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: INS not healthy"));
+                gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Accels not healthy"));
             }
             return;
         }
+
+#if INS_MAX_INSTANCES > 1
+        // check all accelerometers point in roughly same direction
+        if (ins.get_accel_count() > 1) {
+            const Vector3f &prime_accel_vec = ins.get_accel();
+            for(uint8_t i=0; i<ins.get_accel_count(); i++) {
+                // get next accel vector
+                const Vector3f &accel_vec = ins.get_accel(i);
+                Vector3f vec_diff = accel_vec - prime_accel_vec;
+                if (vec_diff.length() > PREARM_MAX_ACCEL_VECTOR_DIFF) {
+                    if (display_failure) {
+                        gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Accels inconsistent"));
+                    }
+                    return;
+                }
+            }
+        }
+#endif
+
+        // check gyros are healthy
+        if(!ins.get_gyro_health_all()) {
+            if (display_failure) {
+                gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Gyros not healthy"));
+            }
+            return;
+        }
+
+        // check gyros calibrated successfully
+        if(!ins.gyro_calibrated_ok_all()) {
+            if (display_failure) {
+                gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Gyro cal failed"));
+            }
+            return;
+        }
+
+#if INS_MAX_INSTANCES > 1
+        // check all gyros are consistent
+        if (ins.get_gyro_count() > 1) {
+            for(uint8_t i=0; i<ins.get_gyro_count(); i++) {
+                // get rotation rate difference between gyro #i and primary gyro
+                Vector3f vec_diff = ins.get_gyro(i) - ins.get_gyro();
+                if (vec_diff.length() > PREARM_MAX_GYRO_VECTOR_DIFF) {
+                    if (display_failure) {
+                        gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: Gyros inconsistent"));
+                    }
+                    return;
+                }
+            }
+        }
+#endif
     }
 #if CONFIG_HAL_BOARD != HAL_BOARD_VRBRAIN
 #ifndef CONFIG_ARCH_BOARD_PX4FMU_V1
@@ -467,7 +560,7 @@ static bool arm_checks(bool display_failure)
 
     // check Baro & inav alt are within 1m
     if ((g.arming_check == ARMING_CHECK_ALL) || (g.arming_check & ARMING_CHECK_BARO)) {
-        if(fabs(inertial_nav.get_altitude() - baro_alt) > 100) {
+        if(fabs(inertial_nav.get_altitude() - baro_alt) > PREARM_MAX_ALT_DISPARITY_CM) {
             if (display_failure) {
                 gcs_send_text_P(SEVERITY_HIGH,PSTR("Arm: Alt disparity"));
             }
@@ -546,6 +639,7 @@ static void init_disarm_motors()
 
     // we are not in the air
     set_land_complete(true);
+    set_land_complete_maybe(true);
 
     // reset the mission
     mission.reset();
@@ -557,7 +651,9 @@ static void init_disarm_motors()
     Log_Write_Event(DATA_DISARMED);
 
     // suspend logging
-    DataFlash.EnableWrites(false);
+    if (!(g.log_bitmask & MASK_LOG_WHEN_DISARMED)) {
+        DataFlash.EnableWrites(false);
+    }
 
     // disable gps velocity based centrefugal force compensation
     ahrs.set_correct_centrifugal(false);

@@ -120,13 +120,13 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     // @DisplayName: Compass device id
     // @Description: Compass device id.  Automatically detected, do not set manually
     // @User: Advanced
-    AP_GROUPINFO("DEV_ID",  15, Compass, _dev_id[0], COMPASS_EXPECTED_DEV_ID),
+    AP_GROUPINFO("DEV_ID",  15, Compass, _dev_id[0], 0),
 
     // @Param: DEV_ID2
     // @DisplayName: Compass2 device id
     // @Description: Second compass's device id.  Automatically detected, do not set manually
     // @User: Advanced
-    AP_GROUPINFO("DEV_ID2", 16, Compass, _dev_id[1], COMPASS_EXPECTED_DEV_ID2),
+    AP_GROUPINFO("DEV_ID2", 16, Compass, _dev_id[1], 0),
 #endif
 
 #if COMPASS_MAX_INSTANCES > 2
@@ -134,7 +134,7 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     // @DisplayName: Compass3 device id
     // @Description: Third compass's device id.  Automatically detected, do not set manually
     // @User: Advanced
-    AP_GROUPINFO("DEV_ID3", 17, Compass, _dev_id[2], COMPASS_EXPECTED_DEV_ID3),
+    AP_GROUPINFO("DEV_ID3", 17, Compass, _dev_id[2], 0),
 #endif
 
     AP_GROUPEND
@@ -167,6 +167,15 @@ bool
 Compass::init()
 {
     return true;
+}
+
+void
+Compass::set_offsets(uint8_t i, const Vector3f &offsets)
+{
+    // sanity check compass instance provided
+    if (i < COMPASS_MAX_INSTANCES) {
+        _offset[i].set(offsets);
+    }
 }
 
 void

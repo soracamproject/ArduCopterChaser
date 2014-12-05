@@ -64,6 +64,7 @@ void guided_pos_control_start()
     set_auto_yaw_mode(get_default_auto_yaw_mode(false));
 }
 
+#if NAV_GUIDED == ENABLED
 // initialise guided mode's velocity controller
 void guided_vel_control_start()
 {
@@ -77,6 +78,7 @@ void guided_vel_control_start()
     // initialise velocity controller
     pos_control.init_vel_controller_xyz();
 }
+#endif
 
 // guided_set_destination - sets guided mode's target destination
 static void guided_set_destination(const Vector3f& destination)
@@ -89,6 +91,7 @@ static void guided_set_destination(const Vector3f& destination)
     wp_nav.set_wp_destination(destination);
 }
 
+#if NAV_GUIDED == ENABLED
 // guided_set_velocity - sets guided mode's target velocity
 static void guided_set_velocity(const Vector3f& velocity)
 {
@@ -100,6 +103,7 @@ static void guided_set_velocity(const Vector3f& velocity)
     // set position controller velocity target
     pos_control.set_desired_velocity(velocity);
 }
+#endif
 
 // guided_run - runs the guided controller
 // should be called at 100hz or more
@@ -128,9 +132,12 @@ static void guided_run()
         guided_pos_control_run();
         break;
 
+#if NAV_GUIDED == ENABLED
     case Guided_Velocity:
         // run velocity controller
         guided_vel_control_run();
+        break;
+#endif
     }
  }
 
@@ -140,13 +147,14 @@ static void guided_takeoff_run()
 {
     // if not auto armed set throttle to zero and exit immediately
     if(!ap.auto_armed) {
+        // initialise wpnav targets
+        wp_nav.shift_wp_origin_to_current_pos();
         // reset attitude control targets
         attitude_control.relax_bf_rate_controller();
         attitude_control.set_yaw_target_to_current_heading();
         attitude_control.set_throttle_out(0, false);
         // tell motors to do a slow start
         motors.slow_start(true);
-        // To-Do: re-initialise wpnav targets
         return;
     }
 

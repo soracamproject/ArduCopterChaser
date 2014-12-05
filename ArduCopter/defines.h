@@ -102,7 +102,7 @@
 #define FLIP        14                  // flip the vehicle on the roll axis
 #define AUTOTUNE    15                  // autotune the vehicle's roll and pitch gains
 #define POSHOLD     16                  // position hold with manual override
-#define CHASER      17
+#define CHASER      17					// CHASERモード
 #define NUM_MODES   18
 
 
@@ -196,8 +196,10 @@ enum AutoMode {
 // Guided modes
 enum GuidedMode {
     Guided_TakeOff,
-    Guided_WP,
-    Guided_Velocity
+    Guided_WP
+#if NAV_GUIDED == ENABLED
+    ,Guided_Velocity
+#endif
 };
 
 // RTL states
@@ -264,6 +266,8 @@ enum FlipState {
 #define MASK_LOG_COMPASS                (1<<13)
 #define MASK_LOG_INAV                   (1<<14) // deprecated
 #define MASK_LOG_CAMERA                 (1<<15)
+#define MASK_LOG_WHEN_DISARMED          (1UL<<16)
+#define MASK_LOG_ANY                    0xFFFF
 
 // DATA - event logging
 #define DATA_MAVLINK_FLOAT              1
@@ -276,6 +280,7 @@ enum FlipState {
 #define DATA_DISARMED                   11
 #define DATA_AUTO_ARMED                 15
 #define DATA_TAKEOFF                    16
+#define DATA_LAND_COMPLETE_MAYBE        17
 #define DATA_LAND_COMPLETE              18
 #define DATA_NOT_LANDED                 28
 #define DATA_LOST_GPS                   19
@@ -330,8 +335,8 @@ enum FlipState {
 #define ERROR_SUBSYSTEM_FLIP                13
 #define ERROR_SUBSYSTEM_AUTOTUNE            14
 #define ERROR_SUBSYSTEM_PARACHUTE           15
-#define ERROR_SUBSYSTEM_EKF_CHECK           16
-#define ERROR_SUBSYSTEM_FAILSAFE_EKF        17
+#define ERROR_SUBSYSTEM_EKFINAV_CHECK       16
+#define ERROR_SUBSYSTEM_FAILSAFE_EKFINAV    17
 #define ERROR_SUBSYSTEM_BARO                18
 // general error codes
 #define ERROR_CODE_ERROR_RESOLVED           0
@@ -357,8 +362,8 @@ enum FlipState {
 // parachute failed to deploy because of low altitude
 #define ERROR_CODE_PARACHUTE_TOO_LOW        2
 // EKF check definitions
-#define ERROR_CODE_EKF_CHECK_BAD_VARIANCE   2
-#define ERROR_CODE_EKF_CHECK_BAD_VARIANCE_CLEARED    0
+#define ERROR_CODE_EKFINAV_CHECK_BAD_VARIANCE       2
+#define ERROR_CODE_EKFINAV_CHECK_VARIANCE_CLEARED   0
 // Baro specific error codes
 #define ERROR_CODE_BARO_GLITCH              2
 

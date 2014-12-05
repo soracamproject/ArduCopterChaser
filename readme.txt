@@ -3,18 +3,25 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 改造箇所は「変更箇所一覧.txt」を参照ください
 
 ベースソフトウェア
-・ArduCopter 3.2 rc5
-・PX4Firmware　3.2 rc4相当　←本家では無くsoracamprojectのgithubから最新リリースをDL願います
-・PX4NuttX　3.2 rc4相当 　←本家では無くsoracamprojectのgithubから最新リリースをDL願います
+・ArduCopter [リリース名：ArduCopter-3.2-apm-px4] [コミットID：c8e0f3e]
+
+コンパイルに必要なソフトウェア
+　本家もしくはsoracamprojectのgithubから下記リリース名のものをダウンロード
+　・PX4Firmware [リリース名：ArduCopter-3.2-apm-px4] [コミットID：dea2cfd]
+　・PX4NuttX [リリース名：ArduCopter-3.2-apm-px4] [コミットID：7a62e35]
 
 ■■■■■　利用したい方へのメッセージ　■■■■■
+
+
 ①　現在のCHASERモードは下記のような状態です。
+　　*** 現在3.2キャッチアップ中のため以下未検証***
 　　・Chaser機能は使用できます。Yaw制御は改善が必要なものの対象を追尾することが可能です。
 　　　Gimbal制御も使用可能です。tarot 2D gimbalを取り付けることで動作はします。ただし正しく映るような制御はできておらず要改善です。
 　　・あまり速い速度は出せませんが、自動追尾しながらターゲットの周りを周回するCircle Chaserという機能が使えます。
 　　　CHASER_CHASEもしくはCHASER_STAYステートにいる際にCHASER_CIRCLEステートに入れてください。
 　　　ただしYaw制御が完成しておりません。要改善点です。
 　　・Stay中もターゲットを自動追尾します。（コプターがその場静止して空撮するモード）
+　　***　未検証ここまで　***
 
 ②　Chaserを利用する場合、Mavlinkで所定のコマンドを送信する必要があるため
 　　利用するためにはbeacon側のコードを読み解く必要があります。
@@ -31,9 +38,8 @@ ArduCopterを改造しChaserモードという自動追尾モードを追加し�
 ・toolchain　https://pixhawk.org/dev/toolchain_installation
 
 ２．ArduCopterChaserのフォルダと同じ階層にPX4FirmwareとPX4NuttXを置く
-・https://github.com/soracamproject/PX4Firmware　から最新リリースをzip等でダウンロードし解凍してファイル名を修正し配置
-・https://github.com/soracamproject/PX4NuttX　　も同様
-※本家(github.com/diydrones)からDLするとバージョンが合わない場合があるため注意
+・本家(github.com/diydrones)もしくはsoracamprojectのgithubから指定のリリースのものをダウンロードし
+　ファイル名を修正して配置　
 
 ３．makeする
 （やり方ざっくり）

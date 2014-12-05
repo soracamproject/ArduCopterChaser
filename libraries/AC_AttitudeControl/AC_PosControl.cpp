@@ -84,6 +84,10 @@ void AC_PosControl::set_dt(float delta_sec)
 
     // update rate controller's d filter
     _pid_alt_accel.set_d_lpf_alpha(POSCONTROL_ACCEL_Z_DTERM_FILTER, _dt);
+
+    // update rate z-axis velocity error and accel error filters
+    _vel_error_filter.set_cutoff_frequency(_dt,POSCONTROL_VEL_ERROR_CUTOFF_FREQ);
+    _accel_error_filter.set_cutoff_frequency(_dt,POSCONTROL_ACCEL_ERROR_CUTOFF_FREQ);
 }
 
 /// set_speed_z - sets maximum climb and descent rates
@@ -334,10 +338,12 @@ void AC_PosControl::rate_to_accel_z()
     if (_flags.reset_rate_to_accel_z) {
         // Reset Filter
         _vel_error.z = 0;
+        _vel_error_filter.reset(0);
         desired_accel = 0;
         _flags.reset_rate_to_accel_z = false;
     } else {
-        _vel_error.z = (_vel_target.z - curr_vel.z);
+        // calculate rate error and filter with cut off frequency of 2 Hz
+        _vel_error.z = _vel_error_filter.apply(_vel_target.z - curr_vel.z);
     }
 
     // calculate p
@@ -365,11 +371,11 @@ void AC_PosControl::accel_to_throttle(float accel_target_z)
     if (_flags.reset_accel_to_throttle) {
         // Reset Filter
         _accel_error.z = 0;
+        _accel_error_filter.reset(0);
         _flags.reset_accel_to_throttle = false;
     } else {
         // calculate accel error and Filter with fc = 2 Hz
-        // To-Do: replace constant below with one that is adjusted for update rate
-        _accel_error.z = _accel_error.z + 0.11164f * (constrain_float(accel_target_z - z_accel_meas, -32000, 32000) - _accel_error.z);
+        _accel_error.z = _accel_error_filter.apply(constrain_float(accel_target_z - z_accel_meas, -32000, 32000));
     }
 
     // separately calculate p, i, d values for logging
@@ -469,7 +475,7 @@ void AC_PosControl::get_stopping_point_xy(Vector3f &stopping_point) const
     float vel_total = pythagorous2(curr_vel.x, curr_vel.y);
 
     // avoid divide by zero by using current position if the velocity is below 10cm/s, kP is very low or acceleration is zero
-    if (kP <= 0.0f || _accel_cms <= 0.0f) {
+    if (kP <= 0.0f || _accel_cms <= 0.0f || vel_total == 0.0f) {
         stopping_point.x = curr_pos.x;
         stopping_point.y = curr_pos.y;
         return;
@@ -545,6 +551,7 @@ void AC_PosControl::update_xy_controller(bool use_desired_velocity)
     uint32_t now = hal.scheduler->millis();
     if ((now - _last_update_xy_ms) >= POSCONTROL_ACTIVE_TIMEOUT_MS) {
         init_xy_controller();
+        now = _last_update_xy_ms;
     }
 
     // check if xy leash needs to be recalculated
@@ -885,9 +892,6 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
     return leash_length;
 }
 
-// ==============================
-// CHASER関連
-// ==============================
 void AC_PosControl::init_xy_controller_for_chaser()
 {
 	// set roll, pitch lean angle targets to current attitude
@@ -937,3 +941,4 @@ void AC_PosControl::update_xy_controller_for_chaser(float dt, bool use_desired_v
 	// run acceleration to lean angle step
 	accel_to_lean_angles();
 }
+

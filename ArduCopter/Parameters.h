@@ -81,7 +81,7 @@ public:
 
         // Misc
         //
-        k_param_log_bitmask = 20,
+        k_param_log_bitmask_old = 20,           // Deprecated
         k_param_log_last_filenumber,            // *** Deprecated - remove
                                                 // with next eeprom number
                                                 // change
@@ -119,7 +119,11 @@ public:
         k_param_sonar, // sonar object
         k_param_ekfcheck_thresh,
         k_param_terrain,
-        k_param_acro_expo,              // 56
+        k_param_acro_expo,
+        k_param_throttle_deadzone,
+        k_param_optflow,
+        k_param_dcmcheck_thresh,        // 59
+        k_param_log_bitmask,
 
         // 65: AP_Limits Library
         k_param_limits = 65,            // deprecated - remove
@@ -176,8 +180,10 @@ public:
         k_param_gcs2,
         k_param_serial2_baud_old, // deprecated
         k_param_serial2_protocol,
-		
+
+		//
 		// 120: CHASER用
+		//
 		k_param_chaser_descent_rate_min = 120,
 		k_param_chaser_descent_rate_max,
 		k_param_chaser_slope_angle,
@@ -192,7 +198,6 @@ public:
 		k_param_chaser_circle_radius,
 		k_param_chaser_circle_time,
 		k_param_chaser_takeoff_alt,
-		
 
         //
         // 140: Sensor parameters
@@ -378,8 +383,7 @@ public:
 	// g.○○という変数となる
 	AP_Int16        chaser_descent_rate_min;	// CHASER時のベース下降速度の最小値[cm/s]
 	AP_Int16        chaser_descent_rate_max;	// CHASER時のベース下降速度の最大値[cm/s]
-	AP_Int8         chaser_slope_angle;			// CHASER時のベース下降速度計算用斜度[deg.]、ベース下降速度の基準となるtan値は起動時に1回だけ計算される。
-												// 値を変更したら再起動が必要。
+	AP_Int8         chaser_slope_angle;			// CHASER時のベース下降速度計算用斜度[deg.]
 	AP_Float        chaser_ff_accel_max;		// Chaser時のFF速度変化率限界[cm/s/s]
 	AP_Float        chaser_vel_max;				// Chaser時の速度限界（ビーコン移動速度上限、かつFF速度上限）[cm/s]
 	AP_Float        chaser_yaw_slew_rate;		// YAW回転速度リミット[centi-deg/sec](-18000〜18000)
@@ -392,7 +396,6 @@ public:
 	AP_Float        chaser_circle_time;			// Circle Chaser時の旋回時間[sec]
 	AP_Float        chaser_takeoff_alt;			// Chaser時のテイクオフ時の高度[cm]
 
-
     // Throttle
     //
     AP_Int16        throttle_min;
@@ -401,6 +404,7 @@ public:
     AP_Int16        failsafe_throttle_value;
     AP_Int16        throttle_cruise;
     AP_Int16        throttle_mid;
+    AP_Int16        throttle_deadzone;
 
     // Flight modes
     //
@@ -414,7 +418,7 @@ public:
 
     // Misc
     //
-    AP_Int16        log_bitmask;
+    AP_Int32        log_bitmask;
     AP_Int8         esc_calibrate;
     AP_Int8         radio_tuning;
     AP_Int16        radio_tuning_high;
@@ -426,6 +430,7 @@ public:
 
     AP_Int8         land_repositioning;
     AP_Float        ekfcheck_thresh;
+    AP_Float        dcmcheck_thresh;
 
 #if FRAME_CONFIG ==     HELI_FRAME
     // Heli
