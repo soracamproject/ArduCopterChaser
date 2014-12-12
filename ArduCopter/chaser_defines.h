@@ -64,6 +64,7 @@
 // APMデフォルト機能に対する変更
 #define SONAR_RELIABLE_DISTANCE_PCT  0.70f		// ソナーの信頼区間割合をデフォルトの60%より10%伸ばす
 #define SONAR_TILT_CORRECTION        1			// ソナーの傾き補正（1で有効、1以外で無効）
+#define LAND_WITH_DELAY_MS           1000		// land_with_pause時のポーズ時間[ms]
 
 // Mission Plannerで変更可
 #define CHASER_BEACON_OFFSET_X       0.0f		// ビーコン位置のオフセット値（lat,緯度方向,x方向）（変更可、初期値）[cm]※-250はミササガパークでの実績値
@@ -73,7 +74,6 @@
 #define CHASER_DESCENT_RATE_MIN      50			// ベース下降速度最小値（変更可、初期値）[cm/s]
 #define CHASER_DESCENT_RATE_MAX      150		// ベース下降速度最大値（変更可、初期値）[cm/s]
 #define CHASER_SLOPE_ANGLE           10			// ベース下降速度計算用斜度（変更可、初期値）[deg.]
-#define CHASER_DESIRED_ALT_LEASH     200.0f		// 高度制御時の目標高度の機体高度との差（変更可、初期値）[cm]※200は池の平でうまくいった実績値
 #define CHASER_GIMBAL_ALT            150		// ジンバル角度計算用高度（変更可、初期値）[cm]
 #define CHASER_ALT_HOLD              0			// CHASER時の高度制御を高度固定にするフラグ（0:地上高追従制御、1:高度固定制御（現在値固定））
 #define CHASER_CIRCLE_RADIUS         200.0f		// Circle Chaser時の旋回半径[cm]
@@ -81,65 +81,10 @@
 #define CHASER_TAKEOFF_ALT           400.0f		// テイクオフ時の高さ[cm]
 #define CHASER_YAW_SLEW_RATE         30			// YAW回転速度リミット[deg/sec] ※100Hzでupdateされる前提での値で、なんで値は微妙に変わる（たぶん）
 
-/*
-// ==============================
-// ジオフェンス制御関連
-// ==============================
-// ゲレンデ毎にジオフェンスを設定する
-// CHASER_PISTEの番号とゲレンデが対応
-// 受け取ったビーコン位置の緯度経度の上下限界を設定
-#define CHASER_PISTE               0
-
-// 0:刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
-#if CHASER_PISTE==0
-#define CHASER_LAT_MIN            349682650			//経度下限
-#define CHASER_LAT_MAX            350551540			//緯度上限
-#define CHASER_LON_MIN            1369701330		//経度下限
-#define CHASER_LON_MAX            1370635160		//経度上限
-
-// 1:スノーウェーブパーク、鷲ヶ岳用
-#elif CHASER_PISTE==1
-#define CHASER_LAT_MIN            358993800			//経度下限
-#define CHASER_LAT_MAX            360388670			//緯度上限
-#define CHASER_LON_MIN            1367319150		//経度下限
-#define CHASER_LON_MAX            1370295750		//経度上限
-
-// 2:池の平温泉スキー場用
-#elif CHASER_PISTE==2
-#define CHASER_LAT_MIN            368389520			//経度下限
-#define CHASER_LAT_MAX            368999260			//緯度上限
-#define CHASER_LON_MIN            1381150330		//経度下限
-#define CHASER_LON_MAX            1382204330		//経度上限
-
-// 3:チャオ御岳スノーリゾート用
-#elif CHASER_PISTE==3
-#define CHASER_LAT_MIN            359025020			//経度下限
-#define CHASER_LAT_MAX            359721350			//緯度上限
-#define CHASER_LON_MIN            1374345560		//経度下限
-#define CHASER_LON_MAX            1375297850		//経度上限
-
-// 4:HAKUBA47用
-#elif CHASER_PISTE==4
-#define CHASER_LAT_MIN            366472510			//経度下限
-#define CHASER_LAT_MAX            367020820			//緯度上限
-#define CHASER_LON_MIN            1377869510		//経度下限
-#define CHASER_LON_MAX            1378635330		//経度上限
-
-#else
-// デフォルト:刈谷用（石浜駅とトヨタ自動車高岡工場を結ぶ直線を対辺とした長方形の枠内）
-#define CHASER_LAT_MIN            349682650			//経度下限
-#define CHASER_LAT_MAX            350551540			//緯度上限
-#define CHASER_LON_MIN            1369701330		//経度下限
-#define CHASER_LON_MAX            1370635160		//経度上限
-
-#endif
-*/
-
-
 // ==============================
 // デバッグ関連
 // ==============================
 
-
+// 現在無し
 
 #endif // _CHASER_DEFINES_H

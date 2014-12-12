@@ -484,13 +484,6 @@ const AP_Param::Info var_info[] PROGMEM = {
 	// @User: Advanced
 	GSCALAR(chaser_gimbal_alt, "CHR_GMBL_ALT", CHASER_GIMBAL_ALT),
 	
-	// @Param: CHR_ALT_LEASH
-	// @DisplayName: Chaser Desired Alt Leash
-	// @Description: leash length between desired alt and current alt for chaser [cm]
-	// @Range 100 750
-	// @User: Advanced
-	GSCALAR(chaser_desired_alt_leash, "CHR_ALT_LEASH", CHASER_DESIRED_ALT_LEASH),
-	
 	// @Param: CHR_OFST_X
 	// @DisplayName: Chaser Beacon Offset X
 	// @Description: offset distance of beacon posision on x direction [cm]

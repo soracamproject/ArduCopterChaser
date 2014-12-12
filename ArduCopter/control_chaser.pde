@@ -483,9 +483,6 @@ static bool chaser_set_chaser_state(uint8_t state) {
 			chaser_mount_activate = false;
 			chaser_recalc_offset = false;
 			
-			// ベース下降速度計算用斜度tan値の計算
-			chaser_slope_angle_tan = tan(radians(g.chaser_slope_angle));
-			
 			// フェールセーフ初回リセット
 			chaser_fs_comm_started = false;		// 通信途絶FS
 			
@@ -528,6 +525,13 @@ static bool chaser_set_chaser_state(uint8_t state) {
 		case CHASER_STAY:
 		{
 			chaser_started = false;
+			
+			// ベース下降速度計算用斜度tan値の計算
+			if(g.chaser_slope_angle>0.1 && g.chaser_alt_hold==0){
+				chaser_slope_angle_tan = tan(radians(g.chaser_slope_angle));
+			} else {
+				chaser_slope_angle_tan = 0.f;
+			}
 			
 			loiter_init(true);
 			
